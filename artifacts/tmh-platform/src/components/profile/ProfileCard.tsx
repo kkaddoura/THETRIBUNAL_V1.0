@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useLocation } from "wouter"
 import { MapPin, ExternalLink } from "lucide-react"
 import type { Profile } from "@workspace/api-client-react"
@@ -61,11 +62,13 @@ export function getCompanyUrl(company?: string | null): string {
 
 export function ProfileCard({ profile }: { profile: Profile }) {
   const [, navigate] = useLocation()
+  const [imgError, setImgError] = useState(false)
+  const [imgLoaded, setImgLoaded] = useState(false)
   const getInitials = (name: string) =>
     name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
 
-  const companyUrl = getCompanyUrl(profile.company)
-  const profileUrl = `/profiles/${profile.id}`
+  const companyUrl = profile.companyUrl || getCompanyUrl(profile.company)
+  const profileUrl = `/voices/${profile.id}`
 
   return (
     <div
@@ -73,51 +76,59 @@ export function ProfileCard({ profile }: { profile: Profile }) {
       onClick={() => navigate(profileUrl)}
       role="article"
     >
-      {/* Photo or initials */}
-      {profile.imageUrl ? (
-        <div className="relative overflow-hidden h-56 flex-shrink-0 bg-secondary flex items-center justify-center">
+      {/* Photo or initials — fixed aspect ratio for alignment */}
+      {profile.imageUrl && !imgError ? (
+        <div className="w-full aspect-[3/4] relative overflow-hidden flex-shrink-0 bg-secondary flex items-center justify-center">
+          {/* Skeleton shimmer while image loads */}
+          {!imgLoaded && (
+            <div className="absolute inset-0 bg-secondary">
+              <div className="absolute inset-0 -translate-x-full animate-[shimmer_1.5s_infinite] bg-gradient-to-r from-transparent via-background/20 to-transparent" />
+            </div>
+          )}
           <img
             src={profile.imageUrl}
             alt={profile.name}
-            className="w-full h-full object-cover object-top grayscale group-hover:grayscale-0 transition-all duration-300"
+            className={`w-full h-full object-cover object-top grayscale group-hover:grayscale-0 transition-all duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
+            onLoad={() => setImgLoaded(true)}
+            onError={() => setImgError(true)}
           />
           {profile.isFeatured && (
-            <span className="absolute top-3 left-3 bg-primary text-background text-[9px] uppercase tracking-widest px-2 py-1 font-bold">
+            <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-primary text-background text-[8px] sm:text-[9px] uppercase tracking-widest px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold">
               Featured Voice
             </span>
           )}
           {profile.isVerified && (
-            <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" title="Verified Voice" />
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-primary border-2 border-background" title="Verified Voice" />
           )}
         </div>
       ) : (
-        <div className="relative h-48 bg-secondary flex items-center justify-center flex-shrink-0">
-          <span className="font-serif font-bold text-4xl text-foreground/30">
+        <div className="relative aspect-[3/4] bg-secondary flex items-center justify-center flex-shrink-0">
+          <span className="font-serif font-bold text-2xl sm:text-4xl text-foreground/30">
             {getInitials(profile.name)}
           </span>
           {profile.isFeatured && (
-            <span className="absolute top-3 left-3 bg-primary text-background text-[9px] uppercase tracking-widest px-2 py-1 font-bold">
+            <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-primary text-background text-[8px] sm:text-[9px] uppercase tracking-widest px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold">
               Featured Voice
             </span>
           )}
           {profile.isVerified && (
-            <div className="absolute top-3 right-3 w-2.5 h-2.5 rounded-full bg-primary border-2 border-background" title="Verified Voice" />
+            <div className="absolute top-2 right-2 sm:top-3 sm:right-3 w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-primary border-2 border-background" title="Verified Voice" />
           )}
         </div>
       )}
 
-      <div className="p-5 flex flex-col flex-1">
-        <h3 className="font-serif font-black text-xl uppercase tracking-tight text-foreground group-hover:text-primary transition-colors leading-tight mb-1">
+      <div className="p-3 sm:p-5 flex flex-col flex-1">
+        <h3 className="font-serif font-black text-sm sm:text-xl uppercase tracking-tight text-foreground group-hover:text-primary transition-colors leading-tight mb-0.5 sm:mb-1">
           {profile.name}
         </h3>
 
         {profile.headline && (
-          <p className="text-sm italic text-muted-foreground mb-2 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+          <p className="text-xs sm:text-sm italic text-muted-foreground mb-1.5 sm:mb-2 leading-snug" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
             {profile.headline}
           </p>
         )}
 
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-1">
+        <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">
           {profile.role}
           {profile.company && (
             <>
@@ -141,13 +152,13 @@ export function ProfileCard({ profile }: { profile: Profile }) {
         </p>
 
         {profile.city && (
-          <p className="text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1 mb-4">
-            <MapPin className="w-3 h-3 flex-shrink-0" /> {profile.city}
+          <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1 mb-2 sm:mb-4">
+            <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" /> {profile.city}
           </p>
         )}
 
         <div className="mt-auto">
-          <div className="w-full py-2 border border-foreground text-foreground text-[10px] uppercase tracking-widest font-bold hover:bg-foreground hover:text-background transition-colors text-center">
+          <div className="w-full py-1.5 sm:py-2 border border-foreground text-foreground text-[9px] sm:text-[10px] uppercase tracking-widest font-bold hover:bg-foreground hover:text-background transition-colors text-center">
             Read Their Story →
           </div>
         </div>

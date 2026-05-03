@@ -44,9 +44,11 @@ interface ResultsBreakdownProps {
   pollId: number
   totalVotes: number
   userCountry?: string | null
+  /** When true, don't render the top border + "By Country" label (useful when inside a tab that already labels the view) */
+  hideHeader?: boolean
 }
 
-export function ResultsBreakdown({ pollId, totalVotes, userCountry }: ResultsBreakdownProps) {
+export function ResultsBreakdown({ pollId, totalVotes, userCountry, hideHeader = false }: ResultsBreakdownProps) {
   const [countries, setCountries] = useState<CountryRow[]>([])
   const [isFallback, setIsFallback] = useState(false)
   const [loaded, setLoaded] = useState(false)
@@ -60,19 +62,55 @@ export function ResultsBreakdown({ pollId, totalVotes, userCountry }: ResultsBre
           setCountries(data.countries.slice(0, 6))
           setIsFallback(false)
         } else {
-          setCountries(makeFallback(pollId))
+          setCountries([])
           setIsFallback(true)
         }
         setLoaded(true)
       })
       .catch(() => {
-        setCountries(makeFallback(pollId))
+        setCountries([])
         setIsFallback(true)
         setLoaded(true)
       })
   }, [pollId])
 
-  if (!loaded) return null
+  const wrapperClass = hideHeader ? "" : "border-t-2 border-foreground mt-6 pt-5"
+
+  if (!loaded) {
+    return (
+      <div className={wrapperClass}>
+        <div className="py-8 text-center">
+          <div className="inline-block w-5 h-5 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+        </div>
+      </div>
+    )
+  }
+
+  // Empty / not enough data state
+  if (isFallback) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        className={wrapperClass}
+      >
+        {!hideHeader && (
+          <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-muted-foreground mb-2">
+            By Country
+          </p>
+        )}
+        <div className="py-10 px-4 text-center border border-dashed border-border">
+          <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
+            Still Gathering Data
+          </p>
+          <p className="text-xs text-muted-foreground font-sans max-w-xs mx-auto leading-relaxed">
+            We don't have enough votes from different countries yet to show a breakdown. Come back later.
+          </p>
+        </div>
+      </motion.div>
+    )
+  }
 
   const topPct = Math.max(...countries.map(c => c.percentage), 1)
 
@@ -80,19 +118,16 @@ export function ResultsBreakdown({ pollId, totalVotes, userCountry }: ResultsBre
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.7, duration: 0.4 }}
-      className="border-t-2 border-foreground mt-6 pt-5"
+      transition={{ duration: 0.4 }}
+      className={wrapperClass}
     >
-      <div className="flex items-center justify-between mb-4">
-        <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-muted-foreground">
-          By Country
-        </p>
-        {isFallback && (
-          <span className="text-[8px] uppercase tracking-widest text-muted-foreground/50 font-serif">
-            Estimated
-          </span>
-        )}
-      </div>
+      {!hideHeader && (
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-muted-foreground">
+            By Country
+          </p>
+        </div>
+      )}
 
       <div className="space-y-3">
         {countries.map((country, i) => {
@@ -134,13 +169,13 @@ export function ResultsBreakdown({ pollId, totalVotes, userCountry }: ResultsBre
                     className={cn("h-full", i === 0 ? "bg-primary" : "bg-foreground/30")}
                   />
                 </div>
-                {!isFallback && country.topOptionText && (
+                {country.topOptionText && (
                   <p className="text-[9px] text-muted-foreground font-sans mt-1 truncate">
                     Most voted: <span className="text-foreground/70 font-medium">"{country.topOptionText}"</span>
                   </p>
                 )}
               </div>
-              {!isFallback && country.count > 0 && (
+              {country.count > 0 && (
                 <span className="text-[9px] text-muted-foreground font-sans flex-shrink-0 w-10 text-right mt-0.5">
                   {country.count.toLocaleString()}
                 </span>
@@ -151,9 +186,7 @@ export function ResultsBreakdown({ pollId, totalVotes, userCountry }: ResultsBre
       </div>
 
       <p className="text-[9px] text-muted-foreground mt-4 font-sans">
-        {isFallback
-          ? `Based on ${totalVotes.toLocaleString()} votes · Country breakdown unlocks as more votes arrive`
-          : `Based on ${totalVotes.toLocaleString()} votes with location data`}
+        {`Based on ${totalVotes.toLocaleString()} votes with location data`}
       </p>
     </motion.div>
   )

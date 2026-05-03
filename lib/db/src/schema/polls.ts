@@ -10,6 +10,7 @@ export const pollsTable = pgTable("polls", {
   categorySlug: text("category_slug").notNull(),
   tags: jsonb("tags").$type<string[]>().notNull().default([]),
   pollType: text("poll_type").notNull().default("binary"),
+  cardLayout: text("card_layout").notNull().default("standard"),
   isFeatured: boolean("is_featured").notNull().default(false),
   isEditorsPick: boolean("is_editors_pick").notNull().default(false),
   editorialStatus: text("editorial_status").notNull().default("approved"),
@@ -23,6 +24,7 @@ export const pollOptionsTable = pgTable("poll_options", {
   pollId: integer("poll_id").notNull(),
   text: text("text").notNull(),
   voteCount: integer("vote_count").notNull().default(0),
+  dummyVoteCount: integer("dummy_vote_count").notNull().default(0),
 });
 
 export const votesTable = pgTable("votes", {
@@ -52,6 +54,7 @@ export const newsletterSubscribersTable = pgTable("newsletter_subscribers", {
   source: text("source").notNull().default("share_gate"),
   pollId: integer("poll_id"),
   countryCode: text("country_code"),
+  newsletterOptIn: boolean("newsletter_opt_in").notNull().default(true),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
@@ -74,6 +77,7 @@ export const hustlerApplicationsTable = pgTable("hustler_applications", {
   aiChecklist: jsonb("ai_checklist"),
   editorialStatus: text("editorial_status").notNull().default("pending"),
   editorNotes: text("editor_notes"),
+  wantsMajlis: boolean("wants_majlis").notNull().default(false),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   reviewedAt: timestamp("reviewed_at"),
 });

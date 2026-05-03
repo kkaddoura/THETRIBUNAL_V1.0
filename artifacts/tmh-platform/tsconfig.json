@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "include": ["src/**/*"],
-  "exclude": ["node_modules", "build", "src/components/dist", "**/*.test.ts"],
+  "exclude": ["node_modules", "build", "src/components/dist", "**/*.test.ts", "**/*.test.tsx"],
   "compilerOptions": {
     "noEmit": true,
     "jsx": "preserve",

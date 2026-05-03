@@ -5,8 +5,13 @@ import { ProfileCard } from "@/components/profile/ProfileCard";
 import { Search, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Link } from "wouter";
-import { usePageConfig } from "@/hooks/use-cms-data";
-import { motion, useReducedMotion } from "motion/react";
+import { usePageConfig, useSiteSettings } from "@/hooks/use-cms-data";
+import { usePageTitle } from "@/hooks/use-page-title";
+import { TitlePunctuation } from "@/components/TitlePunctuation";
+import { motion } from "motion/react";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { LoadingDots } from "@/components/ui/loading-dots";
+import { ProfileGridSkeleton } from "@/components/skeletons/ProfileCardSkeleton";
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -126,7 +131,7 @@ function VoicesTicker({
                 fontSize: "0.7rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                color: "rgba(250,250,250,0.5)",
+                color: "rgba(250,250,250,0.75)",
               }}
             >
               {item.name}
@@ -161,6 +166,10 @@ function VoicesTicker({
 }
 
 export default function Profiles() {
+  usePageTitle({
+    title: "Voices",
+    description: "Profiles and perspectives from founders, operators, and leaders shaping MENA's future.",
+  });
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<
     "all" | "featured" | "newest" | "most_viewed"
@@ -169,8 +178,12 @@ export default function Profiles() {
 
   const { data, isLoading } = useListProfiles({ search, filter: filter === "all" ? undefined : filter as any, limit: 200 });
   const { data: pageConfig } = usePageConfig<{
+    hero?: { titleLine1?: string; titleLine2?: string; subtitle?: string };
+    punctuations?: string[];
     impactStatements?: Record<string, string>;
-  }>("profiles");
+  }>("voices_page");
+  const { data: siteSettings } = useSiteSettings();
+  const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false;
 
   const IMPACT_STATEMENTS = useMemo(() => {
     if (
@@ -193,6 +206,13 @@ export default function Profiles() {
     if (country === "all") return data.profiles;
     return data.profiles.filter((p) => p.country === country);
   }, [data?.profiles, country]);
+
+  const { sentinelRef, visibleItems: visibleProfiles, hasMore } = useInfiniteScroll(filtered, 12);
+
+  const filteredCountries = useMemo(() => {
+    const set = new Set(filtered.map((p) => p.country).filter(Boolean));
+    return set.size;
+  }, [filtered]);
 
   const filters = [
     { id: "all", label: "All" },
@@ -238,9 +258,8 @@ export default function Profiles() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
           >
-            Meet the People
-            <br />
-            Moving This Region.
+            {pageConfig?.hero?.titleLine1 || "Meet the People"}<br />
+            {pageConfig?.hero?.titleLine2 || "Moving This Region."}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </motion.h1>
           <p
             style={{
@@ -251,21 +270,23 @@ export default function Profiles() {
               letterSpacing: "0.18em",
             }}
           >
-            Founders. Operators. Changemakers. Finally counted.
+            {pageConfig?.hero?.subtitle || "Founders. Operators. Changemakers. Finally counted."}
           </p>
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, ease: EASE_OUT_EXPO, delay: 0.2 }}
-          >
-            <Link
-              href="/majlis"
-              className="inline-flex items-center gap-2 mt-4 bg-primary text-white text-[11px] font-bold uppercase tracking-[0.15em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
+          {majlisEnabled && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, ease: EASE_OUT_EXPO, delay: 0.2 }}
             >
-              <Lock className="w-3.5 h-3.5" />
-              Enter The Majlis
-            </Link>
-          </motion.div>
+              <Link
+                href="/majlis"
+                className="inline-flex items-center gap-2 mt-4 bg-primary text-white text-[11px] font-bold uppercase tracking-[0.15em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                Enter The Majlis
+              </Link>
+            </motion.div>
+          )}
         </motion.div>
 
         {data?.profiles && (
@@ -297,7 +318,7 @@ export default function Profiles() {
               fontSize: "0.72rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
-              color: "rgba(250,250,250,0.5)",
+              color: "rgba(250,250,250,0.75)",
             }}
           >
             <span
@@ -308,7 +329,7 @@ export default function Profiles() {
                 marginRight: 6,
               }}
             >
-              {data?.profiles?.length ?? "—"}
+              {filtered.length || "—"}
             </span>{" "}
             Voices
           </span>
@@ -326,7 +347,7 @@ export default function Profiles() {
               fontSize: "0.72rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
-              color: "rgba(250,250,250,0.5)",
+              color: "rgba(250,250,250,0.75)",
             }}
           >
             <span
@@ -337,7 +358,7 @@ export default function Profiles() {
                 marginRight: 6,
               }}
             >
-              {countries.length || "—"}
+              {filteredCountries || "—"}
             </span>{" "}
             Countries
           </span>
@@ -355,7 +376,7 @@ export default function Profiles() {
               fontSize: "0.72rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
-              color: "rgba(250,250,250,0.5)",
+              color: "rgba(250,250,250,0.75)",
             }}
           >
             <span
@@ -430,14 +451,7 @@ export default function Profiles() {
         </motion.div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
-              <div
-                key={i}
-                className="h-80 bg-secondary animate-pulse border border-border"
-              />
-            ))}
-          </div>
+          <ProfileGridSkeleton />
         ) : filtered.length === 0 ? (
           <motion.div
             className="text-center py-20 border border-border border-dashed bg-secondary/30"
@@ -453,19 +467,25 @@ export default function Profiles() {
             </p>
           </motion.div>
         ) : (
-          <motion.div
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.05 }}
-            variants={staggerContainer}
-          >
-            {filtered.map((profile) => (
-              <motion.div key={profile.id} variants={staggerItem} whileHover={{ y: -4 }}>
-                <ProfileCard profile={profile} />
-              </motion.div>
-            ))}
-          </motion.div>
+          <>
+            <motion.div
+              className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+              initial="hidden"
+              animate="visible"
+              variants={staggerContainer}
+            >
+              {visibleProfiles.map((profile) => (
+                <motion.div key={profile.id} variants={staggerItem} whileHover={{ y: -4 }}>
+                  <ProfileCard profile={profile} />
+                </motion.div>
+              ))}
+            </motion.div>
+            {hasMore && (
+              <div ref={sentinelRef} className="flex justify-center py-8">
+                <LoadingDots />
+              </div>
+            )}
+          </>
         )}
       </div>
     </Layout>

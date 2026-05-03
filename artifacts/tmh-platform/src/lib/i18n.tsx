@@ -270,7 +270,7 @@ const AR: Record<string, string> = {
   "The Platform": "المنصة",
 
   "The Tribunal is MENA's first opinion intelligence platform — part editorial, part data engine, part social experiment. A product by The Middle East Hustle.": "المحكمة هي أول منصة ذكاء رأي بالمنطقة — جزء تحريري، جزء محرك بيانات، جزء تجربة اجتماعية. منتج من ذا ميدل إيست هاسل.",
-  "We ask the questions nobody else asks. We collect anonymous votes from across 19 countries. We track predictions over time. We surface the trends reshaping the region. And we profile the people building it.": "نسأل الأسئلة اللي ما حدا بيسألها. نجمع أصوات مجهولة من ١٩ دولة. نتتبع التوقعات عبر الوقت. نظهر الترندات اللي عم تغيّر المنطقة. ونعرّف بالناس اللي عم يبنوها.",
+  "We ask the questions nobody else asks. We collect anonymous votes from around the world on 19 MENA countries. We track predictions over time. We surface the trends reshaping the region. And we profile the people building it.": "نسأل الأسئلة اللي ما حدا بيسألها. نجمع أصوات مجهولة من حول العالم عن ١٩ دولة في منطقة الشرق الأوسط وشمال أفريقيا. نتتبع التوقعات عبر الوقت. نظهر الترندات اللي عم تغيّر المنطقة. ونعرّف بالناس اللي عم يبنوها.",
   "Think of it as the WSJ of MENA opinion — editorial in presentation, ruthlessly neutral in methodology, and built for the 541 million people who live, work, and build in the Middle East and North Africa.": "فكّر فيها كـ WSJ لرأي المنطقة — تحريرية بالعرض، محايدة بالمنهجية، ومبنية لـ ٥٤١ مليون شخص اللي عايشين وشغالين وبانين بالشرق الأوسط وشمال أفريقيا.",
   "Everything on The Tribunal — every debate, every prediction, every trend, every Voice — adds to a living dataset of what the region actually thinks. Not what governments report. Not what Western media assumes. What real people vote for when nobody's watching.": "كل شي على المحكمة — كل مناظرة، كل توقع، كل ترند، كل صوت — بيضيف لداتاسيت حيّة عن شو المنطقة فعلاً بتفكر. مش شو الحكومات بتقول. مش شو الإعلام الغربي بيفترض. شو الناس الحقيقيين بيصوتوا لما ما حدا عم يراقبهم.",
 
@@ -348,7 +348,7 @@ const AR: Record<string, string> = {
   "What is The Tribunal?": "شو هي المحكمة؟",
   "Is The Tribunal free to use?": "هل المحكمة مجانية؟",
   "Who is behind The Tribunal?": "مين ورا المحكمة؟",
-  "Are the polls scientific?": "هل الاستطلاعات علمية؟",
+  "Are the debates scientific?": "هل الاستطلاعات علمية؟",
 
   "How do the debates work?": "كيف تشتغل المناظرات؟",
   "Can I vote more than once?": "فيني صوّت أكتر من مرة؟",

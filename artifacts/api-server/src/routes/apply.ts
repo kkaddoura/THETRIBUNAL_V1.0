@@ -135,14 +135,14 @@ async function sendApplicationEmail(email: string, name: string, status: string,
         text: bodies[status] ?? `Thank you for applying, ${name}. We'll be in touch.`,
       }),
     })
-    console.log(`[APPLY] Resend email sent to ${email} (${status})`)
+    console.log(`[APPLY] Resend email sent to ${email.substring(0, 3)}*** (${status})`)
   } catch (err) {
     console.error("[APPLY] Resend email failed:", err)
   }
 }
 
 router.post("/apply", async (req, res) => {
-  const { name, email, title, company, bio, linkedin, quote, impact, city, country, sector } = req.body
+  const { name, email, title, company, bio, linkedin, quote, impact, city, country, sector, wantsMajlis } = req.body
 
   if (!name || !email || !title || !company || !bio || !linkedin) {
     return res.status(400).json({ error: "Missing required fields" })
@@ -150,8 +150,10 @@ router.post("/apply", async (req, res) => {
 
   const aiResult = scoreApplication({ name, email, title, company, bio, linkedin, quote, impact, city, country })
 
+  let refNumber = `TMH-${Date.now()}`
+
   try {
-    await db.insert(hustlerApplicationsTable).values({
+    const [inserted] = await db.insert(hustlerApplicationsTable).values({
       name,
       email: email.toLowerCase().trim(),
       title,
@@ -163,24 +165,25 @@ router.post("/apply", async (req, res) => {
       linkedin,
       quote: quote ?? null,
       impact: impact ?? null,
+      wantsMajlis: !!wantsMajlis,
       aiScore: aiResult.score,
       aiStatus: aiResult.status,
       aiReasoning: aiResult.reasoning,
       aiChecklist: aiResult.checklist,
-    })
-    console.log(`[APPLY] Stored application: ${name} <${email}> | Score: ${aiResult.score} | Status: ${aiResult.status}`)
+    }).returning()
+    refNumber = `TMH-${inserted.id || Date.now()}`
+    console.log(`[APPLY] Stored application: ${name.substring(0, 2)}*** <${email.substring(0, 3)}***> | Score: ${aiResult.score} | Status: ${aiResult.status} | Ref: ${refNumber}`)
   } catch (err) {
-    console.error("[APPLY] DB save failed:", err)
+    console.error("[APPLY] DB save failed:", (err as Error).message)
+    return res.status(500).json({ success: false, error: "Failed to submit application. Please try again." })
   }
 
   sendApplicationEmail(email, name, aiResult.status, aiResult.reasoning, aiResult.score).catch(() => {})
 
   return res.json({
     success: true,
-    message: "Application received. Our AI review runs in minutes.",
-    aiScore: aiResult.score,
-    aiStatus: aiResult.status,
-    reasoning: aiResult.reasoning,
+    referenceNumber: refNumber,
+    message: "Application received. We'll review it and get back to you within 48 hours.",
   })
 })
 

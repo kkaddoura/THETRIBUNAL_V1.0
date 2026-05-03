@@ -10,6 +10,8 @@ import adminRouter from "./admin";
 import cmsRouter from "./cms";
 import majlisRouter from "./majlis";
 import ideationRouter from "./ideation";
+import chatbotRouter from "./chatbot";
+import ogImageRouter from "./og-image";
 
 const router: IRouter = Router();
 
@@ -24,5 +26,7 @@ router.use(adminRouter);
 router.use(cmsRouter);
 router.use(majlisRouter);
 router.use(ideationRouter);
+router.use(chatbotRouter);
+router.use(ogImageRouter);
 
 export default router;

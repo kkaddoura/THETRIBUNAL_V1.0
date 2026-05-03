@@ -1,7 +1,6 @@
 [build]
-builder = "nixpacks"
-installCommand = "npm install -g pnpm@10.33.0 && pnpm install --frozen-lockfile"
-buildCommand = "pnpm run build"
+builder = "dockerfile"
+dockerfilePath = "Dockerfile"
 
 [deploy]
 startCommand = "node artifacts/api-server/dist/index.cjs"

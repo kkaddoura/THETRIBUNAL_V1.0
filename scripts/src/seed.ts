@@ -866,7 +866,7 @@ async function seed() {
       poll.options.map((text, i) => ({
         pollId: inserted.id,
         text,
-        voteCount: poll.votes[i] ?? 0,
+        voteCount: 0,
       }))
     );
   }

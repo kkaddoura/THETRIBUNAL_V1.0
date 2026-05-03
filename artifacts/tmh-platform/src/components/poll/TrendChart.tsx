@@ -64,7 +64,18 @@ export function TrendChart({ pollId }: TrendChartProps) {
     )
   }
 
-  if (!data?.dataPoints?.length) return null
+  if (!data?.dataPoints?.length) {
+    return (
+      <div className="py-10 px-4 text-center border border-dashed border-border">
+        <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
+          Still Gathering Data
+        </p>
+        <p className="text-xs text-muted-foreground font-sans max-w-xs mx-auto leading-relaxed">
+          We need more votes over time before we can show how opinion has shifted. Come back later.
+        </p>
+      </div>
+    )
+  }
 
   const options: string[] = []
   for (const dp of data.dataPoints) {

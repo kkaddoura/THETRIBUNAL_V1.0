@@ -34,7 +34,7 @@ const ICON_MAP: Record<string, string> = {
 
 router.get("/categories", async (_req, res) => {
   try {
-    // Derive categories dynamically from DB — grouped by category name, summing counts across any slug variants
+    // Derive categories dynamically from DB — approved polls only, summing counts across any slug variants
     const rows = await db
       .select({
         category: pollsTable.category,
@@ -42,25 +42,32 @@ router.get("/categories", async (_req, res) => {
         count: sql<number>`count(*)`,
       })
       .from(pollsTable)
+      .where(eq(pollsTable.editorialStatus, "approved"))
       .groupBy(pollsTable.category, pollsTable.categorySlug)
       .orderBy(pollsTable.category);
 
-    // Merge slug variants under the same category name, keeping the slug with the most polls
-    const nameMap: Record<string, { slug: string; count: number }> = {};
+    // Merge slug variants under the same category name — SUM counts, keep the slug with the most polls as canonical
+    const nameMap: Record<string, { slug: string; maxSlugCount: number; totalCount: number }> = {};
     for (const row of rows) {
-      const existing = nameMap[row.category];
       const n = Number(row.count);
-      if (!existing || n > existing.count) {
-        nameMap[row.category] = { slug: row.categorySlug, count: n };
+      const existing = nameMap[row.category];
+      if (!existing) {
+        nameMap[row.category] = { slug: row.categorySlug, maxSlugCount: n, totalCount: n };
+      } else {
+        existing.totalCount += n;
+        if (n > existing.maxSlugCount) {
+          existing.slug = row.categorySlug;
+          existing.maxSlugCount = n;
+        }
       }
     }
 
     const categories = Object.entries(nameMap)
-      .map(([name, { slug, count }]) => ({
+      .map(([name, { slug, totalCount }]) => ({
         name,
         slug,
         icon: ICON_MAP[slug] ?? "📌",
-        pollCount: count,
+        pollCount: totalCount,
       }))
       .sort((a, b) => a.name.localeCompare(b.name));
 

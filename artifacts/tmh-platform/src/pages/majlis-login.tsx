@@ -2,10 +2,15 @@ import { useState } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { useLocation } from "wouter";
 import { Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 const API_BASE = import.meta.env?.VITE_API_BASE_URL ?? "";
 
 export default function MajlisLogin() {
+  usePageTitle({
+    title: "The Majlis",
+    description: "Log in to The Majlis -- a private community for MENA's sharpest voices.",
+  });
   const [, navigate] = useLocation();
   const [mode, setMode] = useState<"login" | "register">("login");
   const [email, setEmail] = useState("");
@@ -28,6 +33,12 @@ export default function MajlisLogin() {
       }
       if (!email.trim() || !password.trim()) {
         setError("Email and password are required");
+        setLoading(false);
+        return;
+      }
+
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+        setError("Please enter a valid email address");
         setLoading(false);
         return;
       }
@@ -91,6 +102,9 @@ export default function MajlisLogin() {
                 onClick={() => {
                   setMode("login");
                   setError("");
+                  setEmail("");
+                  setPassword("");
+                  setInviteToken("");
                 }}
                 className={`flex-1 pb-3 text-xs font-serif font-bold uppercase tracking-[0.2em] transition-colors border-b-2 ${
                   mode === "login"
@@ -104,6 +118,9 @@ export default function MajlisLogin() {
                 onClick={() => {
                   setMode("register");
                   setError("");
+                  setEmail("");
+                  setPassword("");
+                  setInviteToken("");
                 }}
                 className={`flex-1 pb-3 text-xs font-serif font-bold uppercase tracking-[0.2em] transition-colors border-b-2 ${
                   mode === "register"
@@ -115,7 +132,7 @@ export default function MajlisLogin() {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
               {mode === "register" && (
                 <div>
                   <label className="text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
@@ -145,6 +162,8 @@ export default function MajlisLogin() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  name="majlis-email"
+                  autoComplete="off"
                   placeholder="your@email.com"
                   className="w-full bg-background border border-border px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none transition-colors"
                 />
@@ -160,6 +179,8 @@ export default function MajlisLogin() {
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
+                    name={mode === "register" ? "majlis-new-password" : "majlis-password"}
+                    autoComplete={mode === "register" ? "new-password" : "off"}
                     placeholder="••••••••"
                     className="w-full bg-background border border-border px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none transition-colors pr-10"
                   />
@@ -169,12 +190,20 @@ export default function MajlisLogin() {
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                   >
                     {showPassword ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
                       <Eye className="w-4 h-4" />
+                    ) : (
+                      <EyeOff className="w-4 h-4" />
                     )}
                   </button>
                 </div>
+                {mode === "login" && (
+                  <p className="text-[10px] text-muted-foreground mt-2">
+                    Forgot your password?{" "}
+                    <a href="mailto:hello@themiddleeasthustle.com" className="text-primary underline">
+                      Contact admin
+                    </a>
+                  </p>
+                )}
               </div>
 
               {error && (

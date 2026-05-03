@@ -3,7 +3,7 @@ import { db, newsletterSubscribersTable } from "@workspace/db"
 
 const router = Router()
 
-async function syncToBeehiiv(email: string, source: string) {
+export async function syncToBeehiiv(email: string, source: string) {
   const BEEHIIV_API_KEY = process.env.BEEHIIV_API_KEY
   const BEEHIIV_PUB_ID = process.env.BEEHIIV_PUBLICATION_ID
   if (!BEEHIIV_API_KEY || !BEEHIIV_PUB_ID) return
@@ -25,10 +25,10 @@ async function syncToBeehiiv(email: string, source: string) {
       }),
     })
     if (resp.ok) {
-      console.log(`[BEEHIIV] Synced: ${email}`)
+      console.log(`[BEEHIIV] Synced: ${email.substring(0, 3)}***`)
     } else {
       const err = await resp.text()
-      console.error(`[BEEHIIV] Sync failed for ${email}: ${err}`)
+      console.error(`[BEEHIIV] Sync failed for ${email.substring(0, 3)}***: ${err}`)
     }
   } catch (err) {
     console.error(`[BEEHIIV] Request error:`, err)
@@ -37,7 +37,7 @@ async function syncToBeehiiv(email: string, source: string) {
 
 router.post("/newsletter/subscribe", async (req, res) => {
   try {
-    const { email, source = "homepage" } = req.body
+    const { email, source = "homepage", newsletterOptIn = true } = req.body
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       return res.status(400).json({ error: "Valid email required" })
     }
@@ -45,13 +45,16 @@ router.post("/newsletter/subscribe", async (req, res) => {
     await db.insert(newsletterSubscribersTable).values({
       email: clean,
       source,
+      newsletterOptIn: !!newsletterOptIn,
     }).onConflictDoNothing()
-    console.log(`[NEWSLETTER] Subscriber added: ${clean} (source: ${source})`)
-    syncToBeehiiv(clean, source).catch(() => {})
+    console.log(`[NEWSLETTER] Subscriber added: ${clean.substring(0, 3)}*** (source: ${source}, optIn: ${newsletterOptIn})`)
+    if (newsletterOptIn) {
+      syncToBeehiiv(clean, source).catch(() => {})
+    }
     return res.json({ success: true })
   } catch (err) {
-    console.error(err)
-    return res.json({ success: true })
+    console.error("[NEWSLETTER] Subscribe failed:", (err as Error).message)
+    return res.status(500).json({ success: false, error: "Failed to subscribe. Please try again." })
   }
 })
 

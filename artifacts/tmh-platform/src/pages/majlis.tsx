@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from "react"
 import { Layout } from "@/components/layout/Layout"
 import { useLocation, Link } from "wouter"
-import { Send, Users, LogOut, ChevronDown, Shield, ArrowDown, MessageSquare, Hash, Mail, Plus, X, Menu, BarChart3, TrendingUp, Activity } from "lucide-react"
+import { Send, Users, LogOut, ChevronDown, Shield, ArrowDown, ArrowRight, MessageSquare, Hash, Mail, Plus, X, Menu, Lock, BarChart3, TrendingUp, Activity } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 const API_BASE = import.meta.env?.VITE_API_BASE_URL ?? ""
 
@@ -111,7 +112,7 @@ function parseSharedContent(content: string): { text: string; shared: SharedCont
 function SharedCard({ shared }: { shared: SharedContent }) {
   const colorMap = { debate: "#DC143C", prediction: "#3B82F6", pulse: "#10B981" }
   const iconMap = { debate: BarChart3, prediction: TrendingUp, pulse: Activity }
-  const linkMap = { debate: `/polls/${shared.id}`, prediction: `/predictions`, pulse: `/mena-pulse` }
+  const linkMap = { debate: `/debates/${shared.id}`, prediction: `/predictions`, pulse: `/pulse` }
   const labelMap = { debate: "DEBATE", prediction: "PREDICTION", pulse: "PULSE" }
   const Icon = iconMap[shared.type]
   const color = colorMap[shared.type]
@@ -473,6 +474,10 @@ function CreateGroupModal({ members, onClose, onSubmit }: {
 }
 
 export default function Majlis() {
+  usePageTitle({
+    title: "The Majlis",
+    description: "A private community for MENA's sharpest voices. Discuss, share, and shape the debate behind closed doors.",
+  });
   const [, navigate] = useLocation()
   const [user, setUser] = useState<MajlisUser | null>(null)
   const [channels, setChannels] = useState<Channel[]>([])
@@ -500,7 +505,6 @@ export default function Majlis() {
     const token = getToken()
     const u = getUser()
     if (!token || !u) {
-      navigate("/majlis/login")
       return
     }
     setUser(u)
@@ -510,7 +514,7 @@ export default function Majlis() {
         if (!r.ok) {
           localStorage.removeItem("majlis_token")
           localStorage.removeItem("majlis_user")
-          navigate("/majlis/login")
+          setUser(null)
         }
       })
       .catch(() => {})
@@ -637,7 +641,7 @@ export default function Majlis() {
 
   const handlePaste = async (e: React.ClipboardEvent<HTMLInputElement>) => {
     const text = e.clipboardData.getData("text")
-    const pollMatch = text.match(/\/polls\/(\d+)/)
+    const pollMatch = text.match(/\/debates\/(\d+)/)
     const predMatch = text.match(/\/predictions\/(\d+)/)
     if (!pollMatch && !predMatch) return
 
@@ -733,11 +737,42 @@ export default function Majlis() {
   const activeChannel = channels.find(c => c.id === activeChannelId)
   const onlineCount = members.filter(m => m.isOnline).length
 
+  const hasApplied = typeof window !== "undefined" && localStorage.getItem("tmh_applied") === "1"
+
   if (!user) {
     return (
       <Layout>
-        <div className="min-h-screen flex items-center justify-center pt-20">
-          <p className="text-muted-foreground">Loading...</p>
+        <div className="text-center py-20 max-w-md mx-auto px-4">
+          <div className="inline-flex items-center justify-center w-14 h-14 border-2 border-primary/30 mb-6">
+            <Lock className="w-6 h-6 text-primary" />
+          </div>
+          <h2 className="font-display font-black text-2xl uppercase tracking-tight text-foreground mb-2">
+            The Majlis is Invite-Only
+          </h2>
+          {hasApplied ? (
+            <p className="text-sm text-muted-foreground">
+              Your application is being reviewed. You'll hear back within 48 hours.{" "}
+              Need help?{" "}
+              <a href="mailto:hello@themiddleeasthustle.com" className="text-primary underline">
+                Contact support
+              </a>.
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              A private space for verified voices across MENA.{" "}
+              <a href="/apply?ref=majlis" className="text-primary underline">Apply to join</a>.
+            </p>
+          )}
+
+          <div className="mt-8 pt-6 border-t border-border">
+            <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-serif mb-3">Already a member?</p>
+            <a
+              href="/majlis/login"
+              className="inline-flex items-center gap-2 bg-primary text-white font-serif font-bold uppercase tracking-[0.2em] text-xs px-8 py-3 hover:bg-primary/90 transition-colors"
+            >
+              Login <ArrowRight className="w-3 h-3" />
+            </a>
+          </div>
         </div>
       </Layout>
     )

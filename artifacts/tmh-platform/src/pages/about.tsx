@@ -1,14 +1,17 @@
 import { Link } from "wouter"
 import { Layout } from "@/components/layout/Layout"
 import { useI18n } from "@/lib/i18n"
-import { usePageConfig } from "@/hooks/use-cms-data"
+import { usePageConfig, useLiveCounts, useSiteSettings } from "@/hooks/use-cms-data"
+import { usePageTitle } from "@/hooks/use-page-title"
+import { TitlePunctuation } from "@/components/TitlePunctuation"
+import { PageIndex } from "@/components/layout/PageIndex"
 
 const FALLBACK_PILLARS = [
   {
     num: "01",
     title: "Debates",
     body: "The questions no one asks out loud — about identity, money, religion, gender, power, and the future. Every debate is anonymous. Every vote is permanent. What the region thinks stays on record.",
-    link: "/polls",
+    link: "/debates",
     cta: "Enter the Debates",
   },
   {
@@ -22,15 +25,22 @@ const FALLBACK_PILLARS = [
     num: "03",
     title: "The Pulse",
     body: "Exploding Topics for MENA. 36 data-driven trend cards across 8 categories — from press freedom collapse to the $4.1T sovereign wealth machine. Filterable by Power, Money, Society, Tech, Survival, Migration, Culture, and Health. Real-time population counter. Live tickers. The region's vital signs.",
-    link: "/mena-pulse",
+    link: "/pulse",
     cta: "Read The Pulse",
   },
   {
     num: "04",
     title: "The Voices",
     body: "94 founders, operators, and changemakers from 10 countries — curated, not applied-for. Each Voice has a story, a lesson, and a quote. This is the region's leadership index, built one profile at a time.",
-    link: "/profiles",
+    link: "/voices",
     cta: "Meet The Voices",
+  },
+  {
+    num: "05",
+    title: "The Majlis",
+    body: "A private, members-only forum for the region's verified founders, operators, and changemakers. Real-time conversations across curated channels — no algorithms, no noise. Where the people shaping MENA actually talk to each other.",
+    link: "/majlis/login",
+    cta: "Enter The Majlis",
   },
 ]
 
@@ -90,35 +100,59 @@ const COUNTRIES_DEFAULT = [
 ]
 
 interface AboutConfig {
-  hero?: { title?: string; tagline?: string; subtitle?: string }
+  hero?: { titleLine1?: string; titleLine2?: string; tagline?: string; subtitle?: string }
   pillars?: Array<{ num: string; title: string; body: string; link: string; cta: string }>
   beliefs?: Array<{ num: string; title: string; body: string }>
   founderStatement?: { text?: string; author?: string; quote?: string }
   regionCoverage?: Array<{ name: string; flag: string; population: string }>
+  punctuations?: string[]
 }
 
 export default function About() {
+  usePageTitle({
+    title: "About",
+    description: "The Tribunal is the anonymous voice of MENA -- 541 million people, one platform for debates, predictions, and real opinions.",
+  });
   const { t, isAr } = useI18n()
   const { data: pageConfig } = usePageConfig<AboutConfig & {
     stats?: Array<{ num: string; label: string }>;
   }>("about")
 
-  const pillars = pageConfig?.pillars?.length ? pageConfig.pillars : FALLBACK_PILLARS
+  const { data: siteSettings } = useSiteSettings()
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true
+  const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false
+  const pillars = (pageConfig?.pillars?.length ? pageConfig.pillars : FALLBACK_PILLARS)
+    .filter(p =>
+      (voicesEnabled || !p.link?.startsWith("/voices"))
+      && (majlisEnabled || !p.link?.startsWith("/majlis"))
+    )
   const beliefs = pageConfig?.beliefs?.length ? pageConfig.beliefs : FALLBACK_BELIEFS
   const hero = pageConfig?.hero
   const founder = pageConfig?.founderStatement
   const countries = pageConfig?.regionCoverage?.length
     ? pageConfig.regionCoverage.map(c => ({ name: c.name, flag: c.flag, pop: c.population }))
     : COUNTRIES_DEFAULT
+  const { data: liveCounts } = useLiveCounts()
   const stats = pageConfig?.stats?.length ? pageConfig.stats : [
-    { num: "94", label: "Founding Voices" },
-    { num: "135+", label: "Active Debates" },
+    { num: String(liveCounts?.voices ?? 94), label: "Founding Voices" },
+    { num: `${liveCounts?.debates ?? 135}+`, label: "Active Debates" },
     { num: "19", label: "MENA Countries" },
     { num: "541M", label: "People in MENA" },
   ]
 
+  const pageSections = [
+    { id: "what-is-the-tribunal", label: t("What Is It") },
+    { id: "the-platform", label: t("The Platform") },
+    { id: "from-the-founder", label: t("From the Founder") },
+    { id: "what-we-stand-for", label: t("What We Stand For") },
+    { id: "the-region", label: t("The Region") },
+    { id: "our-ethos", label: t("Our Ethos") },
+  ]
+
   return (
     <Layout>
+      <PageIndex sections={pageSections} />
+
       {/* Hero */}
       <div className="bg-foreground text-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
@@ -126,22 +160,17 @@ export default function About() {
             {t(hero?.tagline || "Est. 2026 · Founded by Kareem Kaddoura")}
           </p>
           <h1 style={{ fontFamily: isAr ? "'IBM Plex Sans Arabic', sans-serif" : "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
-            {isAr ? (
-              <>{t(hero?.title || "The Region's First Collective Mirror")}<span style={{ color: "#DC143C" }}>.</span></>
-            ) : (
-              <>{(hero?.title || "The Region's First\nCollective Mirror").split("\n").map((line, i, arr) => (
-                <span key={i}>{line}{i < arr.length - 1 && <br />}</span>
-              ))}<span style={{ color: "#DC143C" }}>.</span></>
-            )}
+            {t(hero?.titleLine1 || "The Region's First")}<br />
+            {t(hero?.titleLine2 || "Collective Mirror")}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(250,250,250,0.65)" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.18em" }}>
             {t(hero?.subtitle || "541 million people. Zero platforms asking what they think. Until now.")}
           </p>
         </div>
       </div>
 
       {/* What TMH Is */}
-      <div className="max-w-3xl mx-auto px-4 py-20 border-b border-border">
+      <div id="what-is-the-tribunal" className="max-w-3xl mx-auto px-4 py-20 border-b border-border scroll-mt-24">
         <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-8 border-l-4 border-primary pl-4">
           {t("What Is The Tribunal?")}
         </h2>
@@ -149,7 +178,7 @@ export default function About() {
           {t("The Tribunal is MENA's first opinion intelligence platform — part editorial, part data engine, part social experiment. A product by The Middle East Hustle.")}
         </p>
         <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
-          {t("We ask the questions nobody else asks. We collect anonymous votes from across 19 countries. We track predictions over time. We surface the trends reshaping the region. And we profile the people building it.")}
+          {t("We ask the questions nobody else asks. We collect anonymous votes from around the world on 19 MENA countries. We track predictions over time. We surface the trends reshaping the region. And we profile the people building it.")}
         </p>
         <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
           {t("Think of it as the WSJ of MENA opinion — editorial in presentation, ruthlessly neutral in methodology, and built for the 541 million people who live, work, and build in the Middle East and North Africa.")}
@@ -160,7 +189,7 @@ export default function About() {
       </div>
 
       {/* The Four Pillars */}
-      <div className="py-20 bg-secondary/20 border-b border-border">
+      <div id="the-platform" className="py-20 bg-secondary/20 border-b border-border scroll-mt-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-serif font-black uppercase text-3xl border-b-2 border-foreground pb-4 mb-12 text-foreground">
             {t("The Platform")}
@@ -168,7 +197,7 @@ export default function About() {
           <div className="grid md:grid-cols-2 gap-10">
             {pillars.map(p => (
               <div key={p.num} className="relative">
-                <span className="text-6xl font-display font-black text-foreground/8 leading-none select-none block">{p.num}</span>
+                <span className="text-6xl font-display font-black text-gray-900/20 dark:text-gray-100/20 leading-none select-none block">{p.num}</span>
                 <div className="-mt-3">
                   <h3 className="font-serif font-black uppercase text-lg border-b border-border pb-2 mb-3 text-foreground tracking-wide">
                     {t(p.title)}
@@ -193,8 +222,8 @@ export default function About() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {stats.map(stat => (
               <div key={stat.label}>
-                <div className="font-display font-black text-4xl md:text-5xl text-primary leading-none mb-2">{stat.num}</div>
-                <div className="text-[10px] uppercase tracking-[0.2em] text-background/70 font-serif">{t(stat.label)}</div>
+                <div className="font-display text-4xl md:text-5xl leading-none mb-2">{stat.num}</div>
+                <div className="text-[10px] uppercase tracking-[0.2em] font-serif text-primary">{t(stat.label)}</div>
               </div>
             ))}
           </div>
@@ -202,7 +231,7 @@ export default function About() {
       </div>
 
       {/* Founder Statement */}
-      <div className="max-w-3xl mx-auto px-4 py-20 border-b border-border">
+      <div id="from-the-founder" className="max-w-3xl mx-auto px-4 py-20 border-b border-border scroll-mt-24">
         <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-8 border-l-4 border-primary pl-4">
           {t("From the Founder")}
         </h2>
@@ -242,7 +271,7 @@ export default function About() {
       </div>
 
       {/* Beliefs */}
-      <div className="py-20 bg-secondary/20 border-t border-border border-b">
+      <div id="what-we-stand-for" className="py-20 bg-secondary/20 border-t border-border border-b scroll-mt-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-serif font-black uppercase text-3xl border-b-2 border-foreground pb-4 mb-12 text-foreground">
             {t("What We Stand For")}
@@ -250,7 +279,7 @@ export default function About() {
           <div className="grid md:grid-cols-2 gap-8">
             {beliefs.map(b => (
               <div key={b.num} className="relative">
-                <span className="text-6xl font-display font-black text-foreground/8 leading-none select-none block">{b.num}</span>
+                <span className="text-6xl font-display font-black text-gray-900/20 dark:text-gray-100/20 leading-none select-none block">{b.num}</span>
                 <div className="-mt-3">
                   <h3 className="font-serif font-black uppercase text-lg border-b border-border pb-2 mb-3 text-foreground tracking-wide">
                     {t(b.title)}
@@ -264,7 +293,7 @@ export default function About() {
       </div>
 
       {/* MENA Countries */}
-      <div className="py-16 border-b border-border">
+      <div id="the-region" className="py-16 border-b border-border scroll-mt-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-2 border-l-4 border-primary pl-4">
             {t("The Region We Cover")}
@@ -274,7 +303,7 @@ export default function About() {
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
             {countries.map(c => (
-              <div key={c.name} className="border border-border px-3 py-2.5 text-xs font-serif uppercase tracking-widest text-foreground/80 text-center hover:border-primary hover:text-primary transition-colors flex flex-col items-center gap-1">
+              <div key={c.name} className="border border-border px-3 py-2.5 text-xs font-serif uppercase tracking-widest text-foreground/80 text-center flex flex-col items-center gap-1">
                 <span className="text-xl not-italic" style={{ fontFamily: "system-ui" }}>{c.flag}</span>
                 <span>{t(c.name)}</span>
                 <span className="text-[9px] tracking-normal normal-case text-muted-foreground font-sans">{c.pop}</span>
@@ -285,7 +314,7 @@ export default function About() {
       </div>
 
       {/* Ethos */}
-      <div className="py-16 border-b border-border bg-secondary/10">
+      <div id="our-ethos" className="py-16 border-b border-border bg-secondary/10 scroll-mt-24">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-8 border-l-4 border-primary pl-4">
             {t("Our Ethos")}
@@ -321,23 +350,25 @@ export default function About() {
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/polls"
+              href="/debates"
               className="bg-foreground text-background px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary transition-colors font-serif"
             >
               {t("Cast Your Vote")}
             </Link>
             <Link
-              href="/mena-pulse"
+              href="/pulse"
               className="border border-foreground text-foreground px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-foreground hover:text-background transition-colors font-serif"
             >
               {t("Read The Pulse")}
             </Link>
-            <Link
-              href="/profiles"
-              className="border border-primary text-primary px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white transition-colors font-serif"
-            >
-              {t("Meet The Voices")}
-            </Link>
+            {voicesEnabled && (
+              <Link
+                href="/voices"
+                className="border border-primary text-primary px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white transition-colors font-serif"
+              >
+                {t("Meet The Voices")}
+              </Link>
+            )}
           </div>
         </div>
       </div>

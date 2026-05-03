@@ -62,6 +62,30 @@ const ARCS: GlobeArc[] = [
 const ARC_STEPS     = 60;
 const ARC_ELEVATION = 0.3;
 
+// ── Trending callouts ────────────────────────────────────────────────────────
+
+interface TrendingItem {
+  markerId: string;
+  message: string;
+}
+
+const TRENDING: TrendingItem[] = [
+  { markerId: "cairo",     message: "Youth Voices Rising" },
+  { markerId: "dubai",     message: "Tech Boom Surging" },
+  { markerId: "london",    message: "Policy Shifts Ahead" },
+  { markerId: "tokyo",     message: "Innovation Drives Growth" },
+  { markerId: "riyadh",    message: "Vision 2030 Accelerates" },
+  { markerId: "newyork",   message: "Markets Watch Closely" },
+  { markerId: "istanbul",  message: "Culture Bridge Expands" },
+  { markerId: "mumbai",    message: "Digital Wave Grows" },
+  { markerId: "lagos",     message: "Creators Lead Change" },
+  { markerId: "singapore", message: "Hub Status Strengthens" },
+  { markerId: "beirut",    message: "Diaspora Voices Amplify" },
+  { markerId: "saopaulo",  message: "Street Pulse Beats" },
+];
+
+const TRENDING_CYCLE = 260;  // frames per callout (~4.3s at 60fps)
+
 // ── Math helpers ─────────────────────────────────────────────────────────────
 
 function latLonToVec3(lat: number, lon: number): [number, number, number] {
@@ -138,16 +162,16 @@ export function GlobeConnections({
   const thetaOffsetRef     = useRef(0);
   const isPausedRef        = useRef(false);
 
-  // Dark mode — watch html.dark class (custom useTheme toggles it)
-  const [isDark, setIsDark] = useState(
-    () => typeof document !== "undefined"
+  // Dark mode — ref-based so globe is never destroyed/recreated on theme change
+  const isDarkRef = useRef(
+    typeof document !== "undefined"
       ? document.documentElement.classList.contains("dark")
       : false
   );
   useEffect(() => {
-    const obs = new MutationObserver(() =>
-      setIsDark(document.documentElement.classList.contains("dark"))
-    );
+    const obs = new MutationObserver(() => {
+      isDarkRef.current = document.documentElement.classList.contains("dark");
+    });
     obs.observe(document.documentElement, { attributeFilter: ["class"] });
     return () => obs.disconnect();
   }, []);
@@ -179,14 +203,14 @@ export function GlobeConnections({
     };
   }, []);
 
-  // Globe + overlay (recreate when isDark changes so cobe's dark: 0/1 is applied at init)
+  // Globe + overlay (created once; theme updates happen live via onRender)
   useEffect(() => {
     const canvas  = canvasRef.current;
     const overlay = overlayRef.current;
     if (!canvas || !overlay) return;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let phi   = 0.6;
+    let phi   = 3.72; // start slightly east of Middle East so rotation sweeps it through center
     let width = 0;
 
     const onResize = () => {
@@ -214,6 +238,13 @@ export function GlobeConnections({
     // Staggered pulse dot positions per arc
     const arcPulse = ARCS.map((_, i) => i / ARCS.length);
 
+    // Trending callout animation state
+    let trendIdx     = 0;
+    let trendFrame   = 0;
+    let trendHolding = false;
+    // Track consecutive skips to avoid infinite loops
+    let skipCount    = 0;
+
     function drawOverlay(currentPhi: number, currentTheta: number) {
       if (!ctx || width === 0) return;
 
@@ -222,12 +253,13 @@ export function GlobeConnections({
       ctx.clearRect(0, 0, width, width);
 
       // Theme-aware colors
+      const dark      = isDarkRef.current;
       const arcColor  = "#DC143C";
-      const menaColor = isDark ? "#ff3a5c" : "#DC143C";
-      const dotColor  = isDark ? "rgba(255,255,255,0.85)" : "rgba(30,30,30,0.85)";
-      const labelBg   = isDark ? "rgba(12,12,12,0.88)"    : "rgba(255,255,255,0.93)";
-      const labelText = isDark ? "#e8e8e8"                : "#111111";
-      const menaText  = isDark ? "#ff3a5c"                : "#DC143C";
+      const menaColor = dark ? "#ff3a5c" : "#DC143C";
+      const dotColor  = dark ? "rgba(255,255,255,0.85)" : "rgba(30,30,30,0.85)";
+      const labelBg   = dark ? "rgba(12,12,12,0.88)"    : "rgba(255,255,255,0.93)";
+      const labelText = dark ? "#e8e8e8"                : "#111111";
+      const menaText  = dark ? "#ff3a5c"                : "#DC143C";
 
       // ── Arc lines + pulse dots ──
       arcSamples.forEach((samples, ai) => {
@@ -236,8 +268,8 @@ export function GlobeConnections({
         // Static arc line
         ctx.beginPath();
         ctx.strokeStyle = arcColor;
-        ctx.lineWidth   = isDark ? 0.9 : 0.8;
-        ctx.globalAlpha = isDark ? 0.5  : 0.45;
+        ctx.lineWidth   = dark ? 0.9 : 0.8;
+        ctx.globalAlpha = dark ? 0.5  : 0.45;
         ctx.lineCap     = "round";
         ctx.lineJoin    = "round";
 
@@ -317,7 +349,7 @@ export function GlobeConnections({
 
           // MENA border accent
           if (m.isMena) {
-            ctx.strokeStyle = isDark ? "rgba(255,58,92,0.35)" : "rgba(220,20,60,0.3)";
+            ctx.strokeStyle = dark ? "rgba(255,58,92,0.35)" : "rgba(220,20,60,0.3)";
             ctx.lineWidth   = 0.5;
             ctx.stroke();
           }
@@ -329,26 +361,131 @@ export function GlobeConnections({
         }
       });
 
+      // ── Trending callout ──
+      trendFrame++;
+      const trend   = TRENDING[trendIdx];
+      const marker  = MARKERS.find((m) => m.id === trend.markerId);
+      if (marker) {
+        const vec = latLonToVec3(marker.location[0], marker.location[1]);
+        const pt  = projectPoint(vec, currentPhi, currentTheta, width);
+
+        // Only show when city faces camera clearly
+        if (pt.visible && pt.z > 0.15) {
+          skipCount = 0;
+          const t = trendFrame / TRENDING_CYCLE; // 0→1
+
+          // Signal hold phase so onRender can slow the globe
+          trendHolding = t > 0.15 && t < 0.80;
+
+          // Phase easing
+          const lineT   = Math.min(1, t / 0.18);                          // 0→0.18: line grows
+          const textT   = Math.max(0, Math.min(1, (t - 0.18) / 0.12));    // 0.18→0.30: text appears
+          const fadeOut  = t > 0.78 ? Math.max(0, 1 - (t - 0.78) / 0.22) : 1; // 0.78→1.0: fade out
+          const easeOut  = (v: number) => 1 - (1 - v) * (1 - v);
+
+          const lineProgress = easeOut(lineT);
+          const textAlpha    = easeOut(textT) * fadeOut;
+          const lineAlpha    = (lineT < 1 ? 0.9 : 1) * fadeOut;
+
+          // Direction: radially outward from globe center
+          const cx = width / 2, cy = width / 2;
+          const dx = pt.x - cx, dy = pt.y - cy;
+          const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+          const nx = dx / dist, ny = dy / dist;
+
+          // Leader line: extends 32px outward from dot
+          const lineLen = 32 * lineProgress;
+          const x0 = pt.x + nx * 5;      // start just outside the dot
+          const y0 = pt.y + ny * 5;
+          const x1 = x0 + nx * lineLen;
+          const y1 = y0 + ny * lineLen;
+
+          // Draw leader line
+          ctx.globalAlpha = lineAlpha * 0.9;
+          ctx.beginPath();
+          ctx.moveTo(x0, y0);
+          ctx.lineTo(x1, y1);
+          ctx.strokeStyle = "#DC143C";
+          ctx.lineWidth   = 1.2;
+          ctx.lineCap     = "round";
+          ctx.stroke();
+
+          // Terminal dot
+          if (lineProgress > 0.5) {
+            ctx.globalAlpha = lineAlpha;
+            ctx.beginPath();
+            ctx.arc(x1, y1, 2.2, 0, Math.PI * 2);
+            ctx.fillStyle = "#DC143C";
+            ctx.fill();
+          }
+
+          // Message pill
+          if (textAlpha > 0.02) {
+            const msgFont = `600 7px 'Barlow Condensed', sans-serif`;
+            ctx.font = msgFont;
+            const msg = trend.message.toUpperCase();
+            const tw  = ctx.measureText(msg).width;
+            const pad = 5;
+            const pillW = tw + pad * 2;
+            const pillH = 13;
+
+            // Position pill at end of line, offset perpendicular
+            const pillX = x1 + nx * 4 - pillW / 2;
+            const pillY = y1 + ny * 4 - pillH / 2;
+
+            // Pill background
+            ctx.globalAlpha = textAlpha * 0.92;
+            ctx.fillStyle = dark ? "rgba(220,20,60,0.15)" : "rgba(220,20,60,0.08)";
+            ctx.beginPath();
+            ctx.roundRect(pillX, pillY, pillW, pillH, 3);
+            ctx.fill();
+
+            // Pill border
+            ctx.strokeStyle = dark ? "rgba(220,20,60,0.5)" : "rgba(220,20,60,0.35)";
+            ctx.lineWidth = 0.6;
+            ctx.stroke();
+
+            // Message text
+            ctx.globalAlpha = textAlpha;
+            ctx.fillStyle = dark ? "#ff5a78" : "#b01030";
+            ctx.fillText(msg, pillX + pad, pillY + pillH - 3.5);
+          }
+        } else {
+          trendHolding = false;
+          // City is on back of globe — skip to next after brief wait
+          skipCount++;
+          if (skipCount < TRENDING.length) {
+            trendFrame = TRENDING_CYCLE; // trigger advance
+          } else {
+            skipCount = 0; // all hidden, just wait
+          }
+        }
+      }
+
+      // Advance to next trending item
+      if (trendFrame >= TRENDING_CYCLE) {
+        trendFrame = 0;
+        trendIdx   = (trendIdx + 1) % TRENDING.length;
+      }
+
       ctx.globalAlpha = 1;
     }
 
-    // Cobe config
+    // Cobe config — created once; theme-dependent props update each frame via onRender
+    const initDark = isDarkRef.current;
     const globe = createGlobe(canvas, {
       devicePixelRatio: dpr,
       width:            width * dpr,
       height:           width * dpr,
-      phi:              0.6,
+      phi:              3.72,
       theta:            0.25,
-      // Dark mode: ocean ≈ #181818, land ≈ #a2a2a2 (bright enough to see continents).
-      // mapBrightness=1.5 ensures land is clearly visible (#a2a2a2) while keeping
-      // ocean dark. At this brightness, markerColor=[1,1,1] gives white dots.
       dark:          0,
-      diffuse:       isDark ? 2.0 : 1.4,
+      diffuse:       initDark ? 2.0 : 1.4,
       mapSamples:    16000,
-      mapBrightness: isDark ? 2.0 : 8,
-      baseColor:     isDark ? [0.46, 0.46, 0.5] : [1, 1, 1],
-      markerColor:   isDark ? [1, 1, 1]          : [0.86, 0.08, 0.24],
-      glowColor:     isDark ? [0.04, 0.04, 0.05] : [0.96, 0.94, 0.91],
+      mapBrightness: initDark ? 2.0 : 8,
+      baseColor:     initDark ? [0.46, 0.46, 0.5] : [1, 1, 1],
+      markerColor:   initDark ? [1, 1, 1]          : [0.86, 0.08, 0.24],
+      glowColor:     initDark ? [0.04, 0.04, 0.05] : [0.96, 0.94, 0.91],
       markerElevation:  0.015,
       markers: MARKERS.map((m) => ({
         location: m.location,
@@ -362,6 +499,13 @@ export function GlobeConnections({
         state.theta  = currentTheta;
         state.width  = width * dpr;
         state.height = width * dpr;
+        // Live theme updates — no globe recreation needed
+        const dk = isDarkRef.current;
+        state.diffuse       = dk ? 2.0 : 1.4;
+        state.mapBrightness = dk ? 2.0 : 8;
+        state.baseColor     = dk ? [0.46, 0.46, 0.5] : [1, 1, 1];
+        state.markerColor   = dk ? [1, 1, 1]          : [0.86, 0.08, 0.24];
+        state.glowColor     = dk ? [0.04, 0.04, 0.05] : [0.96, 0.94, 0.91];
         drawOverlay(currentPhi, currentTheta);
       },
     });
@@ -374,7 +518,7 @@ export function GlobeConnections({
       globe.destroy();
       window.removeEventListener("resize", onResize);
     };
-  }, [speed, isDark]);
+  }, [speed]);
 
   return (
     <div

@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Save, Plus, Trash2, GripVertical } from "lucide-react";
-
 interface TermsSection {
   id: string;
   title: string;
@@ -9,8 +8,11 @@ interface TermsSection {
 }
 
 interface TermsConfig {
+  titleLine1: string;
+  titleLine2: string;
   lastUpdated: string;
   sections: TermsSection[];
+  punctuations?: string[];
 }
 
 export default function PageTerms() {
@@ -20,7 +22,15 @@ export default function PageTerms() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    api.getPage("terms").then(setConfig).catch(console.error).finally(() => setLoading(false));
+    api.getPage("terms").then((data: any) => {
+      setConfig({
+        titleLine1: data?.titleLine1 ?? "Terms &",
+        titleLine2: data?.titleLine2 ?? "Conditions",
+        lastUpdated: data?.lastUpdated ?? "",
+        sections: data?.sections ?? [],
+        punctuations: data?.punctuations ?? ["."],
+      });
+    }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   const save = async () => {
@@ -60,7 +70,7 @@ export default function PageTerms() {
     <div className="space-y-6 max-w-4xl">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="font-serif text-2xl font-bold uppercase tracking-wide">Terms & Conditions<span className="text-primary">.</span></h1>
+          <h1 className="font-serif text-2xl font-bold uppercase text-primary tracking-wide">Terms & Conditions<span className="text-primary">.</span></h1>
           <p className="text-xs text-muted-foreground mt-1">{config.sections.length} sections</p>
         </div>
         <div className="flex gap-2">
@@ -73,9 +83,22 @@ export default function PageTerms() {
         </div>
       </div>
 
-      <div className="border border-border rounded-sm p-4">
-        <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Last Updated</label>
-        <input type="date" value={config.lastUpdated} onChange={e => setConfig({ ...config, lastUpdated: e.target.value })} className="px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+      <div className="border border-border rounded-sm p-4 space-y-3">
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 1</label>
+          <input value={config.titleLine1} onChange={e => setConfig({ ...config, titleLine1: e.target.value })} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 2</label>
+          <div className="flex items-center gap-2">
+            <input value={config.titleLine2} onChange={e => setConfig({ ...config, titleLine2: e.target.value })} className="flex-1 px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input value={(config.punctuations ?? ["."]).join("")} onChange={e => setConfig({ ...config, punctuations: e.target.value ? e.target.value.split("") : [] })} placeholder="." className="w-16 px-2 py-2 bg-background border border-border rounded-sm text-sm text-primary font-bold text-center focus:outline-none focus:ring-1 focus:ring-primary" title="Punctuation (renders in primary color)" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Last Updated</label>
+          <input type="date" value={config.lastUpdated} onChange={e => setConfig({ ...config, lastUpdated: e.target.value })} className="px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
       </div>
 
       {config.sections.map((section, i) => (

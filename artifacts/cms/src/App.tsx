@@ -1,6 +1,6 @@
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Layout from "@/components/layout";
 import LoginPage from "@/pages/login";
 import DashboardPage from "@/pages/dashboard";
@@ -28,8 +28,7 @@ import PageSiteSettings from "@/pages/page-site-settings";
 import DesignTokensPage from "@/pages/design-tokens";
 import IdeationPage from "@/pages/ideation";
 import MajlisPage from "@/pages/majlis";
-
-const queryClient = new QueryClient();
+import { Toaster } from "sonner";
 
 function ProtectedRoutes() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -72,7 +71,6 @@ function ProtectedRoutes() {
         <Route path="/subscribers" component={SubscribersPage} />
         <Route path="/applications" component={ApplicationsPage} />
         <Route path="/majlis" component={MajlisPage} />
-        <Route path="/ideation" component={IdeationPage} />
         <Route path="/">
           <Redirect to="/dashboard" />
         </Route>
@@ -86,13 +84,14 @@ function ProtectedRoutes() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <ErrorBoundary>
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
         <AuthProvider>
           <ProtectedRoutes />
+          <Toaster position="bottom-right" richColors />
         </AuthProvider>
       </WouterRouter>
-    </QueryClientProvider>
+    </ErrorBoundary>
   );
 }
 

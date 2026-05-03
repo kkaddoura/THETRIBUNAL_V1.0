@@ -23,11 +23,12 @@ interface RegionCountry {
 }
 
 interface AboutConfig {
-  hero: { tagline: string; title: string; subtitle: string };
+  hero: { tagline: string; titleLine1: string; titleLine2: string; subtitle: string };
   pillars: Pillar[];
   beliefs: Belief[];
   founderStatement?: { text: string; author: string };
   regionCoverage?: RegionCountry[];
+  punctuations?: string[];
 }
 
 export default function PageAbout() {
@@ -37,7 +38,16 @@ export default function PageAbout() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    api.getPage("about").then(setConfig).catch(console.error).finally(() => setLoading(false));
+    api.getPage("about").then((data: any) => {
+      setConfig({
+        hero: { tagline: "Est. 2026 · Founded by Kareem Kaddoura", titleLine1: "The Region's First", titleLine2: "Collective Mirror", subtitle: "541 million people. Zero platforms asking what they think. Until now.", ...data?.hero },
+        pillars: data?.pillars ?? [],
+        beliefs: data?.beliefs ?? [],
+        founderStatement: data?.founderStatement ?? { text: "", author: "" },
+        regionCoverage: data?.regionCoverage ?? [],
+        punctuations: data?.punctuations ?? ["."],
+      });
+    }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   const save = async () => {
@@ -67,15 +77,22 @@ export default function PageAbout() {
         <h2 className="font-serif text-lg font-bold uppercase tracking-wide">Hero Section</h2>
         <div>
           <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Tagline</label>
-          <input value={config.hero.tagline} onChange={e => setConfig({ ...config, hero: { ...config.hero, tagline: e.target.value } })} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+          <input value={config?.hero?.tagline ?? ""} onChange={e => setConfig({ ...config, hero: { ...config?.hero, tagline: e.target.value } } as AboutConfig)} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
         <div>
-          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title</label>
-          <input value={config.hero.title} onChange={e => setConfig({ ...config, hero: { ...config.hero, title: e.target.value } })} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 1</label>
+          <input value={config?.hero?.titleLine1 ?? ""} onChange={e => setConfig({ ...config, hero: { ...config?.hero, titleLine1: e.target.value } } as AboutConfig)} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 2</label>
+          <div className="flex items-center gap-2">
+            <input value={config?.hero?.titleLine2 ?? ""} onChange={e => setConfig({ ...config, hero: { ...config?.hero, titleLine2: e.target.value } } as AboutConfig)} className="flex-1 px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input value={(config.punctuations ?? ["."]).join("")} onChange={e => setConfig({ ...config, punctuations: e.target.value ? e.target.value.split("") : [] })} placeholder="." className="w-16 px-2 py-2 bg-background border border-border rounded-sm text-sm text-primary font-bold text-center focus:outline-none focus:ring-1 focus:ring-primary" title="Punctuation (renders in primary color)" />
+          </div>
         </div>
         <div>
           <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Subtitle</label>
-          <textarea value={config.hero.subtitle} onChange={e => setConfig({ ...config, hero: { ...config.hero, subtitle: e.target.value } })} rows={3} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+          <textarea value={config?.hero?.subtitle ?? ""} onChange={e => setConfig({ ...config, hero: { ...config?.hero, subtitle: e.target.value } } as AboutConfig)} rows={3} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
         </div>
       </section>
 

@@ -107,8 +107,12 @@ export function useVoter() {
     const current = profileRef.current;
     if (!current) return;
 
+    // If already voted on this poll, just update the optionId (already done above), skip stats
     const alreadyVotedThisPoll = current.pollsVoted.includes(pollId) || !!votes[pollId];
-    if (alreadyVotedThisPoll) return;
+    if (alreadyVotedThisPoll) {
+      saveProfile(current);
+      return;
+    }
 
     const today = todayStr();
     let newStreak = current.streak;

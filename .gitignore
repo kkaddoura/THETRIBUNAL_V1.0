@@ -48,9 +48,10 @@ Thumbs.db
 .cache/
 .local/
 
-# Environment files — use .env.production.example as the template
+# Environment files — use .env.example as the template
 .env
 .env.*
+!.env.example
 !.env.production.example
 
 # Project uses pnpm — never commit the npm lockfile

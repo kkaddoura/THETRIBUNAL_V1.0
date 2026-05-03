@@ -3,9 +3,17 @@ import { useGetFeaturedPoll } from "@workspace/api-client-react"
 import { PollCard } from "@/components/poll/PollCard"
 import { Layout } from "@/components/layout/Layout"
 import { Link } from "wouter"
+import { usePageTitle } from "@/hooks/use-page-title"
+import { useSiteSettings } from "@/hooks/use-cms-data"
 
 export default function Join() {
+  usePageTitle({
+    title: "Join",
+    description: "Join The Tribunal -- the anonymous platform for MENA's most important debates, predictions, and voices.",
+  });
   const { data: poll, isLoading } = useGetFeaturedPoll()
+  const { data: siteSettings } = useSiteSettings()
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true
   const [email, setEmail] = useState("")
   const [joined, setJoined] = useState(() => !!localStorage.getItem("tmh_cta_joined"))
 
@@ -17,7 +25,9 @@ export default function Join() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, source: "qr_join" }),
-    }).catch(() => {})
+    }).catch((err) => {
+      console.error("Subscribe failed:", err)
+    })
     setJoined(true)
   }
 
@@ -43,8 +53,10 @@ export default function Join() {
           </span>
         </Link>
         <div className="flex items-center gap-6">
-          <Link href="/polls" className="text-[11px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground font-serif">Polls</Link>
-          <Link href="/profiles" className="text-[11px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground font-serif">Voices</Link>
+          <Link href="/debates" className="text-[11px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground font-serif">Debates</Link>
+          {voicesEnabled && (
+            <Link href="/voices" className="text-[11px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground font-serif">Voices</Link>
+          )}
           <Link href="/about" className="text-[11px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground font-serif">About</Link>
         </div>
       </div>
@@ -115,7 +127,7 @@ export default function Join() {
         </div>
 
         <div className="mt-6 text-center border-t border-border pt-6">
-          <Link href="/polls" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground transition-colors font-serif">
+          <Link href="/debates" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground transition-colors font-serif">
             Browse All Debates →
           </Link>
         </div>

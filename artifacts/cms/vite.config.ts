@@ -19,7 +19,7 @@ if (!isBuildMode && !rawPort) {
   );
 }
 
-const basePath = process.env.BASE_PATH ?? "/";
+const basePath = process.env.CMS_BASE_PATH ?? process.env.BASE_PATH ?? "/";
 
 export default defineConfig({
   base: basePath,

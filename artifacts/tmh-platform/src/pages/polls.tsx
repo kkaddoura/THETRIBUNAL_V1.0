@@ -1,12 +1,19 @@
-import { useState, useMemo, useRef } from "react";
-import { useLocation } from "wouter";
+import { useState, useMemo, useRef, useCallback, useEffect } from "react";
+import { Link, useLocation } from "wouter";
 import { useListPolls, useListCategories } from "@workspace/api-client-react";
+import type { Poll } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout/Layout";
 import { PollCard } from "@/components/poll/PollCard";
 import { cn } from "@/lib/utils";
-import { Search, X } from "lucide-react";
 import { usePageConfig } from "@/hooks/use-cms-data";
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { usePageTitle } from "@/hooks/use-page-title";
+import { TitlePunctuation } from "@/components/TitlePunctuation";
+import { motion } from "motion/react";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { LoadingDots } from "@/components/ui/loading-dots";
+import { DebateGridSkeleton } from "@/components/skeletons/DebateCardSkeleton";
+import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
+import { FilterSidebar } from "@/components/layout/FilterSidebar";
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -23,75 +30,154 @@ const staggerItem = {
   },
 };
 
-const FALLBACK_DEBATE_TICKER = [
-  { topic: "Brain Drain", votes: "18,421" },
-  { topic: "AI & Jobs", votes: "12,847" },
-  { topic: "Gender Leadership", votes: "9,203" },
-  { topic: "Income Tax UAE", votes: "15,609" },
-  { topic: "Vision 2030", votes: "11,002" },
-  { topic: "Arab Identity", votes: "8,441" },
-  { topic: "Expat Rights", votes: "7,810" },
-  { topic: "Cannabis Reform", votes: "6,290" },
-  { topic: "Arranged Marriage", votes: "5,433" },
-  { topic: "Gulf Wealth Gap", votes: "10,117" },
-];
+type DebateTickerItem = { topic: string; votes: string; href?: string };
 
 interface PollsConfig {
-  hero?: { title?: string; subtitle?: string };
+  hero?: { titleLine1?: string; titleLine2?: string; subtitle?: string };
+  punctuations?: string[];
   tickerItems?: Array<{ topic: string; votes: string }>;
   tickerSource?: string;
 }
 
 export default function Polls() {
+  usePageTitle({
+    title: "Debates",
+    description: "Anonymous debates on the questions that matter across MENA. Vote, see results, and watch opinion shift in real time.",
+  });
   const [location] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   const initialCategory = searchParams.get("category") || undefined;
 
   const [filter, setFilter] = useState<"latest" | "trending" | "most_voted">(
-    "latest",
+    "trending",
   );
   const [category, setCategory] = useState<string | undefined>(initialCategory);
   const [searchQuery, setSearchQuery] = useState("");
+  const PAGE_SIZE = 30;
+
+  // Paginated polling: accumulate pages as user scrolls
+  const [offset, setOffset] = useState(0);
+  const [allPolls, setAllPolls] = useState<Poll[]>([]);
+  const [serverTotal, setServerTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const prevKey = useRef("");
+
+  // Server-side search with 400ms debounce
+  const [searchResults, setSearchResults] = useState<Poll[] | null>(null);
+  const [searchTotal, setSearchTotal] = useState(0);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (searchAbortRef.current) searchAbortRef.current.abort();
+
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchResults(null);
+      setSearchTotal(0);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimerRef.current = setTimeout(() => {
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
+      fetch(`/api/polls?search=${encodeURIComponent(q)}&limit=50`, { signal: controller.signal })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.polls) {
+            setSearchResults(data.polls);
+            setSearchTotal(data.total ?? data.polls.length);
+          }
+          setIsSearching(false);
+        })
+        .catch(err => {
+          if (err.name !== "AbortError") setIsSearching(false);
+        });
+    }, 400);
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchQuery]);
 
   const { data: pollsData, isLoading } = useListPolls({
     filter,
     category,
-    limit: 50,
+    limit: PAGE_SIZE,
+    offset: 0,
   });
   const { data: categoriesData } = useListCategories();
   const { data: config } = usePageConfig<PollsConfig>("polls");
 
-  const filteredPolls = useMemo(() => {
-    if (!pollsData?.polls) return [];
-    if (!searchQuery.trim()) return pollsData.polls;
-    const q = searchQuery.toLowerCase();
-    return pollsData.polls.filter(
-      (p) =>
-        p.question?.toLowerCase().includes(q) ||
-        p.category?.toLowerCase().includes(q) ||
-        (p.tags as string[])?.some((t: string) => t.toLowerCase().includes(q)),
-    );
-  }, [pollsData?.polls, searchQuery]);
+  // Reset accumulated polls when filter/category changes
+  useEffect(() => {
+    const key = `${filter}|${category ?? ""}`;
+    if (key !== prevKey.current) {
+      prevKey.current = key;
+      setOffset(0);
+      setAllPolls([]);
+    }
+  }, [filter, category]);
 
+  // Merge first page from React Query
+  useEffect(() => {
+    if (pollsData?.polls && offset === 0) {
+      setAllPolls(pollsData.polls);
+      setServerTotal(pollsData.total ?? pollsData.polls.length);
+    }
+  }, [pollsData, offset]);
+
+  const canLoadMore = allPolls.length < serverTotal;
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !canLoadMore) return;
+    setLoadingMore(true);
+    const nextOffset = allPolls.length;
+    try {
+      const params = new URLSearchParams();
+      params.set("filter", filter);
+      if (category) params.set("category", category);
+      params.set("limit", String(PAGE_SIZE));
+      params.set("offset", String(nextOffset));
+      const res = await fetch(`/api/polls?${params}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAllPolls(prev => [...prev, ...(data.polls ?? [])]);
+        setServerTotal(data.total ?? serverTotal);
+        setOffset(nextOffset);
+      }
+    } catch {}
+    setLoadingMore(false);
+  }, [loadingMore, canLoadMore, allPolls.length, filter, category, serverTotal]);
+
+  const filteredPolls = useMemo(() => {
+    if (searchQuery.trim()) return searchResults ?? [];
+    return allPolls;
+  }, [allPolls, searchResults, searchQuery]);
+
+  const { sentinelRef, visibleItems: visiblePolls, hasMore } = useInfiniteScroll(filteredPolls, 10);
   const tabs = [
-    { id: "latest", label: "Latest" },
     { id: "trending", label: "Trending" },
+    { id: "latest", label: "Latest" },
     { id: "most_voted", label: "Most Voted" },
   ] as const;
 
   const hero = config?.hero;
 
-  const DEBATE_TICKER = useMemo(() => {
-    if (pollsData?.polls?.length) {
-      return pollsData.polls.slice(0, 10).map((p) => ({
-        topic:
-          p.question && p.question.length > 25
-            ? p.question.substring(0, 23) + "…"
-            : (p.question ?? "Debate"),
-        votes: (p.totalVotes ?? 0).toLocaleString(),
-      }));
-    }
-    return FALLBACK_DEBATE_TICKER;
+  const DEBATE_TICKER = useMemo<DebateTickerItem[]>(() => {
+    if (!pollsData?.polls?.length) return [];
+    return pollsData.polls.slice(0, 10).map((p) => ({
+      topic:
+        p.question && p.question.length > 25
+          ? p.question.substring(0, 23) + "…"
+          : (p.question ?? "Debate"),
+      votes: (p.totalVotes ?? 0).toLocaleString(),
+      href: `/debates/${p.id}`,
+    }));
   }, [pollsData]);
 
   const doubled = [...DEBATE_TICKER, ...DEBATE_TICKER];
@@ -133,14 +219,8 @@ export default function Polls() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
           >
-            {(hero?.title || "What Does the Region\nActually Think?")
-              .split("\n")
-              .map((line, i, arr) => (
-                <span key={i}>
-                  {line}
-                  {i < arr.length - 1 && <br />}
-                </span>
-              ))}
+            {hero?.titleLine1 || "What Does the Region"}<br />
+            {hero?.titleLine2 || "Actually Think?"}<TitlePunctuation punctuations={config?.punctuations} />
           </motion.h1>
           <p
             className="text-text2/60 pl-2"
@@ -156,6 +236,9 @@ export default function Polls() {
           </p>
         </motion.div>
 
+        {isLoading && DEBATE_TICKER.length === 0 ? (
+        <TickerSkeleton />
+        ) : DEBATE_TICKER.length > 0 ? (
         <div
           style={{
             background: "#0D0D0D",
@@ -166,14 +249,17 @@ export default function Polls() {
         >
           <div className="tmh-ticker-scroll">
             {doubled.map((item, i) => (
-              <div
+              <Link
                 key={i}
+                href={item.href ?? "/debates"}
                 style={{
                   display: "flex",
                   alignItems: "center",
                   gap: "0.6rem",
                   padding: "0.7rem 2rem",
                   borderRight: "1px solid rgba(255,255,255,0.1)",
+                  cursor: "pointer",
+                  textDecoration: "none",
                 }}
               >
                 <span
@@ -183,7 +269,7 @@ export default function Polls() {
                     fontSize: "0.7rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.08em",
-                    color: "rgba(250,250,250,0.5)",
+                    color: "rgba(250,250,250,0.75)",
                   }}
                 >
                   {item.topic}
@@ -208,107 +294,55 @@ export default function Polls() {
                 >
                   VOTES
                 </span>
-              </div>
+              </Link>
             ))}
           </div>
         </div>
+        ) : null}
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 flex flex-col lg:flex-row gap-12">
-        <motion.div
-          className="lg:w-64 flex-shrink-0 space-y-12"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.5, ease: EASE_OUT_EXPO, delay: 0.15 }}
-        >
-          <div>
-            <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4 border-b border-border pb-2">
-              Search
-            </h3>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-              <input
-                type="text"
-                placeholder="Topic, keyword, country..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-secondary border border-border pl-9 pr-8 py-2.5 text-xs font-sans text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary transition-colors"
-              />
-              {searchQuery && (
-                <button
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-          <div>
-            <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4 border-b border-border pb-2">
-              Sort By
-            </h3>
-            <div className="flex flex-col gap-1">
-              {tabs.map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setFilter(tab.id)}
-                  className={cn(
-                    "text-left px-3 py-2 text-xs uppercase tracking-widest font-bold transition-colors",
-                    filter === tab.id
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4 border-b border-border pb-2">
-              Categories
-            </h3>
-            <div className="flex flex-col gap-1">
-              <button
-                onClick={() => setCategory(undefined)}
-                className={cn(
-                  "text-left px-3 py-2 text-xs uppercase tracking-widest font-bold transition-colors flex justify-between",
-                  !category
-                    ? "bg-foreground text-background"
-                    : "text-muted-foreground hover:text-foreground",
-                )}
-              >
-                All Topics
-              </button>
-              {categoriesData?.categories?.map((cat) => (
-                <button
-                  key={cat.slug}
-                  onClick={() => setCategory(cat.slug)}
-                  className={cn(
-                    "text-left px-3 py-2 text-xs uppercase tracking-widest font-bold transition-colors flex justify-between items-center",
-                    category === cat.slug
-                      ? "bg-foreground text-background"
-                      : "text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <span>{cat.name}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </motion.div>
+        <FilterSidebar
+          search={{
+            value: searchQuery,
+            onChange: (v) => {
+              setSearchQuery(v);
+              setCategory(undefined);
+            },
+            placeholder: "Topic, keyword, country...",
+          }}
+          sort={{
+            value: filter,
+            onChange: (v) => setFilter(v as typeof filter),
+            options: tabs,
+          }}
+          categories={{
+            items: (categoriesData?.categories ?? []).map((c) => ({
+              key: c.slug,
+              label: c.name,
+              count: c.pollCount ?? 0,
+            })),
+            activeKey: category ?? "ALL",
+            onSelect: (key) => {
+              setCategory(key === "ALL" ? undefined : key);
+              setSearchQuery("");
+            },
+            allLabel: "All Topics",
+            allCount: categoriesData?.categories
+              ? categoriesData.categories.reduce((sum, c) => sum + (c.pollCount ?? 0), 0)
+              : serverTotal,
+          }}
+        />
 
         <div className="flex-1">
-          {isLoading ? (
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="h-80 bg-secondary animate-pulse border border-border"
-                />
-              ))}
+          {isLoading || isSearching ? (
+            <div className="space-y-4">
+              {isSearching && (
+                <div className="flex items-center gap-2 py-4">
+                  <LoadingDots text={`Searching for "${searchQuery}"`} />
+                </div>
+              )}
+              <DebateGridSkeleton />
             </div>
           ) : filteredPolls.length === 0 ? (
             <motion.div
@@ -318,7 +352,7 @@ export default function Polls() {
               transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
             >
               <h3 className="font-serif font-bold text-2xl uppercase tracking-wider text-foreground mb-2">
-                No polls found
+                No debates found
               </h3>
               <p className="text-sm text-muted-foreground mb-6 font-sans">
                 {searchQuery
@@ -327,7 +361,7 @@ export default function Polls() {
               </p>
               <button
                 onClick={() => {
-                  setFilter("latest");
+                  setFilter("trending");
                   setCategory(undefined);
                   setSearchQuery("");
                 }}
@@ -350,12 +384,34 @@ export default function Polls() {
                 animate="visible"
                 variants={staggerContainer}
               >
-                {filteredPolls.map((poll) => (
+                {visiblePolls.map((poll) => (
                   <motion.div key={poll.id} variants={staggerItem}>
                     <PollCard poll={poll} />
                   </motion.div>
                 ))}
               </motion.div>
+              {hasMore && (
+                <div ref={sentinelRef} className="flex justify-center py-8">
+                  <LoadingDots />
+                </div>
+              )}
+              {/* Load more from server when all visible items rendered but more exist on server */}
+              {!hasMore && canLoadMore && !searchQuery.trim() && (
+                <div className="flex justify-center py-8">
+                  <button
+                    onClick={loadMore}
+                    disabled={loadingMore}
+                    className={cn(
+                      "px-6 py-3 text-xs uppercase tracking-widest font-bold border border-border transition-colors",
+                      loadingMore
+                        ? "text-muted-foreground opacity-50"
+                        : "text-foreground hover:bg-foreground hover:text-background"
+                    )}
+                  >
+                    {loadingMore ? "Loading..." : `Load More (${allPolls.length} of ${serverTotal})`}
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>

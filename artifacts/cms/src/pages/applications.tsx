@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { Search, ChevronLeft, ChevronRight, ExternalLink, CheckCircle, XCircle, Clock, Star } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ExternalLink, CheckCircle, XCircle, Clock, Star, MessageSquare, Send } from "lucide-react";
 
 interface Application {
   id: number;
@@ -20,6 +20,7 @@ interface Application {
   aiReasoning: string | null;
   editorialStatus: string;
   editorNotes: string | null;
+  wantsMajlis: boolean;
   createdAt: string;
   reviewedAt: string | null;
 }
@@ -50,6 +51,8 @@ export default function ApplicationsPage() {
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
+  const [inviting, setInviting] = useState(false);
+  const [inviteResult, setInviteResult] = useState<{ token?: string; error?: string; alreadyInvited?: boolean; emailSent?: boolean } | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -82,6 +85,19 @@ export default function ApplicationsPage() {
       fetchData();
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const handleInviteMajlis = async (id: number) => {
+    setInviting(true);
+    setInviteResult(null);
+    try {
+      const data = await api.inviteToMajlis(id);
+      setInviteResult({ token: data.token, alreadyInvited: !!data.alreadyInvited, emailSent: !!data.emailSent });
+    } catch (err) {
+      setInviteResult({ error: err instanceof Error ? err.message : "Failed to invite" });
+    } finally {
+      setInviting(false);
     }
   };
 
@@ -136,7 +152,7 @@ export default function ApplicationsPage() {
           <div key={app.id} className="bg-card border border-border">
             <div
               className="p-4 flex items-start justify-between cursor-pointer hover:bg-secondary/20 transition-colors"
-              onClick={() => { setExpandedId(expandedId === app.id ? null : app.id); setNotes(app.editorNotes || ""); }}
+              onClick={() => { setExpandedId(expandedId === app.id ? null : app.id); setNotes(app.editorNotes || ""); setInviteResult(null); }}
             >
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3">
@@ -144,6 +160,11 @@ export default function ApplicationsPage() {
                   <span className={`text-xs px-2 py-0.5 shrink-0 ${STATUS_STYLES[app.editorialStatus] || "bg-gray-500/20 text-gray-400"}`}>
                     {app.editorialStatus}
                   </span>
+                  {app.wantsMajlis && (
+                    <span className="flex items-center gap-1 text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 shrink-0">
+                      <MessageSquare className="w-3 h-3" /> Majlis
+                    </span>
+                  )}
                   {app.aiScore !== null && (
                     <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
                       <Star className="w-3 h-3" /> AI: {app.aiScore}/100
@@ -181,12 +202,14 @@ export default function ApplicationsPage() {
                     )}
                     <div className="flex items-center gap-2">
                       <a href={`mailto:${app.email}`} className="text-sm text-primary hover:underline">{app.email}</a>
-                      {app.linkedin && (
-                        <a href={app.linkedin} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
-                      )}
                     </div>
+                    {app.linkedin && (
+                      <div className="mt-1">
+                        <a href={app.linkedin} target="_blank" rel="noopener noreferrer" className="text-primary underline text-sm">
+                          {app.linkedin}
+                        </a>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -208,7 +231,7 @@ export default function ApplicationsPage() {
                   />
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <button onClick={() => handleStatusChange(app.id, "approved")} className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-sm hover:bg-green-700 transition-colors">
                     <CheckCircle className="w-3.5 h-3.5" /> Approve
                   </button>
@@ -218,7 +241,26 @@ export default function ApplicationsPage() {
                   <button onClick={() => handleStatusChange(app.id, "rejected")} className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-sm hover:bg-red-700 transition-colors">
                     <XCircle className="w-3.5 h-3.5" /> Reject
                   </button>
+                  {app.wantsMajlis && (
+                    <button
+                      onClick={() => handleInviteMajlis(app.id)}
+                      disabled={inviting || !!(inviteResult && inviteResult.token && expandedId === app.id)}
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-sm hover:bg-purple-700 transition-colors disabled:opacity-50 ml-auto"
+                    >
+                      <Send className="w-3.5 h-3.5" /> {inviting ? "Inviting..." : inviteResult?.token && expandedId === app.id ? "Invited" : "Invite to Majlis"}
+                    </button>
+                  )}
                 </div>
+                {inviteResult && expandedId === app.id && (
+                  <div className={`text-sm px-3 py-2 ${inviteResult.token ? "bg-green-500/10 text-green-400" : "bg-red-500/10 text-red-400"}`}>
+                    {inviteResult.token ? (
+                      <>
+                        {inviteResult.alreadyInvited ? "Already invited." : "Invite created."} Code: <span className="font-mono font-bold">{inviteResult.token}</span>
+                        {!inviteResult.emailSent && <span className="text-yellow-400 ml-2">(email not sent — RESEND_API_KEY not configured)</span>}
+                      </>
+                    ) : inviteResult.error}
+                  </div>
+                )}
               </div>
             )}
           </div>

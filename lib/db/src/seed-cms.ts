@@ -4142,7 +4142,7 @@ const PAGE_CONFIGS_SEED: Record<string, unknown> = {
     successMessage: {
       title: "Application Received.",
       subtitle:
-        "Our AI review runs in minutes. You'll hear back within 48 hours.",
+        "We are reviewing your application. You'll hear back within 48 hours.",
       cta: "Go Vote",
     },
     disclaimer:
@@ -4486,12 +4486,12 @@ export async function seedCmsData() {
         category: p.category,
         categorySlug: toSlug(p.category),
         resolvesAt: p.resolves,
-        yesPercentage: p.yes,
-        noPercentage: p.no,
-        totalCount: parseCount(p.count),
-        momentum: p.momentum,
-        momentumDirection: p.up ? "up" : "down",
-        trendData: p.data,
+        yesPercentage: 50,
+        noPercentage: 50,
+        totalCount: 0,
+        momentum: 0,
+        momentumDirection: "up",
+        trendData: [],
         cardLayout: "grid",
         editorialStatus: "approved",
         isFeatured: [1, 11, 21, 31, 41, 51].includes(p.id),

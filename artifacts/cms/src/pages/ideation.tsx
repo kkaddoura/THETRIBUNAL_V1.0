@@ -186,6 +186,7 @@ export default function IdeationPage() {
   const [rejectingIdeaId, setRejectingIdeaId] = useState<number | null>(null);
   const [refiningIds, setRefiningIds] = useState<Set<number>>(new Set());
   const [publishingIds, setPublishingIds] = useState<Set<number>>(new Set());
+  const [publishErrors, setPublishErrors] = useState<Record<number, string>>({});
 
   useEffect(() => {
     api.getTaxonomy().then(setTaxonomy).catch(console.error);
@@ -304,11 +305,13 @@ export default function IdeationPage() {
 
   const handlePublishDraft = async (ideaId: number) => {
     setPublishingIds(prev => new Set(prev).add(ideaId));
+    setPublishErrors(prev => { const next = { ...prev }; delete next[ideaId]; return next; });
     try {
       await api.publishDraft(ideaId);
       setIdeas(prev => prev.map(i => i.id === ideaId ? { ...i, status: "published" } : i));
     } catch (err) {
       console.error("Publish error:", err);
+      setPublishErrors(prev => ({ ...prev, [ideaId]: "Failed to publish draft. Please try again." }));
     } finally {
       setPublishingIds(prev => { const s = new Set(prev); s.delete(ideaId); return s; });
     }
@@ -378,9 +381,21 @@ export default function IdeationPage() {
     }
   };
 
-  const categories = taxonomy
-    ? [...new Set([...(taxonomy.debateCategories || []), ...(taxonomy.predictionCategories || [])])].sort()
-    : [];
+  const categories = (() => {
+    if (!taxonomy) return [];
+    if (mode === "focused") {
+      if (focusedPillar === "debates") return (taxonomy.debateCategories || []).sort();
+      if (focusedPillar === "predictions") return (taxonomy.predictionCategories || []).sort();
+      return []; // pulse doesn't use categories
+    }
+    // Explore mode: merge both but normalize similar names (case-insensitive dedup)
+    const seen = new Map<string, string>();
+    for (const cat of [...(taxonomy.debateCategories || []), ...(taxonomy.predictionCategories || [])]) {
+      const key = cat.toLowerCase().replace(/[&\s]+/g, " ").trim();
+      if (!seen.has(key)) seen.set(key, cat);
+    }
+    return [...seen.values()].sort();
+  })();
 
   const tabs: { key: ViewTab; label: string; icon: typeof Lightbulb }[] = [
     { key: "generate", label: "Generate", icon: Sparkles },
@@ -477,6 +492,7 @@ export default function IdeationPage() {
                   onPublishDraft={handlePublishDraft}
                   refiningIds={refiningIds}
                   publishingIds={publishingIds}
+                  publishErrors={publishErrors}
                   onUpdateRefined={(id, content) => {
                     setIdeas(prev => prev.map(i => i.id === id ? { ...i, refinedContent: content } : i));
                     api.updateRefinedIdea(id, content).catch(console.error);
@@ -929,7 +945,7 @@ function ResearchPanel({ data }: { data: Record<string, unknown> }) {
 
 function IdeaCards({
   ideas, currentStep, rejectingIdeaId, setRejectingIdeaId,
-  onCherryPick, onAcceptAll, onRefine, onRefineAll, onPublishDraft, refiningIds, publishingIds, onUpdateRefined, onComplete, sessionCompleted,
+  onCherryPick, onAcceptAll, onRefine, onRefineAll, onPublishDraft, refiningIds, publishingIds, publishErrors, onUpdateRefined, onComplete, sessionCompleted,
 }: {
   ideas: Idea[];
   currentStep: number;
@@ -942,6 +958,7 @@ function IdeaCards({
   onPublishDraft: (id: number) => void;
   refiningIds: Set<number>;
   publishingIds: Set<number>;
+  publishErrors: Record<number, string>;
   onUpdateRefined: (id: number, content: Record<string, unknown>) => void;
   onComplete: () => void;
   sessionCompleted: boolean;
@@ -1066,6 +1083,13 @@ function IdeaCards({
                 <button onClick={() => setRejectingIdeaId(null)} className="ml-auto text-muted-foreground hover:text-foreground">
                   <X className="w-3 h-3" />
                 </button>
+              </div>
+            )}
+
+            {publishErrors[idea.id] && (
+              <div className="mt-2 px-3 py-2 bg-red-500/10 border border-red-500/30 text-red-400 text-xs flex items-center gap-1.5">
+                <AlertCircle className="w-3 h-3 shrink-0" />
+                {publishErrors[idea.id]}
               </div>
             )}
 

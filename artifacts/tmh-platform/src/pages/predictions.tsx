@@ -1,7 +1,16 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Search, X, Share2, CheckCircle2, MessageSquare } from "lucide-react";
-import { motion, useInView, useReducedMotion } from "motion/react";
+import { Share2, CheckCircle2, MessageSquare, Info } from "lucide-react";
+import { FilterSidebar } from "@/components/layout/FilterSidebar";
+import { Link } from "wouter";
+import { motion } from "motion/react";
+import { useToast } from "@/hooks/use-toast";
+import { ShareModal } from "@/components/ShareModal";
+import type { PredictionShareContext } from "@/lib/share";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { LoadingDots } from "@/components/ui/loading-dots";
+import { PredictionGridSkeleton } from "@/components/skeletons/PredictionCardSkeleton";
+import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -17,7 +26,6 @@ const staggerItem = {
     transition: { duration: 0.5, ease: EASE_OUT_EXPO },
   },
 };
-import { ShareToMajlisModal } from "@/components/ShareToMajlisModal";
 import {
   ComposedChart,
   Area,
@@ -34,10 +42,11 @@ import {
 import {
   PREDICTIONS as FALLBACK_PREDICTIONS,
   PREDICTION_CATEGORIES as FALLBACK_CATEGORIES,
-  PREDICTIONS_TICKER as FALLBACK_TICKER,
   type PredictionCard,
 } from "@/data/predictions-data";
-import { usePredictions, type ApiPrediction } from "@/hooks/use-cms-data";
+import { usePredictions, usePageConfig, type ApiPrediction } from "@/hooks/use-cms-data";
+import { usePageTitle } from "@/hooks/use-page-title";
+import { TitlePunctuation } from "@/components/TitlePunctuation";
 
 function apiToPredictionCard(p: ApiPrediction): PredictionCard {
   return {
@@ -53,6 +62,8 @@ function apiToPredictionCard(p: ApiPrediction): PredictionCard {
     data: p.trendData?.length
       ? p.trendData
       : Array.from({ length: 12 }, () => p.yesPercentage),
+    options: p.options,
+    optionResults: p.optionResults,
   };
 }
 
@@ -71,10 +82,25 @@ const MONTHS = [
   "Dec",
 ];
 
-const FALLBACK_TICKER_DATA = FALLBACK_TICKER;
-
 const CLOSED_RAW = [55, 58, 60, 62, 63, 65, 67, 67, 67, 80];
 const CLOSED_DATA = CLOSED_RAW.map((yes, i) => ({ week: i + 1, yes }));
+
+function formatResolvesText(resolves: string): string {
+  if (!resolves || resolves === "TBD") return "Resolves: TBD";
+  const date = new Date(resolves);
+  if (isNaN(date.getTime())) return `Resolves: ${resolves}`;
+  const now = new Date();
+  if (date <= now) return "Resolved";
+  const diffMs = date.getTime() - now.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  if (diffDays < 30) return `Ends in ${diffDays}d`;
+  const diffMonths = Math.round(diffDays / 30);
+  if (diffMonths < 12) return `Ends in ${diffMonths}mo`;
+  const years = Math.floor(diffMonths / 12);
+  const remainingMonths = diffMonths % 12;
+  if (remainingMonths === 0) return `Ends in ${years}y`;
+  return `Ends in ${years}y ${remainingMonths}mo`;
+}
 
 // ─── CUSTOM TOOLTIP ──────────────────────────────────────────────────────────
 
@@ -97,7 +123,7 @@ function FeaturedTooltip({ active, payload, label, chartData }: any) {
     >
       <p
         style={{
-          color: "rgba(255,255,255,0.5)",
+          color: "rgba(255,255,255,0.75)",
           fontSize: 11,
           marginBottom: 2,
         }}
@@ -157,12 +183,16 @@ function ConfidenceBars({
   up,
   momentum,
   compact = false,
+  options,
+  optionResults,
 }: {
   yes: number;
   no: number;
   up: boolean;
   momentum: number;
   compact?: boolean;
+  options?: string[];
+  optionResults?: Record<string, number>;
 }) {
   const [animated, setAnimated] = useState(false);
   useEffect(() => {
@@ -170,6 +200,81 @@ function ConfidenceBars({
     return () => clearTimeout(t);
   }, []);
   const h = compact ? "h-2" : "h-3";
+
+  // Dynamic options mode
+  if (options?.length && optionResults) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+        {options.map((opt, i) => {
+          const pct = optionResults[opt] ?? 0;
+          const color = OPTION_COLORS[i % OPTION_COLORS.length];
+          return (
+            <div key={opt}>
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  marginBottom: 3,
+                }}
+              >
+                <span
+                  style={{
+                    fontFamily: "DM Sans, sans-serif",
+                    fontWeight: 600,
+                    fontSize: compact ? 11 : 12,
+                    color,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    maxWidth: "80%",
+                  }}
+                >
+                  {opt}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 700,
+                    fontSize: compact ? 12 : 13,
+                    color,
+                  }}
+                >
+                  {pct}%
+                </span>
+              </div>
+              <div
+                className={`w-full ${h} rounded-sm overflow-hidden`}
+                style={{ background: "rgba(255,255,255,0.08)" }}
+              >
+                <div
+                  className={`${h} rounded-sm transition-all duration-1000`}
+                  style={{
+                    width: animated ? `${pct}%` : "0%",
+                    background: color,
+                    opacity: 0.7,
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+        {(compact || (!compact && options.length > 0)) && (
+          <p
+            style={{
+              fontFamily: "DM Sans, sans-serif",
+              fontSize: 11,
+              color: up ? "#10B981" : "#DC143C",
+              marginTop: 2,
+            }}
+          >
+            {up ? "\u25B2" : "\u25BC"} {up ? "Up" : "Down"} {momentum}% this week
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  // Legacy YES/NO mode
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: "0.6rem" }}>
       <div>
@@ -224,7 +329,7 @@ function ConfidenceBars({
               marginTop: 3,
             }}
           >
-            {up ? "▲" : "▼"} {up ? "Up" : "Down"} {momentum}% this week
+            {up ? "\u25B2" : "\u25BC"} {up ? "Up" : "Down"} {momentum}% this week
           </p>
         )}
       </div>
@@ -280,7 +385,7 @@ function ConfidenceBars({
               marginTop: 3,
             }}
           >
-            {up ? "▲" : "▼"} {up ? "UP" : "DOWN"} {momentum}% this week
+            {up ? "\u25B2" : "\u25BC"} {up ? "UP" : "DOWN"} {momentum}% this week
           </p>
         )}
       </div>
@@ -312,46 +417,55 @@ async function predCopyText(text: string): Promise<boolean> {
   }
 }
 
-function PredShareBtn({ question, id }: { question: string; id: number }) {
-  const [copied, setCopied] = useState(false);
+function PredShareBtn({ card }: { card: PredictionCard }) {
+  const [showModal, setShowModal] = useState(false);
   const url =
     typeof window !== "undefined"
-      ? `${window.location.origin}/predictions?shared=${id}`
-      : `/predictions?shared=${id}`;
+      ? `${window.location.origin}/predictions?shared=${card.id}`
+      : `/predictions?shared=${card.id}`;
 
-  const handleShare = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (navigator.share) {
-      try {
-        await navigator.share({ url, title: question });
-        return;
-      } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-      }
-    }
-    const ok = await predCopyText(url);
-    if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
+  const totalVotes = parseInt(card.count.replace(/,/g, ""), 10) || 0;
+
+  const shareContext: PredictionShareContext = {
+    contentType: "prediction",
+    predictionId: card.id,
+    url,
+    title: card.question,
+    category: card.category,
+    totalVotes,
+    votedChoice: typeof window !== "undefined" ? localStorage.getItem(`tmh_pred_${card.id}`) ?? undefined : undefined,
+    yesPercentage: card.yes,
+    noPercentage: card.no,
+    options: card.options?.length
+      ? card.options.map((text) => ({ text, percentage: card.optionResults?.[text] ?? 0 }))
+      : undefined,
+    momentum: card.momentum,
+    momentumDirection: card.up ? "up" : "down",
   };
 
   return (
-    <button
-      onClick={handleShare}
-      title="Share"
-      style={{
-        background: "none",
-        border: "none",
-        cursor: "pointer",
-        padding: "4px",
-        color: copied ? "#10B981" : "rgba(250,250,250,0.4)",
-        transition: "color 0.15s",
-      }}
-    >
-      {copied ? <CheckCircle2 size={14} /> : <Share2 size={14} />}
-    </button>
+    <>
+      <button
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowModal(true); }}
+        title="Share"
+        style={{
+          background: "none",
+          border: "none",
+          cursor: "pointer",
+          padding: "4px",
+          color: "var(--muted-foreground)",
+          transition: "color 0.15s",
+        }}
+      >
+        <Share2 size={14} />
+      </button>
+      {showModal && (
+        <ShareModal
+          context={shareContext}
+          onClose={() => setShowModal(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -360,8 +474,28 @@ function PredMajlisShareBtn({ card }: { card: PredictionCard }) {
   const hasMajlisToken = typeof window !== "undefined" && !!localStorage.getItem("majlis_token");
   if (!hasMajlisToken) return null;
 
-  const sentiment = card.yes >= 50 ? `${card.yes}% Yes` : `${card.no}% No`;
-  const shareString = `[share:prediction:${card.id}|${card.question}|${sentiment}|${card.category}]`;
+  const url =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/predictions?shared=${card.id}`
+      : `/predictions?shared=${card.id}`;
+  const totalVotes = parseInt(card.count.replace(/,/g, ""), 10) || 0;
+
+  const shareContext: PredictionShareContext = {
+    contentType: "prediction",
+    predictionId: card.id,
+    url,
+    title: card.question,
+    category: card.category,
+    totalVotes,
+    votedChoice: typeof window !== "undefined" ? localStorage.getItem(`tmh_pred_${card.id}`) ?? undefined : undefined,
+    yesPercentage: card.yes,
+    noPercentage: card.no,
+    options: card.options?.length
+      ? card.options.map((text) => ({ text, percentage: card.optionResults?.[text] ?? 0 }))
+      : undefined,
+    momentum: card.momentum,
+    momentumDirection: card.up ? "up" : "down",
+  };
 
   return (
     <>
@@ -373,15 +507,15 @@ function PredMajlisShareBtn({ card }: { card: PredictionCard }) {
           border: "none",
           cursor: "pointer",
           padding: "4px",
-          color: "rgba(250,250,250,0.4)",
+          color: "var(--muted-foreground)",
           transition: "color 0.15s",
         }}
       >
         <MessageSquare size={14} />
       </button>
       {show && (
-        <ShareToMajlisModal
-          shareString={shareString}
+        <ShareModal
+          context={shareContext}
           onClose={() => setShow(false)}
         />
       )}
@@ -389,26 +523,41 @@ function PredMajlisShareBtn({ card }: { card: PredictionCard }) {
   );
 }
 
+const OPTION_COLORS = ["#10B981", "#3B82F6", "#F59E0B", "#DC143C"];
+
 function VoteButtons({
   height = 52,
   locked = false,
   predId,
+  options,
+  onVote,
 }: {
   height?: number;
   locked?: boolean;
   predId?: number;
+  options?: string[];
+  onVote?: (predId: number, choice: string | null, serverYes?: number, serverNo?: number) => void;
 }) {
+  const { toast } = useToast();
   const storageKey = predId != null ? `tmh_pred_${predId}` : null;
-  const [voted, setVoted] = useState<"yes" | "no" | null>(() => {
+  const [voted, setVoted] = useState<string | null>(() => {
     if (typeof window === "undefined" || !storageKey) return null;
-    return localStorage.getItem(storageKey) as "yes" | "no" | null;
+    return localStorage.getItem(storageKey);
   });
   if (locked) return null;
-  const handleVote = (choice: "yes" | "no") => {
-    if (voted) return;
+
+  const resolvedOptions = options?.length ? options : ["yes", "no"];
+  const isLegacy = !options?.length;
+
+  const submitVote = (choice: string) => {
+    const previousVote = voted;
     setVoted(choice);
     if (storageKey) localStorage.setItem(storageKey, choice);
     if (predId != null) {
+      // Optimistic update only for NEW votes (no server data yet)
+      if (!previousVote) {
+        onVote?.(predId, choice);
+      }
       let token = localStorage.getItem("tmh_voter_token");
       if (!token) {
         token = crypto.randomUUID();
@@ -418,62 +567,140 @@ function VoteButtons({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ choice, voterToken: token }),
-      }).catch(() => {});
+      })
+        .then(r => {
+          if (!r.ok) throw new Error("Vote failed");
+          return r.json();
+        })
+        .then(data => {
+          if (data && onVote) {
+            // Server-authoritative: overwrite with combined percentages
+            if (data.yesPercentage != null) {
+              onVote(predId, choice, data.yesPercentage, data.noPercentage ?? (100 - data.yesPercentage));
+            }
+          }
+        })
+        .catch(() => {
+          // Revert optimistic state on failure
+          setVoted(previousVote);
+          if (storageKey) {
+            if (previousVote) localStorage.setItem(storageKey, previousVote);
+            else localStorage.removeItem(storageKey);
+          }
+          if (previousVote && onVote) onVote(predId, previousVote);
+          toast({ title: "Failed to vote", description: "Please try again.", variant: "destructive" });
+        });
     }
   };
+
+  // Click option → instant vote. Click different option → instant change.
+  // Click same option → no-op.
+  const handleVote = (choice: string) => {
+    if (voted === choice) return;
+    submitVote(choice);
+  };
+
+  if (isLegacy) {
+    return (
+      <div style={{ display: "flex", flexDirection: "column", width: "100%" }}>
+        <div style={{ display: "flex", gap: 8, width: "100%" }}>
+          <button
+            onClick={() => handleVote("yes")}
+            style={{
+              flex: 1,
+              height,
+              border: `1.5px solid #10B981`,
+              background: voted === "yes" ? "#10B981" : "transparent",
+              color: voted === "yes" ? "#fff" : "#10B981",
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 900,
+              fontSize: "1rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              cursor: "pointer",
+              transition: "all 0.15s",
+              borderRadius: 4,
+            }}
+          >
+            {voted === "yes" ? "\u2713 YES" : "YES"}
+          </button>
+          <button
+            onClick={() => handleVote("no")}
+            style={{
+              flex: 1,
+              height,
+              border: `1.5px solid #DC143C`,
+              background: voted === "no" ? "#DC143C" : "transparent",
+              color: voted === "no" ? "#fff" : "#DC143C",
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 900,
+              fontSize: "0.85rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em",
+              cursor: "pointer",
+              transition: "all 0.15s",
+              borderRadius: 4,
+            }}
+          >
+            {voted === "no" ? "\u2713 NO" : "NO"}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ display: "flex", gap: 8, width: "100%" }}>
-      <button
-        onClick={() => handleVote("yes")}
-        style={{
-          flex: 1,
-          height,
-          border: `1.5px solid #10B981`,
-          background: voted === "yes" ? "#10B981" : "transparent",
-          color: voted === "yes" ? "#fff" : "#10B981",
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontWeight: 900,
-          fontSize: "1rem",
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          cursor: voted ? "default" : "pointer",
-          transition: "all 0.15s",
-          borderRadius: 4,
-        }}
-      >
-        {voted === "yes" ? "✓ YES — LOCKED" : "YES"}
-      </button>
-      <button
-        onClick={() => handleVote("no")}
-        style={{
-          flex: 1,
-          height,
-          border: `1.5px solid #DC143C`,
-          background: voted === "no" ? "#DC143C" : "transparent",
-          color: voted === "no" ? "#fff" : "#DC143C",
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontWeight: 900,
-          fontSize: "0.85rem",
-          textTransform: "uppercase",
-          letterSpacing: "0.08em",
-          cursor: voted ? "default" : "pointer",
-          transition: "all 0.15s",
-          borderRadius: 4,
-        }}
-      >
-        {voted === "no" ? "✓ NO — LOCKED" : "NO"}
-      </button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 6, width: "100%" }}>
+      {resolvedOptions.map((opt, i) => {
+        const color = OPTION_COLORS[i % OPTION_COLORS.length];
+        const isSelected = voted === opt;
+        return (
+          <button
+            key={opt}
+            onClick={() => handleVote(opt)}
+            style={{
+              width: "100%",
+              minHeight: 44,
+              padding: "10px 16px",
+              border: `1.5px solid ${color}`,
+              background: isSelected ? color : "transparent",
+              color: isSelected ? "#fff" : color,
+              fontFamily: "DM Sans, sans-serif",
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              textAlign: "left",
+              cursor: "pointer",
+              transition: "all 0.15s",
+              borderRadius: 4,
+            }}
+          >
+            {isSelected ? `\u2713 ${opt}` : opt}
+          </button>
+        );
+      })}
     </div>
   );
 }
 
 // ─── MOMENTUM TICKER ─────────────────────────────────────────────────────────
 
+type MomentumTickerItem = {
+  label: string;
+  yes: number;
+  delta: number;
+  up: boolean;
+  href?: string;
+};
+
 function MomentumTicker({
   tickerData,
+  isLoading,
 }: {
-  tickerData: typeof FALLBACK_TICKER_DATA;
+  tickerData: MomentumTickerItem[];
+  isLoading: boolean;
 }) {
+  if (isLoading && !tickerData.length) return <TickerSkeleton />;
+  if (!tickerData.length) return null;
   const doubled = [...tickerData, ...tickerData];
   return (
     <div
@@ -486,14 +713,17 @@ function MomentumTicker({
     >
       <div className="tmh-ticker-scroll">
         {doubled.map((item, i) => (
-          <div
+          <Link
             key={i}
+            href={item.href ?? "/predictions"}
             style={{
               display: "flex",
               alignItems: "center",
               gap: "0.6rem",
               padding: "0.7rem 2rem",
               borderRight: "1px solid rgba(255,255,255,0.1)",
+              cursor: "pointer",
+              textDecoration: "none",
             }}
           >
             <span
@@ -503,7 +733,7 @@ function MomentumTicker({
                 fontSize: "0.7rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                color: "rgba(250,250,250,0.5)",
+                color: "rgba(250,250,250,0.75)",
               }}
             >
               {item.label}
@@ -529,7 +759,7 @@ function MomentumTicker({
               {item.up ? "▲" : "▼"} {item.up ? "+" : "-"}
               {item.delta}%
             </span>
-          </div>
+          </Link>
         ))}
       </div>
     </div>
@@ -538,7 +768,7 @@ function MomentumTicker({
 
 // ─── FEATURED PREDICTION ─────────────────────────────────────────────────────
 
-function FeaturedPrediction({ card }: { card: PredictionCard }) {
+function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (predId: number, choice: string | null, serverYes?: number, serverNo?: number) => void }) {
   const featuredData = useMemo(() => {
     return card.data.map((yes, i) => {
       const slice = card.data.slice(Math.max(0, i - 2), i + 1);
@@ -665,34 +895,38 @@ function FeaturedPrediction({ card }: { card: PredictionCard }) {
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <span
               style={{
-                padding: "2px 8px",
+                padding: "4px 10px",
                 background: "var(--foreground)",
                 color: "var(--background)",
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: 9,
+                fontSize: 16,
                 textTransform: "uppercase",
-                letterSpacing: "0.2em",
+                letterSpacing: "0.18em",
               }}
             >
               {card.category}
             </span>
             <span
               style={{
-                padding: "2px 8px",
+                padding: "3px 9px",
                 background: "rgba(251,191,36,0.15)",
                 border: "1px solid rgba(251,191,36,0.3)",
                 color: "#F59E0B",
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: 9,
+                fontSize: 15,
                 textTransform: "uppercase",
                 letterSpacing: "0.1em",
                 borderRadius: 2,
               }}
             >
-              Resolves: {card.resolves}
+              {formatResolvesText(card.resolves)}
             </span>
+            <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <PredMajlisShareBtn card={card} />
+              <PredShareBtn card={card} />
+            </div>
           </div>
 
           <p
@@ -707,19 +941,26 @@ function FeaturedPrediction({ card }: { card: PredictionCard }) {
             prediction on it.
           </p>
 
-          <p
-            style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 900,
-              fontSize: "1.2rem",
-              textTransform: "uppercase",
-              lineHeight: 1.2,
-              color: "var(--foreground)",
-              letterSpacing: "0.02em",
-            }}
+          <Link
+            href={`/predictions/${card.id}`}
+            style={{ textDecoration: "none" }}
           >
-            {card.question}
-          </p>
+            <p
+              data-testid="featured-prediction-title"
+              style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 900,
+                fontSize: "1.2rem",
+                textTransform: "uppercase",
+                lineHeight: 1.2,
+                color: "var(--foreground)",
+                letterSpacing: "0.02em",
+                cursor: "pointer",
+              }}
+            >
+              {card.question}
+            </p>
+          </Link>
 
           <p
             style={{
@@ -737,21 +978,12 @@ function FeaturedPrediction({ card }: { card: PredictionCard }) {
             up={card.up}
             momentum={card.momentum}
             compact={false}
+            options={card.options}
+            optionResults={card.optionResults}
           />
 
-          <VoteButtons height={52} predId={card.id} />
+          <VoteButtons height={52} predId={card.id} options={card.options} onVote={onVote} />
 
-          <p
-            style={{
-              fontFamily: "DM Sans, sans-serif",
-              fontStyle: "italic",
-              fontSize: "0.72rem",
-              color: "var(--muted-foreground)",
-            }}
-          >
-            Your prediction is locked until the resolution date. No changing
-            your mind.
-          </p>
         </div>
       </div>
     </div>
@@ -760,8 +992,18 @@ function FeaturedPrediction({ card }: { card: PredictionCard }) {
 
 // ─── PREDICTION GRID CARD ────────────────────────────────────────────────────
 
-function PredictionGridCard({ card, highlighted }: { card: PredictionCard; highlighted?: boolean }) {
+function PredictionGridCard({
+  card,
+  highlighted,
+  onVote,
+}: {
+  card: PredictionCard;
+  highlighted?: boolean;
+  onVote?: (predId: number, choice: string | null, serverYes?: number, serverNo?: number) => void;
+}) {
   const [glowing, setGlowing] = useState(!!highlighted);
+  const [showInfo, setShowInfo] = useState(false);
+  const infoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!highlighted) return;
@@ -769,6 +1011,18 @@ function PredictionGridCard({ card, highlighted }: { card: PredictionCard; highl
     const timer = setTimeout(() => setGlowing(false), 3000);
     return () => clearTimeout(timer);
   }, [highlighted]);
+
+  // Close tooltip on outside click
+  useEffect(() => {
+    if (!showInfo) return;
+    const handler = (e: MouseEvent) => {
+      if (infoRef.current && !infoRef.current.contains(e.target as Node)) {
+        setShowInfo(false);
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, [showInfo]);
 
   return (
     <div
@@ -801,54 +1055,141 @@ function PredictionGridCard({ card, highlighted }: { card: PredictionCard; highl
       >
         <span
           style={{
-            padding: "2px 7px",
+            padding: "4px 10px",
             background: "var(--foreground)",
             color: "var(--background)",
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 700,
-            fontSize: 9,
+            fontSize: 16,
             textTransform: "uppercase",
-            letterSpacing: "0.2em",
+            letterSpacing: "0.18em",
           }}
         >
           {card.category}
         </span>
         <span
+          data-testid="grid-resolves-badge"
           style={{
-            padding: "2px 7px",
+            padding: "3px 9px",
             background: "rgba(251,191,36,0.15)",
             border: "1px solid rgba(251,191,36,0.3)",
             color: "#F59E0B",
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 700,
-            fontSize: 9,
+            fontSize: 15,
             textTransform: "uppercase",
             letterSpacing: "0.1em",
             borderRadius: 2,
           }}
         >
-          Resolves: {card.resolves}
+          {formatResolvesText(card.resolves)}
         </span>
         <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
           <PredMajlisShareBtn card={card} />
-          <PredShareBtn question={card.question} id={card.id} />
+          <PredShareBtn card={card} />
+          {/* Info tooltip button */}
+          <div ref={infoRef} style={{ position: "relative", display: "inline-flex" }}>
+            <button
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowInfo(!showInfo); }}
+              onMouseEnter={() => setShowInfo(true)}
+              onMouseLeave={() => setShowInfo(false)}
+              title="Prediction details"
+              style={{
+                background: "none",
+                border: "none",
+                cursor: "pointer",
+                padding: "4px",
+                color: "var(--muted-foreground)",
+                transition: "color 0.15s",
+                lineHeight: 1,
+                width: 22,
+                height: 22,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Info size={14} />
+            </button>
+            {showInfo && (
+              <div
+                style={{
+                  position: "absolute",
+                  bottom: "calc(100% + 8px)",
+                  right: 0,
+                  background: "#1A1A1A",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  borderRadius: 6,
+                  padding: "10px 14px",
+                  minWidth: 220,
+                  zIndex: 50,
+                  boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+                }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <p style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.75rem",
+                  color: "rgba(255,255,255,0.7)",
+                  margin: "0 0 4px",
+                }}>
+                  Category: {card.category}
+                </p>
+                <p style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.75rem",
+                  color: "rgba(255,255,255,0.7)",
+                  margin: "0 0 4px",
+                }}>
+                  {formatResolvesText(card.resolves)}
+                </p>
+                <p style={{
+                  fontFamily: "DM Sans, sans-serif",
+                  fontSize: "0.75rem",
+                  color: "rgba(255,255,255,0.7)",
+                  margin: 0,
+                }}>
+                  {card.count} predictions locked in
+                </p>
+                <div style={{
+                  position: "absolute",
+                  bottom: -5,
+                  right: 8,
+                  width: 10,
+                  height: 10,
+                  background: "#1A1A1A",
+                  border: "1px solid rgba(255,255,255,0.15)",
+                  borderTop: "none",
+                  borderLeft: "none",
+                  transform: "rotate(45deg)",
+                }} />
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Question */}
-      <p
-        style={{
-          fontFamily: "'Barlow Condensed', sans-serif",
-          fontWeight: 900,
-          fontSize: "0.95rem",
-          textTransform: "uppercase",
-          lineHeight: 1.2,
-          color: "var(--foreground)",
-          letterSpacing: "0.02em",
-        }}
+      <Link
+        href={`/predictions/${card.id}`}
+        style={{ textDecoration: "none" }}
       >
-        {card.question}
-      </p>
+        <p
+          data-testid="grid-prediction-title"
+          style={{
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontWeight: 900,
+            fontSize: "0.95rem",
+            textTransform: "uppercase",
+            lineHeight: 1.2,
+            color: "var(--foreground)",
+            letterSpacing: "0.02em",
+            cursor: "pointer",
+          }}
+        >
+          {card.question}
+        </p>
+      </Link>
 
       {/* Participation */}
       <p
@@ -868,22 +1209,32 @@ function PredictionGridCard({ card, highlighted }: { card: PredictionCard; highl
         up={card.up}
         momentum={card.momentum}
         compact={true}
+        options={card.options}
+        optionResults={card.optionResults}
       />
 
-      {/* Vote buttons */}
-      <VoteButtons height={44} predId={card.id} />
+      {/* Resolution date (always visible) */}
+      {card.resolves && (
+        <span
+          data-testid="grid-resolves-date"
+          style={{
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontWeight: 700,
+            fontSize: "0.82rem",
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "var(--muted-foreground)",
+          }}
+        >
+          {formatResolvesText(card.resolves)}
+        </span>
+      )}
 
-      {/* Lock notice */}
-      <p
-        style={{
-          fontFamily: "DM Sans, sans-serif",
-          fontStyle: "italic",
-          fontSize: "0.7rem",
-          color: "var(--muted-foreground)",
-        }}
-      >
-        Your prediction is locked until the resolution date.
-      </p>
+      {/* Vote buttons */}
+      <div>
+        <VoteButtons height={44} predId={card.id} options={card.options} onVote={onVote} />
+      </div>
+
     </div>
   );
 }
@@ -911,7 +1262,7 @@ function ClosedPredictionCard() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.65rem",
+              fontSize: "1.15rem",
               textTransform: "uppercase",
               letterSpacing: "0.18em",
               color: "var(--muted-foreground)",
@@ -1125,9 +1476,55 @@ function ClosedPredictionCard() {
 // ─── PAGE ────────────────────────────────────────────────────────────────────
 
 export default function Predictions() {
+  usePageTitle({
+    title: "Predictions",
+    description: "A prediction market for MENA's biggest questions. Track confidence, watch consensus shift, and see where the region is headed.",
+  });
+  const { data: pageConfig } = usePageConfig<{ hero?: { titleLine1?: string; titleLine2?: string; subtitle?: string }; punctuations?: string[] }>("predictions_page");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("ALL");
-  const [visibleCount, setVisibleCount] = useState(20);
+
+  // Server-side search with 400ms debounce
+  const [searchResults, setSearchResults] = useState<PredictionCard[] | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const searchAbortRef = useRef<AbortController | null>(null);
+
+  useEffect(() => {
+    if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    if (searchAbortRef.current) searchAbortRef.current.abort();
+
+    const q = searchQuery.trim();
+    if (!q) {
+      setSearchResults(null);
+      setIsSearching(false);
+      return;
+    }
+
+    setIsSearching(true);
+    searchTimerRef.current = setTimeout(() => {
+      const controller = new AbortController();
+      searchAbortRef.current = controller;
+      const params = new URLSearchParams({ search: q, limit: "100" });
+      fetch(`/api/public/predictions?${params}`, { signal: controller.signal })
+        .then(r => r.ok ? r.json() : null)
+        .then(data => {
+          if (data?.items) {
+            setSearchResults(data.items.map((p: any) => apiToPredictionCard(p)));
+          }
+          setIsSearching(false);
+        })
+        .catch(err => {
+          if (err.name !== "AbortError") setIsSearching(false);
+        });
+    }, 400);
+
+    return () => {
+      if (searchTimerRef.current) clearTimeout(searchTimerRef.current);
+    };
+  }, [searchQuery]);
+
+  const [voteOverrides, setVoteOverrides] = useState<Record<number, { yes: number; no: number }>>({});
   const [highlightedId, setHighlightedId] = useState<string | null>(() => {
     const params = new URLSearchParams(window.location.search);
     return params.get("shared");
@@ -1148,47 +1545,84 @@ export default function Predictions() {
     return FALLBACK_CATEGORIES;
   }, [apiData]);
 
-  const tickerData = useMemo(() => {
-    if (apiData?.items?.length) {
-      return apiData.items.slice(0, 12).map((p) => ({
-        label:
-          p.question.length > 40
-            ? p.question.substring(0, 38) + "…"
-            : p.question,
-        yes: p.yesPercentage,
-        delta: p.momentum,
-        up: p.momentumDirection === "up",
-      }));
-    }
-    return FALLBACK_TICKER_DATA;
+  const tickerData = useMemo<MomentumTickerItem[]>(() => {
+    if (!apiData?.items?.length) return [];
+    return apiData.items.slice(0, 12).map((p) => ({
+      label:
+        p.question.length > 40
+          ? p.question.substring(0, 38) + "…"
+          : p.question,
+      yes: p.yesPercentage,
+      delta: p.momentum,
+      up: p.momentumDirection === "up",
+      href: `/predictions/${p.id}`,
+    }));
   }, [apiData]);
 
+  const handleVoteOverride = useCallback((predId: number, choice: string | null, serverYes?: number, serverNo?: number) => {
+    setVoteOverrides((prev) => {
+      // Vote removal
+      if (choice === null) {
+        if (serverYes != null) {
+          // Server sent back post-removal percentages
+          return { ...prev, [predId]: { yes: serverYes, no: serverNo ?? (100 - serverYes) } };
+        }
+        // Optimistic: remove override so card reverts to base PREDICTIONS data
+        const next = { ...prev };
+        delete next[predId];
+        return next;
+      }
+      // Server-authoritative: use real percentages when available
+      if (serverYes != null) {
+        return { ...prev, [predId]: { yes: serverYes, no: serverNo ?? (100 - serverYes) } };
+      }
+      // Optimistic fallback: estimate new percentage using combined total
+      const card = PREDICTIONS.find((c) => c.id === predId);
+      if (!card) return prev;
+      const currentYes = prev[predId]?.yes ?? card.yes;
+      // card.count is a locale string like "44" - parse it; total includes seed
+      const total = parseInt(String(card.count).replace(/,/g, ""), 10) || 1;
+      const yesVotes = Math.round((currentYes / 100) * total);
+      const newTotal = total + 1;
+      const newYesVotes = choice === "yes" ? yesVotes + 1 : yesVotes;
+      const newYes = Math.max(1, Math.min(99, Math.round((newYesVotes / newTotal) * 100)));
+      return { ...prev, [predId]: { yes: newYes, no: 100 - newYes } };
+    });
+  }, [PREDICTIONS]);
+
   const filteredCards = useMemo(() => {
-    let result = PREDICTIONS;
+    // When searching, use server results
+    if (searchQuery.trim() && searchResults) {
+      let result = searchResults.map((c) => {
+        const ov = voteOverrides[c.id];
+        if (ov) return { ...c, yes: ov.yes, no: ov.no };
+        return c;
+      });
+      if (activeCategory !== "ALL") {
+        result = result.filter((c) => c.category === activeCategory);
+      }
+      return result;
+    }
+
+    let result = PREDICTIONS.map((c) => {
+      const ov = voteOverrides[c.id];
+      if (ov) return { ...c, yes: ov.yes, no: ov.no };
+      return c;
+    });
     if (activeCategory !== "ALL") {
       result = result.filter((c) => c.category === activeCategory);
     }
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (c) =>
-          c.question.toLowerCase().includes(q) ||
-          c.category.toLowerCase().includes(q) ||
-          c.resolves.toLowerCase().includes(q),
-      );
-    }
     return result;
-  }, [searchQuery, activeCategory, PREDICTIONS]);
+  }, [searchQuery, searchResults, activeCategory, PREDICTIONS, voteOverrides]);
+
+  const { sentinelRef, visibleItems: visibleCards, hasMore, expandTo } = useInfiniteScroll(filteredCards, 10);
 
   // When shared param is present, ensure the card is visible and scroll to it
   useEffect(() => {
     if (!highlightedId || !filteredCards.length) return;
     const idx = filteredCards.findIndex((c) => String(c.id) === highlightedId);
     if (idx === -1) return;
-    // Ensure enough cards are rendered to include the shared one
-    if (idx >= visibleCount) {
-      setVisibleCount(idx + 5);
-    }
+    expandTo(idx);
     // Wait for DOM to render, then scroll
     requestAnimationFrame(() => {
       setTimeout(() => {
@@ -1240,9 +1674,8 @@ export default function Predictions() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
           >
-            What Do You Think
-            <br />
-            Actually Happens?
+            {pageConfig?.hero?.titleLine1 || "What Do You Think"}<br />
+            {pageConfig?.hero?.titleLine2 || "Actually Happens?"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </motion.h1>
           <p
             className="text-text2"
@@ -1254,41 +1687,8 @@ export default function Predictions() {
               letterSpacing: "0.18em",
             }}
           >
-            {PREDICTIONS.length} predictions across{" "}
-            {PREDICTION_CATEGORIES.length} categories. Not what should happen.
-            What will.
+            {pageConfig?.hero?.subtitle || `${PREDICTIONS.length} predictions across ${PREDICTION_CATEGORIES.length} categories. Not what should happen. What will.`}
           </p>
-          <div className="mt-6 max-w-md relative border border-border rounded-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search predictions..."
-              value={searchQuery}
-              onChange={(e) => {
-                setSearchQuery(e.target.value);
-                setVisibleCount(20);
-              }}
-              className="text-text2"
-              style={{
-                width: "100%",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                padding: "10px 36px 10px 36px",
-                fontSize: "0.8rem",
-                fontFamily: "DM Sans, sans-serif",
-                outline: "none",
-              }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-                style={{ color: "rgba(250,250,250,0.5)" }}
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
         </motion.div>
       </div>
 
@@ -1312,7 +1712,7 @@ export default function Predictions() {
             fontSize: "0.72rem",
             textTransform: "uppercase",
             letterSpacing: "0.15em",
-            color: "rgba(250,250,250,0.5)",
+            color: "rgba(250,250,250,0.75)",
           }}
         >
           <span
@@ -1337,7 +1737,7 @@ export default function Predictions() {
             fontSize: "0.72rem",
             textTransform: "uppercase",
             letterSpacing: "0.15em",
-            color: "rgba(250,250,250,0.5)",
+            color: "rgba(250,250,250,0.75)",
           }}
         >
           <span
@@ -1362,7 +1762,7 @@ export default function Predictions() {
             fontSize: "0.72rem",
             textTransform: "uppercase",
             letterSpacing: "0.15em",
-            color: "rgba(250,250,250,0.5)",
+            color: "rgba(250,250,250,0.75)",
           }}
         >
           <span
@@ -1380,94 +1780,42 @@ export default function Predictions() {
       </div>
 
       {/* Momentum ticker */}
-      <MomentumTicker tickerData={tickerData} />
-
-      {/* Category filter */}
-      <div
-        style={{
-          background: "var(--background)",
-          borderBottom: "1px solid var(--border)",
-          padding: "1rem 0",
-        }}
-      >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div
-            style={{
-              display: "flex",
-              gap: "0.5rem",
-              flexWrap: "wrap",
-              alignItems: "center",
-            }}
-          >
-            <button
-              onClick={() => {
-                setActiveCategory("ALL");
-                setVisibleCount(20);
-              }}
-              style={{
-                padding: "5px 14px",
-                fontFamily: "'Barlow Condensed', sans-serif",
-                fontWeight: 700,
-                fontSize: "0.7rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.1em",
-                background:
-                  activeCategory === "ALL" ? "#DC143C" : "transparent",
-                color:
-                  activeCategory === "ALL" ? "#fff" : "var(--muted-foreground)",
-                border:
-                  activeCategory === "ALL"
-                    ? "1px solid #DC143C"
-                    : "1px solid var(--border)",
-                cursor: "pointer",
-                transition: "all 0.2s",
-              }}
-            >
-              All ({PREDICTIONS.length})
-            </button>
-            {PREDICTION_CATEGORIES.map((cat) => {
-              const count = PREDICTIONS.filter(
-                (p) => p.category === cat,
-              ).length;
-              return (
-                <button
-                  key={cat}
-                  onClick={() => {
-                    setActiveCategory(cat);
-                    setVisibleCount(20);
-                  }}
-                  style={{
-                    padding: "5px 14px",
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontWeight: 700,
-                    fontSize: "0.7rem",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.1em",
-                    background:
-                      activeCategory === cat ? "#DC143C" : "transparent",
-                    color:
-                      activeCategory === cat
-                        ? "#fff"
-                        : "var(--muted-foreground)",
-                    border:
-                      activeCategory === cat
-                        ? "1px solid #DC143C"
-                        : "1px solid var(--border)",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                  }}
-                >
-                  {cat} ({count})
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
+      <MomentumTicker tickerData={tickerData} isLoading={isLoading} />
 
       {/* Content */}
       <div className="py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row gap-12">
+          <FilterSidebar
+            search={{
+              value: searchQuery,
+              onChange: (v) => {
+                setSearchQuery(v);
+                setActiveCategory("ALL");
+              },
+              placeholder: "Search predictions...",
+            }}
+            categories={{
+              items: PREDICTION_CATEGORIES.map((cat) => ({
+                key: cat,
+                label: cat,
+                count: PREDICTIONS.filter((p) => p.category === cat).length,
+              })),
+              activeKey: activeCategory,
+              onSelect: (key) => {
+                setActiveCategory(key);
+                setSearchQuery("");
+              },
+              allLabel: "All",
+              allCount: PREDICTIONS.length,
+            }}
+          />
+
+          <div className="flex-1 min-w-0">
+          {/* Loading skeletons */}
+          {isLoading && PREDICTIONS.length === 0 && (
+            <PredictionGridSkeleton />
+          )}
+
           {/* Featured prediction */}
           {!isFiltering && PREDICTIONS.length > 0 && (
             <motion.div
@@ -1481,7 +1829,7 @@ export default function Predictions() {
                   style={{
                     fontFamily: "'Barlow Condensed', sans-serif",
                     fontWeight: 700,
-                    fontSize: "0.65rem",
+                    fontSize: "1.15rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.22em",
                     color: "var(--muted-foreground)",
@@ -1491,7 +1839,10 @@ export default function Predictions() {
                   Featured Prediction
                 </p>
               </div>
-              <FeaturedPrediction card={PREDICTIONS[0]} />
+              <FeaturedPrediction
+                card={voteOverrides[PREDICTIONS[0].id] ? { ...PREDICTIONS[0], yes: voteOverrides[PREDICTIONS[0].id].yes, no: voteOverrides[PREDICTIONS[0].id].no } : PREDICTIONS[0]}
+                onVote={handleVoteOverride}
+              />
             </motion.div>
           )}
 
@@ -1501,7 +1852,7 @@ export default function Predictions() {
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.65rem",
+                fontSize: "1.15rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.22em",
                 color: "var(--muted-foreground)",
@@ -1513,7 +1864,11 @@ export default function Predictions() {
                 : `Active Predictions (${PREDICTIONS.length})${isLoading ? " — loading…" : ""}`}
             </p>
           </div>
-          {filteredCards.length === 0 ? (
+          {isSearching ? (
+            <div className="flex justify-center py-16">
+              <LoadingDots text={`Searching for "${searchQuery}"`} />
+            </div>
+          ) : filteredCards.length === 0 ? (
             <div
               className="text-center py-16 border border-border border-dashed"
               style={{ background: "rgba(255,255,255,0.02)" }}
@@ -1565,45 +1920,26 @@ export default function Predictions() {
               <motion.div
                 className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-8"
                 initial="hidden"
-                whileInView="visible"
-                viewport={{ once: true, amount: 0.05 }}
+                animate="visible"
                 variants={staggerContainer}
               >
-                {filteredCards.slice(0, visibleCount).map((card) => (
-                  <motion.div key={card.id} variants={staggerItem}>
-                    <PredictionGridCard card={card} highlighted={highlightedId === String(card.id)} />
+                {visibleCards.map((card, index, arr) => {
+                  const isLastOdd = index === arr.length - 1 && arr.length % 2 !== 0;
+                  return (
+                  <motion.div key={card.id} variants={staggerItem} className={isLastOdd ? "md:col-span-2 md:max-w-[calc(50%-0.625rem)] md:justify-self-center" : ""}>
+                    <PredictionGridCard
+                      card={card}
+                      highlighted={highlightedId === String(card.id)}
+                      onVote={handleVoteOverride}
+                    />
                   </motion.div>
-                ))}
+                  );
+                })}
               </motion.div>
-              {visibleCount < filteredCards.length && (
-                <motion.div
-                  className="text-center mb-16"
-                  initial={{ opacity: 0, y: 12 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ duration: 0.4, ease: EASE_OUT_EXPO }}
-                >
-                  <motion.button
-                    onClick={() => setVisibleCount((v) => v + 20)}
-                    whileHover={{ scale: 1.03 }}
-                    whileTap={{ scale: 0.95 }}
-                    style={{
-                      fontFamily: "'Barlow Condensed', sans-serif",
-                      fontWeight: 800,
-                      fontSize: "0.78rem",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.15em",
-                      color: "#DC143C",
-                      background: "none",
-                      border: "1px solid rgba(220,20,60,0.3)",
-                      padding: "12px 32px",
-                      cursor: "pointer",
-                      transition: "color 0.2s",
-                    }}
-                  >
-                    Load More ({filteredCards.length - visibleCount} remaining)
-                  </motion.button>
-                </motion.div>
+              {hasMore && (
+                <div ref={sentinelRef} className="flex justify-center py-8">
+                  <LoadingDots />
+                </div>
               )}
             </>
           )}
@@ -1621,7 +1957,7 @@ export default function Predictions() {
                   style={{
                     fontFamily: "'Barlow Condensed', sans-serif",
                     fontWeight: 700,
-                    fontSize: "0.65rem",
+                    fontSize: "1.15rem",
                     textTransform: "uppercase",
                     letterSpacing: "0.22em",
                     color: "var(--muted-foreground)",
@@ -1643,6 +1979,7 @@ export default function Predictions() {
               <ClosedPredictionCard />
             </motion.div>
           )}
+          </div>
         </div>
       </div>
     </Layout>

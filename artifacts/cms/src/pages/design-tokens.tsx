@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { api } from "@/lib/api";
 import { Save, Plus, Trash2, Palette } from "lucide-react";
+import { toast } from "sonner";
 
 interface DesignToken {
   id: number;
@@ -35,9 +36,20 @@ export default function DesignTokensPage() {
     try {
       await api.updateDesignToken(id, data as Record<string, unknown>);
       setTokens(prev => prev.map(t => t.id === id ? { ...t, ...data } : t));
-    } catch (e) { alert(e instanceof Error ? e.message : "Update failed"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Update failed"); }
     finally { setSaving(null); }
   };
+
+  const debounceTimers = useRef<Map<string, NodeJS.Timeout>>(new Map());
+  const debouncedUpdate = useCallback((tokenId: number, data: Partial<DesignToken>) => {
+    const key = String(tokenId);
+    const existing = debounceTimers.current.get(key);
+    if (existing) clearTimeout(existing);
+    debounceTimers.current.set(key, setTimeout(async () => {
+      await updateToken(tokenId, data);
+      debounceTimers.current.delete(key);
+    }, 500));
+  }, []);
 
   const addToken = async () => {
     try {
@@ -49,7 +61,7 @@ export default function DesignTokensPage() {
         category: "brand",
       });
       if (res.item) setTokens(prev => [...prev, res.item]);
-    } catch (e) { alert(e instanceof Error ? e.message : "Create failed"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Create failed"); }
   };
 
   const deleteToken = async (id: number) => {
@@ -57,7 +69,7 @@ export default function DesignTokensPage() {
     try {
       await api.deleteDesignToken(id);
       setTokens(prev => prev.filter(t => t.id !== id));
-    } catch (e) { alert(e instanceof Error ? e.message : "Delete failed"); }
+    } catch (e) { toast.error(e instanceof Error ? e.message : "Delete failed"); }
   };
 
   if (loading) return <div className="text-center py-12 text-muted-foreground">Loading...</div>;
@@ -88,7 +100,7 @@ export default function DesignTokensPage() {
                 <input
                   type="color"
                   value={token.value}
-                  onChange={e => updateToken(token.id, { value: e.target.value })}
+                  onChange={e => { setTokens(prev => prev.map(t => t.id === token.id ? { ...t, value: e.target.value } : t)); debouncedUpdate(token.id, { value: e.target.value }); }}
                   className="w-10 h-10 border border-border rounded-sm cursor-pointer"
                 />
               ) : (
@@ -98,7 +110,7 @@ export default function DesignTokensPage() {
                 <label className="block text-[0.6rem] text-muted-foreground uppercase mb-0.5">Label</label>
                 <input
                   value={token.label}
-                  onChange={e => updateToken(token.id, { label: e.target.value })}
+                  onChange={e => { setTokens(prev => prev.map(t => t.id === token.id ? { ...t, label: e.target.value } : t)); debouncedUpdate(token.id, { label: e.target.value }); }}
                   className="w-full px-2 py-1 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>
@@ -106,7 +118,7 @@ export default function DesignTokensPage() {
                 <label className="block text-[0.6rem] text-muted-foreground uppercase mb-0.5">Value</label>
                 <input
                   value={token.value}
-                  onChange={e => updateToken(token.id, { value: e.target.value })}
+                  onChange={e => { setTokens(prev => prev.map(t => t.id === token.id ? { ...t, value: e.target.value } : t)); debouncedUpdate(token.id, { value: e.target.value }); }}
                   className="w-full px-2 py-1 bg-background border border-border rounded-sm text-sm font-mono focus:outline-none focus:ring-1 focus:ring-primary"
                 />
               </div>

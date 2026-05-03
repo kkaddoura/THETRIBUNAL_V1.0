@@ -4,15 +4,19 @@ import { desc, eq, sql } from "drizzle-orm"
 
 const router = Router()
 
-const ADMIN_KEY = process.env.ADMIN_KEY ?? "tmh-admin-2026";
-
-if (process.env.NODE_ENV === "production" && !process.env.ADMIN_KEY) {
-  console.error("[SECURITY] ADMIN_KEY is not set in production. Default key is active — set this environment variable immediately.");
+const ADMIN_KEY = process.env.ADMIN_KEY;
+if (!ADMIN_KEY && process.env.NODE_ENV === "production") {
+  console.error("FATAL: ADMIN_KEY must be set in production");
+  process.exit(1);
 }
+if (!ADMIN_KEY) {
+  console.warn("[SECURITY] ADMIN_KEY is not set — using insecure dev fallback. Do NOT run this in production.");
+}
+const adminKey = ADMIN_KEY ?? "tmh-admin-2026-dev";
 
 function requireAdmin(req: any, res: any, next: any) {
-  const key = req.headers["x-admin-key"] ?? req.query.key
-  if (key !== ADMIN_KEY) {
+  const key = req.headers["x-admin-key"]
+  if (key !== adminKey) {
     return res.status(401).json({ error: "Unauthorized" })
   }
   next()

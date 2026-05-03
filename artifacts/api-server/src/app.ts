@@ -1,6 +1,7 @@
 import express, { type Request, type Express } from "express";
 import cors from "cors";
 import path from "path";
+import rateLimit from "express-rate-limit";
 import router from "./routes";
 import { ogTagsMiddleware } from "./middlewares/ogTags";
 
@@ -48,6 +49,28 @@ app.use((req, res, next) => {
   return ogTagsMiddleware(req, res, next);
 });
 
+// ── Disable caching for CMS API routes ─────────────────────
+// Prevents 304 Not Modified responses that return stale data
+// after mutations (e.g., status updates not reflected in list).
+app.use("/api/cms", (_req, res, next) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  next();
+});
+
+// ── Auth rate limiting ──────────────────────────────────────
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 attempts per window
+  message: { error: "Too many login attempts, please try again later" },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+app.use("/api/cms/auth", authLimiter);
+app.use("/api/majlis/auth", authLimiter);
+
 // ── API routes ──────────────────────────────────────────────
 
 app.use("/api", router);
@@ -84,6 +107,14 @@ app.use((req, res) => {
   res.sendFile(
     path.join(process.cwd(), `artifacts/${dir}/dist/public/index.html`),
   );
+});
+
+// ── Global error handler — must be last middleware ──────────
+app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
+  console.error("[UNHANDLED ERROR]", err.message);
+  if (!res.headersSent) {
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default app;

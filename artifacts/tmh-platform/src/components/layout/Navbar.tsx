@@ -15,7 +15,7 @@ export function Navbar() {
   const [isHidden, setIsHidden] = useState(false)
   const lastScrollY = useRef(0)
   const idleTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const { data: settings } = useSiteSettings()
+  const { data: settings, isLoading: settingsLoading } = useSiteSettings()
 
   useEffect(() => {
     const clearIdleTimer = () => {
@@ -58,16 +58,21 @@ export function Navbar() {
     }
   }, [mobileMenuOpen])
 
+  const majlisEnabled = settings?.featureToggles?.majlis?.enabled ?? false
+  const voicesEnabled = settings?.featureToggles?.voices?.enabled ?? true
+
   const defaultLinks = [
     { label: t("About"), href: "/about" },
-    { label: t("Pulse"), href: "/mena-pulse" },
-    { label: t("Debates"), href: "/polls" },
+    { label: t("Pulse"), href: "/pulse" },
+    { label: t("Debates"), href: "/debates" },
     { label: t("Predictions"), href: "/predictions" },
-    { label: t("Voices"), href: "/profiles" },
-    { label: t("The Majlis"), href: "/majlis", icon: "lock" },
+    ...(voicesEnabled ? [{ label: t("Voices"), href: "/voices" }] : []),
+    ...(majlisEnabled ? [{ label: t("The Majlis"), href: "/majlis", icon: "lock" }] : []),
   ]
 
-  const cmsLinks = settings?.navigation?.links?.filter(link => link.enabled !== false)
+  const cmsLinks = settings?.navigation?.links?.filter(link => link.enabled !== false
+    && (majlisEnabled || !link.href?.startsWith("/majlis"))
+    && (voicesEnabled || !link.href?.startsWith("/voices")))
   const navLinks = (cmsLinks?.length ? cmsLinks : defaultLinks).map(link => ({
     ...link,
     icon: link.icon === "lock" ? Lock : undefined,
@@ -101,20 +106,20 @@ export function Navbar() {
               <span className="font-display font-black text-lg uppercase tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">
                 {brandName}<span className="text-primary">.</span>
               </span>
-              <span className="text-[7px] font-serif tracking-[0.2em] uppercase text-muted-foreground leading-none mt-1.5">
+              <span className="text-[9px] font-serif tracking-[0.2em] uppercase text-muted-foreground leading-none mt-1.5">
                 {brandSub}
               </span>
             </Link>
 
           </div>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className={cn("hidden md:flex items-center gap-3 lg:gap-8 transition-opacity duration-300", settingsLoading ? "opacity-0" : "opacity-100")}>
             {navLinks.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "text-[11px] uppercase tracking-[0.2em] font-bold transition-all font-serif flex items-center gap-1",
+                  "text-[10px] lg:text-[11.5px] uppercase tracking-[0.15em] lg:tracking-[0.2em] font-bold transition-all font-serif flex items-center gap-1",
                   location === link.href || (link.href === "/majlis" && location.startsWith("/majlis"))
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -127,10 +132,10 @@ export function Navbar() {
           </nav>
 
           <div className="flex items-center gap-3">
-            {ctaButton && (
+            {ctaButton && !settingsLoading && (
             <Link
               href={ctaButton.href}
-              className="hidden sm:flex items-center gap-2 bg-primary text-white text-[10px] font-bold uppercase tracking-[0.15em] px-4 py-2 hover:bg-primary/90 transition-colors font-serif"
+              className="hidden lg:flex items-center gap-2 bg-primary text-white text-[11px] font-bold uppercase tracking-[0.15em] px-4 py-2 hover:bg-primary/90 transition-colors font-serif"
             >
               {ctaButton.label}
             </Link>
@@ -159,7 +164,7 @@ export function Navbar() {
         </div>
       </div>
 
-      {mobileMenuOpen && (
+      {mobileMenuOpen && !settingsLoading && (
         <div className="md:hidden absolute top-full left-0 w-full bg-background border-b border-border shadow-xl z-50">
           <div className="px-6 py-6 flex flex-col gap-1">
             {navLinks.map((link) => (

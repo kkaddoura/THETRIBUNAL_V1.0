@@ -1,9 +1,11 @@
+import { useState } from "react"
 import { useRoute, Link } from "wouter"
 import { useGetProfile } from "@workspace/api-client-react"
 import { Layout } from "@/components/layout/Layout"
 import { PollCard } from "@/components/poll/PollCard"
 import { ProfileCard } from "@/components/profile/ProfileCard"
 import { ArrowLeft, MapPin, Building, Briefcase, Eye, ExternalLink, MessageSquare } from "lucide-react"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 const COMPANY_URLS: Record<string, string> = {
   "1833 Members Club": "https://1833.club",
@@ -50,8 +52,8 @@ function getCompanyUrl(company: string): string {
   return ""
 }
 
-function CompanyLink({ company }: { company: string }) {
-  const url = getCompanyUrl(company)
+function CompanyLink({ company, companyUrl: apiUrl }: { company: string; companyUrl?: string | null }) {
+  const url = apiUrl || getCompanyUrl(company)
   if (!url) return <span>{company}</span>
   return (
     <a href={url} target="_blank" rel="noopener noreferrer"
@@ -62,10 +64,12 @@ function CompanyLink({ company }: { company: string }) {
 }
 
 export default function ProfileDetail() {
-  const [, params] = useRoute("/profiles/:id")
+  const [, params] = useRoute("/voices/:id")
   const id = params?.id ? parseInt(params.id) : 0
+  const [imgError, setImgError] = useState(false)
 
   const { data: profile, isLoading, error } = useGetProfile(id)
+  usePageTitle(profile?.name)
 
   if (isLoading) {
     return (
@@ -84,7 +88,7 @@ export default function ProfileDetail() {
       <Layout>
         <div className="max-w-4xl mx-auto px-4 py-24 text-center">
           <h1 className="text-4xl font-serif font-black uppercase tracking-tight mb-4 text-foreground">Profile not found</h1>
-          <Link href="/profiles" className="text-primary hover:underline font-bold text-xs uppercase tracking-widest">
+          <Link href="/voices" className="text-primary hover:underline font-bold text-xs uppercase tracking-widest">
             Back to Directory
           </Link>
         </div>
@@ -99,31 +103,24 @@ export default function ProfileDetail() {
       {/* Header: portrait photo + name/meta */}
       <div className="bg-background border-b border-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <Link href="/profiles" className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
+          <Link href="/voices" className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Directory
           </Link>
 
           <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start">
             {/* Portrait photo */}
-            {profile.imageUrl ? (
-              <div className="relative flex-shrink-0 w-48 md:w-56 lg:w-64">
-                <div className="relative overflow-hidden border border-border bg-secondary flex items-center justify-center" style={{ aspectRatio: '3/4' }}>
-                  <img
-                    src={profile.imageUrl}
-                    alt={profile.name}
-                    className="w-full h-full object-contain grayscale"
-                  />
-                  {profile.isVerified && (
-                    <div className="absolute bottom-3 right-3 w-3 h-3 rounded-full bg-primary border-2 border-background" title="Verified Voice" />
-                  )}
-                </div>
+            {profile.imageUrl && !imgError ? (
+              <div className="flex-shrink-0 w-48 md:w-56 overflow-hidden" style={{ aspectRatio: '3/4' }}>
+                <img
+                  src={profile.imageUrl}
+                  alt={profile.name}
+                  className="w-full h-full object-cover object-top grayscale"
+                  onError={() => setImgError(true)}
+                />
               </div>
             ) : (
-              <div className="relative flex-shrink-0 w-48 md:w-56 bg-secondary text-foreground flex items-center justify-center font-serif font-black text-5xl border border-border" style={{ aspectRatio: '3/4' }}>
+              <div className="flex-shrink-0 w-48 md:w-56 bg-secondary text-foreground flex items-center justify-center font-serif font-black text-5xl" style={{ aspectRatio: '3/4' }}>
                 {profile.name.substring(0, 2).toUpperCase()}
-                {profile.isVerified && (
-                  <div className="absolute bottom-3 right-3 bg-primary w-3 h-3 border-2 border-background" title="Verified Voice" />
-                )}
               </div>
             )}
 
@@ -157,7 +154,7 @@ export default function ProfileDetail() {
                 {profile.company && (
                   <div className="flex items-center gap-2">
                     <Building className="w-4 h-4 text-foreground" />
-                    <CompanyLink company={profile.company} />
+                    <CompanyLink company={profile.company} companyUrl={profile.companyUrl} />
                   </div>
                 )}
                 <div className="flex items-center gap-2">
@@ -240,7 +237,7 @@ export default function ProfileDetail() {
           {/* Related Polls */}
           {profile.relatedPolls && profile.relatedPolls.length > 0 && (
             <section>
-              <h2 className="font-serif text-3xl font-black uppercase tracking-tight border-b-2 border-foreground pb-4 mb-8">Associated Polls</h2>
+              <h2 className="font-serif text-3xl font-black uppercase tracking-tight border-b-2 border-foreground pb-4 mb-8">Associated Debates</h2>
               <div className="grid gap-10">
                 {profile.relatedPolls.map(poll => (
                   <div key={poll.id}>

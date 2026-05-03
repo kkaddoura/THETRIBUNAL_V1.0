@@ -1,4 +1,8 @@
+import { Link } from "wouter"
 import { Layout } from "@/components/layout/Layout"
+import { usePageTitle } from "@/hooks/use-page-title"
+import { usePageConfig } from "@/hooks/use-cms-data"
+import { TitlePunctuation } from "@/components/TitlePunctuation"
 
 const SECTIONS = [
   {
@@ -69,13 +73,19 @@ const SECTIONS = [
 ]
 
 export default function Terms() {
+  usePageTitle({
+    title: "Terms of Service",
+    description: "Terms of service and usage policies for The Tribunal platform.",
+  });
+  const { data: pageConfig } = usePageConfig<{ titleLine1?: string; titleLine2?: string; punctuations?: string[] }>("terms")
   return (
     <Layout>
       <div className="bg-foreground text-background py-16 border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">Legal</p>
           <h1 className="font-display font-black text-4xl md:text-6xl uppercase tracking-tight">
-            Terms &amp; Conditions
+            {pageConfig?.titleLine1 || "Terms &"}<br />
+            {pageConfig?.titleLine2 || "Conditions"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
           <p className="text-background/75 font-sans text-sm mt-4">
             Last updated: March 2026 · Governed by UAE Law
@@ -100,9 +110,9 @@ export default function Terms() {
         </div>
 
         <div className="mt-16 pt-8 border-t border-border flex flex-wrap gap-6 text-[10px] uppercase tracking-widest font-bold font-serif text-muted-foreground">
-          <a href="/faq" className="hover:text-foreground transition-colors">FAQ</a>
-          <a href="/about" className="hover:text-foreground transition-colors">About The Tribunal</a>
-          <a href="/" className="hover:text-foreground transition-colors">Home</a>
+          <Link href="/faq" className="hover:text-foreground transition-colors">FAQ</Link>
+          <Link href="/about" className="hover:text-foreground transition-colors">About The Tribunal</Link>
+          <Link href="/" className="hover:text-foreground transition-colors">Home</Link>
         </div>
       </div>
     </Layout>

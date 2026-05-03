@@ -13,7 +13,8 @@ interface StatBar {
 }
 
 interface VoicesPageConfig {
-  hero: { title: string; subtitle: string };
+  hero: { titleLine1: string; titleLine2: string; subtitle: string };
+  punctuations?: string[];
   impactStatements: ImpactStatement[];
   statsBar: StatBar[];
   filterLabels: { sector: string; country: string; featured: string; verified: string };
@@ -54,7 +55,17 @@ export default function PageVoices() {
 
       <section className="border border-border rounded-sm p-4 space-y-3">
         <h2 className="font-serif text-lg font-bold uppercase tracking-wide">Hero</h2>
-        <input value={config.hero.title} onChange={e => setConfig({ ...config, hero: { ...config.hero, title: e.target.value } })} placeholder="Title" className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 1</label>
+          <input value={config.hero.titleLine1} onChange={e => setConfig({ ...config, hero: { ...config.hero, titleLine1: e.target.value } })} placeholder="Line 1" className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 2</label>
+          <div className="flex items-center gap-2">
+            <input value={config.hero.titleLine2} onChange={e => setConfig({ ...config, hero: { ...config.hero, titleLine2: e.target.value } })} placeholder="Line 2" className="flex-1 px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input value={(config.punctuations ?? ["."]).join("")} onChange={e => setConfig({ ...config, punctuations: e.target.value ? e.target.value.split("") : [] })} placeholder="." className="w-16 px-2 py-2 bg-background border border-border rounded-sm text-sm text-primary font-bold text-center focus:outline-none focus:ring-1 focus:ring-primary" title="Punctuation (renders in primary color)" />
+          </div>
+        </div>
         <textarea value={config.hero.subtitle} onChange={e => setConfig({ ...config, hero: { ...config.hero, subtitle: e.target.value } })} rows={2} placeholder="Subtitle" className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
       </section>
 

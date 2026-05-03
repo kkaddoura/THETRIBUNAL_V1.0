@@ -9,6 +9,8 @@ export interface PredictionCard {
   momentum: number
   up: boolean
   data: number[]
+  options?: string[]
+  optionResults?: Record<string, number>
 }
 
 function spark(base: number, trend: "up" | "down" | "flat", volatility = 2): number[] {
@@ -43,7 +45,7 @@ export const PREDICTION_CATEGORIES = [
   "Health & Demographics",
 ]
 
-export const PREDICTIONS: PredictionCard[] = [
+const _RAW_PREDICTIONS: PredictionCard[] = [
   // ─── ECONOMY & FINANCE ──────────────────────────────────────
   { id: 1, category: "Economy & Finance", resolves: "Dec 2026", question: "Saudi Arabia's non-oil GDP will exceed 50% of total GDP by end of 2026", count: "18,203", yes: 62, no: 38, momentum: 1.8, up: true, data: spark(58, "up") },
   { id: 2, category: "Economy & Finance", resolves: "Mar 2029", question: "UAE will introduce some form of personal income tax within 3 years", count: "15,603", yes: 38, no: 62, momentum: 0.8, up: true, data: spark(35, "up", 1) },
@@ -333,35 +335,14 @@ export const PREDICTIONS: PredictionCard[] = [
   { id: 230, category: "Education & Workforce", resolves: "Dec 2027", question: "Oman's Saudization (Omanization) rate in the private sector will reach 42%", count: "4,123", yes: 48, no: 52, momentum: 0.9, up: true, data: spark(44, "up") },
 ]
 
-export const PREDICTIONS_TICKER = [
-  { label: "CINEMA SAUDI", yes: 71, delta: 2.1, up: true },
-  { label: "$10B STARTUP", yes: 44, delta: 1.3, up: false },
-  { label: "UAE INCOME TAX", yes: 38, delta: 0.8, up: true },
-  { label: "ARABIC SCHOOLS", yes: 58, delta: 1.4, up: true },
-  { label: "NEOM LINE", yes: 36, delta: 1.8, up: false },
-  { label: "RIYADH METRO", yes: 64, delta: 1.1, up: true },
-  { label: "SAUDI 2034 WC", yes: 91, delta: 0.2, up: true },
-  { label: "EGYPT CAPITAL", yes: 48, delta: 1.5, up: true },
-  { label: "GREEN H2 OMAN", yes: 41, delta: 0.5, up: true },
-  { label: "GCC VISA", yes: 48, delta: 1.4, up: true },
-  { label: "MOROCCO 2030 WC", yes: 92, delta: 0.3, up: true },
-  { label: "TANGER MED", yes: 67, delta: 0.9, up: true },
-  { label: "ALGERIA BORDER", yes: 22, delta: 0.5, up: false },
-  { label: "TUNISIA IMF", yes: 38, delta: 0.9, up: false },
-  { label: "EGYPT 115M POP", yes: 82, delta: 0.3, up: true },
-  { label: "JORDAN WATER", yes: 61, delta: 1.6, up: true },
-  { label: "LEBANON BANKS", yes: 34, delta: 0.8, up: false },
-  { label: "IRAQ GRAND FAW", yes: 52, delta: 1.1, up: true },
-  { label: "KUWAIT DEBT LAW", yes: 52, delta: 1.4, up: true },
-  { label: "BAHRAIN FINTECH", yes: 58, delta: 1.1, up: true },
-  { label: "QATAR LNG 126MT", yes: 71, delta: 0.6, up: true },
-  { label: "TURKEY INFLATION", yes: 47, delta: 1.5, up: true },
-  { label: "LIBYA ELECTION", yes: 22, delta: 0.3, up: false },
-  { label: "SUDAN WAR", yes: 68, delta: 1.2, up: true },
-  { label: "SYRIA SANCTIONS", yes: 37, delta: 0.8, up: true },
-  { label: "PALESTINE 160 UN", yes: 71, delta: 1.4, up: true },
-  { label: "YEMEN CRISIS", yes: 81, delta: 0.4, up: true },
-  { label: "MOROCCO SOLAR", yes: 58, delta: 1.4, up: true },
-  { label: "TURKEY DRONES", yes: 62, delta: 1.3, up: true },
-  { label: "BAYKAR TB3", yes: 64, delta: 1.3, up: true },
-]
+// Zero out all fabricated engagement data — keep content, remove fake counts
+export const PREDICTIONS: PredictionCard[] = _RAW_PREDICTIONS.map(p => ({
+  ...p,
+  count: "0",
+  yes: 50,
+  no: 50,
+  momentum: 0,
+  up: true,
+  data: [50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50, 50],
+}))
+

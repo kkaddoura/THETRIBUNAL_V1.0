@@ -11,6 +11,8 @@ export const predictionsTable = pgTable("predictions", {
   yesPercentage: integer("yes_percentage").notNull().default(50),
   noPercentage: integer("no_percentage").notNull().default(50),
   totalCount: integer("total_count").notNull().default(0),
+  dummyTotalCount: integer("dummy_total_count").notNull().default(0),
+  dummyOptionResults: jsonb("dummy_option_results").$type<Record<string, number>>(),
   momentum: real("momentum").notNull().default(0),
   momentumDirection: text("momentum_direction").notNull().default("up"),
   trendData: jsonb("trend_data").$type<number[]>().notNull().default([]),
@@ -18,6 +20,8 @@ export const predictionsTable = pgTable("predictions", {
   editorialStatus: text("editorial_status").notNull().default("draft"),
   isFeatured: boolean("is_featured").notNull().default(false),
   tags: jsonb("tags").$type<string[]>().notNull().default([]),
+  options: jsonb("options").$type<string[]>(),
+  optionResults: jsonb("option_results").$type<Record<string, number>>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });

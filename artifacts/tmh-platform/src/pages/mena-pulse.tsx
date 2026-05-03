@@ -1,13 +1,21 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { Layout } from "@/components/layout/Layout";
-import { Search, X, Share2, CheckCircle2 } from "lucide-react";
+import { Share2, CheckCircle2 } from "lucide-react";
+import { FilterSidebar } from "@/components/layout/FilterSidebar";
 import { LiveNumber } from "@/components/live-counter/FlipDigit";
 import { useI18n } from "@/lib/i18n";
+import { useToast } from "@/hooks/use-toast";
+import { ShareModal } from "@/components/ShareModal";
+import type { PulseShareContext } from "@/lib/share";
 import {
   usePulseTopics,
   usePageConfig,
   type ApiPulseTopic,
 } from "@/hooks/use-cms-data";
+import { usePageTitle } from "@/hooks/use-page-title";
+import { TitlePunctuation } from "@/components/TitlePunctuation";
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
+import { LoadingDots } from "@/components/ui/loading-dots";
 
 const MS_PER_YEAR = 365.25 * 24 * 60 * 60 * 1000;
 const BASE_DATE = new Date("2026-01-01T00:00:00Z").getTime();
@@ -1188,79 +1196,57 @@ function MiniSparkline({
   );
 }
 
-function PulseShareBtn({ title, stat, id }: { title: string; stat: string; id: string }) {
-  const [copied, setCopied] = useState(false);
+function PulseShareBtn({ topic }: { topic: TopicCard }) {
+  const [showModal, setShowModal] = useState(false);
   const url =
     typeof window !== "undefined"
-      ? `${window.location.origin}/mena-pulse?shared=${id}`
-      : `/mena-pulse?shared=${id}`;
+      ? `${window.location.origin}/pulse?shared=${topic.id}`
+      : `/pulse?shared=${topic.id}`;
 
-  const handleShare = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const shareText = `${title}: ${stat} — The Pulse by The Tribunal`;
-    if (navigator.share) {
-      try {
-        await navigator.share({ url, title: shareText });
-        return;
-      } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-      }
-    }
-    if (navigator.clipboard?.writeText) {
-      try {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
-        return;
-      } catch {}
-    }
-    try {
-      const ta = document.createElement("textarea");
-      ta.value = url;
-      ta.style.cssText = "position:fixed;top:-9999px;opacity:0";
-      document.body.appendChild(ta);
-      ta.focus();
-      ta.select();
-      document.execCommand("copy");
-      document.body.removeChild(ta);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
+  const shareContext: PulseShareContext = {
+    contentType: "pulse",
+    topicId: topic.id,
+    url,
+    title: topic.title,
+    category: topic.tag,
+    stat: topic.stat,
+    delta: topic.delta ?? "",
+    deltaUp: topic.deltaUp ?? true,
+    source: topic.source,
   };
 
   return (
-    <button
-      onClick={handleShare}
-      title="Share this insight"
-      style={{
-        background: "none",
-        border: "1px solid rgba(255,255,255,0.15)",
-        borderRadius: 3,
-        cursor: "pointer",
-        padding: "4px 10px",
-        color: copied ? "#10B981" : "rgba(255,255,255,0.5)",
-        transition: "all 0.15s",
-        display: "flex",
-        alignItems: "center",
-        gap: 4,
-        fontSize: 9,
-        fontFamily: "'Barlow Condensed', sans-serif",
-        fontWeight: 700,
-        textTransform: "uppercase" as const,
-        letterSpacing: "0.1em",
-      }}
-    >
-      {copied ? (
-        <>
-          <CheckCircle2 size={12} /> Copied
-        </>
-      ) : (
-        <>
-          <Share2 size={12} /> Share
-        </>
+    <>
+      <button
+        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShowModal(true); }}
+        title="Share this insight"
+        style={{
+          background: "none",
+          border: "1px solid rgba(255,255,255,0.15)",
+          borderRadius: 3,
+          cursor: "pointer",
+          padding: "4px 10px",
+          color: "rgba(255,255,255,0.75)",
+          transition: "all 0.15s",
+          display: "flex",
+          alignItems: "center",
+          gap: 4,
+          fontSize: 9,
+          fontFamily: "'Barlow Condensed', sans-serif",
+          fontWeight: 700,
+          textTransform: "uppercase" as const,
+          letterSpacing: "0.1em",
+        }}
+      >
+        <Share2 size={12} /> Share
+      </button>
+      {showModal && (
+        <ShareModal
+          context={shareContext}
+          onClose={() => setShowModal(false)}
+        />
       )}
-    </button>
+    </>
   );
 }
 
@@ -1339,13 +1325,13 @@ function TopicCardComponent({
         <span
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
-            fontSize: 9,
+            fontSize: 13,
             fontWeight: 800,
             textTransform: "uppercase",
-            letterSpacing: "0.18em",
+            letterSpacing: "0.16em",
             color: topic.tagColor,
             background: `${topic.tagColor}15`,
-            padding: "2px 8px",
+            padding: "4px 10px",
           }}
         >
           {t(topic.tag)}
@@ -1436,7 +1422,7 @@ function TopicCardComponent({
             fontSize: 9,
             textTransform: "uppercase",
             letterSpacing: "0.1em",
-            color: "rgba(255,255,255,0.45)",
+            color: "rgba(255,255,255,0.75)",
           }}
         >
           {topic.live
@@ -1448,6 +1434,18 @@ function TopicCardComponent({
           color={topic.tagColor}
           id={topic.id}
         />
+      </div>
+
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "flex-end",
+          marginTop: 12,
+          paddingTop: 10,
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        <PulseShareBtn topic={topic} />
       </div>
 
       {expanded && (
@@ -1462,33 +1460,24 @@ function TopicCardComponent({
             style={{
               fontFamily: "'DM Sans', sans-serif",
               fontSize: 12,
-              color: "rgba(255,255,255,0.55)",
+              color: "rgba(255,255,255,0.75)",
               lineHeight: 1.7,
               marginBottom: 8,
             }}
           >
             {topic.blurb}
           </p>
-          <div
+          <p
             style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: 8,
+              color: "rgba(255,255,255,0.75)",
+              textTransform: "uppercase",
+              letterSpacing: "0.15em",
             }}
           >
-            <p
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 8,
-                color: "rgba(255,255,255,0.4)",
-                textTransform: "uppercase",
-                letterSpacing: "0.15em",
-              }}
-            >
-              {t("Source:")} {topic.source}
-            </p>
-            <PulseShareBtn title={topic.title} stat={topic.stat} id={topic.id} />
-          </div>
+            {t("Source:")} {topic.source}
+          </p>
         </div>
       )}
     </div>
@@ -1503,7 +1492,8 @@ interface PulseConfig {
     up: boolean;
   }>;
   categories?: Array<{ key: string; label: string; color: string }>;
-  hero?: { title?: string; subtitle?: string };
+  hero?: { tagline?: string; titleLine1?: string; titleLine2?: string; subtitle?: string };
+  punctuations?: string[];
 }
 
 function PulseTicker() {
@@ -1539,7 +1529,7 @@ function PulseTicker() {
                 fontSize: "0.7rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
-                color: "rgba(250,250,250,0.5)",
+                color: "rgba(250,250,250,0.75)",
               }}
             >
               {item.label}
@@ -1634,7 +1624,7 @@ function BigNumber() {
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.12em",
-          color: "rgba(255,255,255,0.45)",
+          color: "rgba(255,255,255,0.75)",
           marginBottom: 6,
         }}
       >
@@ -1666,7 +1656,7 @@ function BigNumber() {
         style={{
           fontFamily: "'DM Sans', sans-serif",
           fontSize: 10,
-          color: "rgba(255,255,255,0.55)",
+          color: "rgba(255,255,255,0.75)",
           marginTop: 8,
           lineHeight: 1.5,
         }}
@@ -1679,56 +1669,11 @@ function BigNumber() {
   );
 }
 
-function CategoryFilter({
-  active,
-  onSelect,
-  categories,
-  topics,
-}: {
-  active: string;
-  onSelect: (key: string) => void;
-  categories: typeof FALLBACK_CATEGORIES;
-  topics: TopicCard[];
-}) {
-  const { t } = useI18n();
-  return (
-    <div
-      style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "16px 0" }}
-    >
-      {categories.map((cat) => {
-        const isActive = active === cat.key;
-        return (
-          <button
-            key={cat.key}
-            onClick={() => onSelect(cat.key)}
-            style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontSize: 10,
-              fontWeight: 800,
-              textTransform: "uppercase",
-              letterSpacing: "0.14em",
-              padding: "6px 14px",
-              border: `1px solid ${isActive ? cat.color : "rgba(255,255,255,0.1)"}`,
-              background: isActive ? `${cat.color}18` : "transparent",
-              color: isActive ? cat.color : "rgba(255,255,255,0.4)",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-            }}
-          >
-            {t(cat.label)}
-            <span style={{ marginLeft: 6, fontSize: 9, opacity: 0.6 }}>
-              {cat.key === "ALL"
-                ? topics.length
-                : topics.filter((tp) => tp.tag === cat.key).length}
-            </span>
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
 export default function MenaPulse() {
+  usePageTitle({
+    title: "Pulse",
+    description: "36 data-driven trend cards across 8 categories -- from press freedom to sovereign wealth. The region's vital signs, live.",
+  });
   const [activeCategory, setActiveCategory] = useState("ALL");
   const [searchQuery, setSearchQuery] = useState("");
   const [highlightedId, setHighlightedId] = useState<string | null>(null);
@@ -1800,6 +1745,8 @@ export default function MenaPulse() {
     return result;
   }, [activeCategory, searchQuery, allTopics]);
 
+  const { sentinelRef, visibleItems: visibleTopics, hasMore } = useInfiniteScroll(filtered, 10);
+
   return (
     <Layout>
       <style>{`
@@ -1822,7 +1769,7 @@ export default function MenaPulse() {
               marginBottom: "0.5rem",
             }}
           >
-            {t(pulseConfig?.hero?.title || "Pulse")}
+            {t(pulseConfig?.hero?.tagline || "Pulse")}
           </p>
           <h1
             style={{
@@ -1838,21 +1785,8 @@ export default function MenaPulse() {
               marginBottom: "0.5rem",
             }}
           >
-            {isAr ? (
-              <>
-                {t(
-                  pulseConfig?.hero?.subtitle ||
-                    "What's Actually Happening in MENA",
-                )}
-                <span style={{ color: "#DC143C" }}>.</span>
-              </>
-            ) : (
-              <>
-                {pulseConfig?.hero?.subtitle ||
-                  "What's Actually\nHappening in MENA"}
-                <span style={{ color: "#DC143C" }}>.</span>
-              </>
-            )}
+            {t(pulseConfig?.hero?.titleLine1 || "What's Actually")}<br />
+            {t(pulseConfig?.hero?.titleLine2 || "Happening in MENA")}<TitlePunctuation punctuations={pulseConfig?.punctuations} />
           </h1>
           <p
             style={{
@@ -1866,32 +1800,6 @@ export default function MenaPulse() {
             {allTopics.length}{" "}
             {t("trends the region needs to confront. Updated quarterly.")}
           </p>
-          <div className="mt-6 max-w-md relative border border-border rounded-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
-            <input
-              type="text"
-              placeholder={t("Search trends...")}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              style={{
-                width: "100%",
-                background: "rgba(255,255,255,0.06)",
-                border: "1px solid rgba(255,255,255,0.12)",
-                padding: "10px 36px 10px 36px",
-                fontSize: "0.8rem",
-                fontFamily: "DM Sans, sans-serif",
-                outline: "none",
-              }}
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="absolute right-3 top-1/2 -translate-y-1/2"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            )}
-          </div>
         </div>
 
         <PulseTicker />
@@ -1915,7 +1823,7 @@ export default function MenaPulse() {
               fontSize: "0.72rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
-              color: "rgba(250,250,250,0.5)",
+              color: "rgba(250,250,250,0.75)",
             }}
           >
             <span
@@ -1944,7 +1852,7 @@ export default function MenaPulse() {
               fontSize: "0.72rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
-              color: "rgba(250,250,250,0.5)",
+              color: "rgba(250,250,250,0.75)",
             }}
           >
             <span
@@ -1973,7 +1881,7 @@ export default function MenaPulse() {
               fontSize: "0.72rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
-              color: "rgba(250,250,250,0.5)",
+              color: "rgba(250,250,250,0.75)",
             }}
           >
             <span
@@ -2002,7 +1910,7 @@ export default function MenaPulse() {
               fontSize: "0.72rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
-              color: "rgba(250,250,250,0.5)",
+              color: "rgba(250,250,250,0.75)",
             }}
           >
             <span
@@ -2049,90 +1957,110 @@ export default function MenaPulse() {
           </div>
 
           <div
+            className="flex flex-col lg:flex-row gap-12"
             style={{ maxWidth: 1280, margin: "0 auto", padding: "0 16px 16px" }}
           >
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-                marginBottom: 4,
+            <FilterSidebar
+              search={{
+                value: searchQuery,
+                onChange: setSearchQuery,
+                placeholder: t("Search trends..."),
               }}
-            >
-              <div style={{ width: 3, height: 16, background: "#DC143C" }} />
-              <span
+              categories={{
+                items: CATEGORIES.filter((c) => c.key !== "ALL").map((c) => ({
+                  key: c.key,
+                  label: t(c.label),
+                  count: allTopics.filter((tp) => tp.tag === c.key).length,
+                })),
+                activeKey: activeCategory,
+                onSelect: setActiveCategory,
+                allLabel: t("All Trends"),
+                allCount: allTopics.length,
+              }}
+            />
+
+            <div className="flex-1 min-w-0">
+              <div
                 style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontSize: 12,
-                  fontWeight: 800,
-                  textTransform: "uppercase",
-                  letterSpacing: "0.18em",
-                  color: "rgba(255,255,255,0.5)",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  marginBottom: 4,
                 }}
               >
-                {t("Exploding Trends")}
-              </span>
-              <span
+                <div style={{ width: 3, height: 16, background: "#DC143C" }} />
+                <span
+                  style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontSize: 12,
+                    fontWeight: 800,
+                    textTransform: "uppercase",
+                    letterSpacing: "0.18em",
+                    color: "rgba(255,255,255,0.75)",
+                  }}
+                >
+                  {t("Exploding Trends")}
+                </span>
+                <span
+                  style={{
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: 9,
+                    color: "rgba(255,255,255,0.75)",
+                    marginLeft: 8,
+                    letterSpacing: "0.05em",
+                  }}
+                >
+                  {t("Click any card for the full story")}
+                </span>
+              </div>
+
+              <div
                 style={{
                   fontFamily: "'DM Sans', sans-serif",
-                  fontSize: 9,
-                  color: "rgba(255,255,255,0.5)",
-                  marginLeft: 8,
+                  fontSize: 10,
+                  color: "rgba(255,255,255,0.75)",
+                  margin: "16px 0",
                   letterSpacing: "0.05em",
                 }}
               >
-                {t("Click any card for the full story")}
-              </span>
-            </div>
+                {t("Showing")} {filtered.length} {t("of")} {allTopics.length}{" "}
+                {t("trends")}
+                {activeCategory !== "ALL" && (
+                  <button
+                    onClick={() => setActiveCategory("ALL")}
+                    style={{
+                      marginLeft: 12,
+                      color: "#DC143C",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      fontFamily: "inherit",
+                      fontSize: "inherit",
+                      letterSpacing: "inherit",
+                      textDecoration: "underline",
+                    }}
+                  >
+                    {t("Clear filter")}
+                  </button>
+                )}
+              </div>
 
-            <CategoryFilter
-              active={activeCategory}
-              onSelect={setActiveCategory}
-              categories={CATEGORIES}
-              topics={allTopics}
-            />
-
-            <div
-              style={{
-                fontFamily: "'DM Sans', sans-serif",
-                fontSize: 10,
-                color: "rgba(255,255,255,0.5)",
-                marginBottom: 16,
-                letterSpacing: "0.05em",
-              }}
-            >
-              {t("Showing")} {filtered.length} {t("of")} {allTopics.length}{" "}
-              {t("trends")}
-              {activeCategory !== "ALL" && (
-                <button
-                  onClick={() => setActiveCategory("ALL")}
-                  style={{
-                    marginLeft: 12,
-                    color: "#DC143C",
-                    background: "none",
-                    border: "none",
-                    cursor: "pointer",
-                    fontFamily: "inherit",
-                    fontSize: "inherit",
-                    letterSpacing: "inherit",
-                    textDecoration: "underline",
-                  }}
-                >
-                  {t("Clear filter")}
-                </button>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                  gap: 12,
+                }}
+              >
+                {visibleTopics.map((topic, i) => (
+                  <TopicCardComponent key={topic.id} topic={topic} index={i} highlighted={highlightedId === topic.id} />
+                ))}
+              </div>
+              {hasMore && (
+                <div ref={sentinelRef} className="flex justify-center py-8">
+                  <LoadingDots />
+                </div>
               )}
-            </div>
-
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(340px, 1fr))",
-                gap: 12,
-              }}
-            >
-              {filtered.map((topic, i) => (
-                <TopicCardComponent key={topic.id} topic={topic} index={i} highlighted={highlightedId === topic.id} />
-              ))}
             </div>
           </div>
 
@@ -2148,7 +2076,7 @@ export default function MenaPulse() {
               style={{
                 fontFamily: "'DM Sans', sans-serif",
                 fontSize: 9,
-                color: "rgba(255,255,255,0.4)",
+                color: "rgba(255,255,255,0.75)",
                 textTransform: "uppercase",
                 letterSpacing: "0.12em",
                 maxWidth: 640,

@@ -21,10 +21,19 @@ export const designTokensTable = pgTable("design_tokens", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const cmsSessionsTable = pgTable("cms_sessions", {
+  id: serial("id").primaryKey(),
+  token: text("token").notNull().unique(),
+  username: text("username").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  expiresAt: timestamp("expires_at").notNull(),
+});
+
 export const insertCmsConfigSchema = createInsertSchema(cmsConfigsTable).omit({ id: true });
 export const insertDesignTokenSchema = createInsertSchema(designTokensTable).omit({ id: true });
 
 export type CmsConfig = typeof cmsConfigsTable.$inferSelect;
 export type DesignToken = typeof designTokensTable.$inferSelect;
+export type CmsSession = typeof cmsSessionsTable.$inferSelect;
 export type InsertCmsConfig = z.infer<typeof insertCmsConfigSchema>;
 export type InsertDesignToken = z.infer<typeof insertDesignTokenSchema>;

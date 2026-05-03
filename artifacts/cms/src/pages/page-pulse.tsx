@@ -41,7 +41,8 @@ interface TickerItem {
 }
 
 interface PulsePageConfig {
-  hero: { title: string; subtitle: string };
+  hero: { tagline: string; titleLine1: string; titleLine2: string; subtitle: string };
+  punctuations?: string[];
   categories: PulseCategory[];
   tickerItems?: TickerItem[];
 }
@@ -81,7 +82,7 @@ export default function PagePulse() {
 
   useEffect(() => {
     Promise.all([
-      api.getPage("pulse").catch(() => ({ hero: { title: "MENA PULSE", subtitle: "" }, categories: [] })),
+      api.getPage("pulse").catch(() => ({ hero: { tagline: "Pulse", titleLine1: "What's Actually", titleLine2: "Happening in MENA", subtitle: "" }, punctuations: ["."], categories: [] })),
       api.getPulseTopics().then((d: { items: PulseTopic[] }) => d.items).catch(() => []),
       api.getDesignTokens().then((d: { items: DesignToken[] }) => d.items).catch(() => []),
     ]).then(([cfg, items, designTokens]) => {
@@ -157,8 +158,25 @@ export default function PagePulse() {
 
       <section className="border border-border rounded-sm p-4 space-y-3">
         <h2 className="font-serif text-lg font-bold uppercase tracking-wide">Hero</h2>
-        <input value={config.hero.title} onChange={e => setConfig({ ...config, hero: { ...config.hero, title: e.target.value } })} placeholder="Title" className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-        <textarea value={config.hero.subtitle} onChange={e => setConfig({ ...config, hero: { ...config.hero, subtitle: e.target.value } })} rows={2} placeholder="Subtitle" className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Tagline</label>
+          <input value={config.hero.tagline} onChange={e => setConfig({ ...config, hero: { ...config.hero, tagline: e.target.value } })} placeholder="Pulse" className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 1</label>
+          <input value={config.hero.titleLine1} onChange={e => setConfig({ ...config, hero: { ...config.hero, titleLine1: e.target.value } })} placeholder="Line 1" className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 2</label>
+          <div className="flex items-center gap-2">
+            <input value={config.hero.titleLine2} onChange={e => setConfig({ ...config, hero: { ...config.hero, titleLine2: e.target.value } })} placeholder="Line 2" className="flex-1 px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input value={(config.punctuations ?? ["."]).join("")} onChange={e => setConfig({ ...config, punctuations: e.target.value ? e.target.value.split("") : [] })} placeholder="." className="w-16 px-2 py-2 bg-background border border-border rounded-sm text-sm text-primary font-bold text-center focus:outline-none focus:ring-1 focus:ring-primary" title="Punctuation (renders in primary color)" />
+          </div>
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Subtitle</label>
+          <textarea value={config.hero.subtitle} onChange={e => setConfig({ ...config, hero: { ...config.hero, subtitle: e.target.value } })} rows={2} placeholder="Subtitle" className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary resize-none" />
+        </div>
       </section>
 
       <section className="border border-border rounded-sm p-4 space-y-3">

@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Save, Plus, Trash2 } from "lucide-react";
-
 interface ApplyConfig {
-  hero: { tagline: string; title: string; subtitle: string };
+  hero: { tagline: string; titleLine1: string; titleLine2: string; subtitle: string };
   criteria: string[];
   criteriaHeading: string;
   countries: string[];
   sectors: string[];
   successMessage: { title: string; subtitle: string; cta: string };
   disclaimer: string;
+  punctuations?: string[];
 }
 
 export default function PageApply() {
@@ -19,7 +19,18 @@ export default function PageApply() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    api.getPage("apply").then(setConfig).catch(console.error).finally(() => setLoading(false));
+    api.getPage("apply").then((data: any) => {
+      setConfig({
+        hero: { tagline: "The Voices", titleLine1: "Think You Belong", titleLine2: "In The Voices?", subtitle: "We're building the most credible founder directory in the Middle East. Not everyone makes the cut. The bar is high — because our audience is discerning.", ...data?.hero },
+        criteria: data?.criteria ?? [],
+        criteriaHeading: data?.criteriaHeading ?? "",
+        countries: data?.countries ?? [],
+        sectors: data?.sectors ?? [],
+        successMessage: { title: "", subtitle: "", cta: "", ...data?.successMessage },
+        disclaimer: data?.disclaimer ?? "",
+        punctuations: data?.punctuations ?? ["."],
+      });
+    }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   const save = async () => {
@@ -52,8 +63,15 @@ export default function PageApply() {
           <input value={config.hero.tagline} onChange={e => setConfig({ ...config, hero: { ...config.hero, tagline: e.target.value } })} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
         </div>
         <div>
-          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title</label>
-          <input value={config.hero.title} onChange={e => setConfig({ ...config, hero: { ...config.hero, title: e.target.value } })} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 1</label>
+          <input value={config.hero.titleLine1} onChange={e => setConfig({ ...config, hero: { ...config.hero, titleLine1: e.target.value } })} className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Title Line 2</label>
+          <div className="flex items-center gap-2">
+            <input value={config.hero.titleLine2} onChange={e => setConfig({ ...config, hero: { ...config.hero, titleLine2: e.target.value } })} className="flex-1 px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+            <input value={(config.punctuations ?? ["."]).join("")} onChange={e => setConfig({ ...config, punctuations: e.target.value ? e.target.value.split("") : [] })} placeholder="." className="w-16 px-2 py-2 bg-background border border-border rounded-sm text-sm text-primary font-bold text-center focus:outline-none focus:ring-1 focus:ring-primary" title="Punctuation (renders in primary color)" />
+          </div>
         </div>
         <div>
           <label className="block text-xs text-muted-foreground uppercase tracking-wider mb-1">Subtitle</label>

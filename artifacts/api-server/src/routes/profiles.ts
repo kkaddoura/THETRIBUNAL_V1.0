@@ -11,6 +11,7 @@ function toProfileResponse(profile: any) {
     headline: profile.headline,
     role: profile.role,
     company: profile.company ?? null,
+    companyUrl: profile.companyUrl ?? null,
     sector: profile.sector,
     country: profile.country,
     city: profile.city,
@@ -30,7 +31,7 @@ router.get("/profiles", async (req, res) => {
     const lim = Math.min(parseInt(limit) || 20, 200);
     const off = parseInt(offset) || 0;
 
-    const conditions: any[] = [];
+    const conditions: any[] = [eq(profilesTable.editorialStatus, "approved")];
     if (search) {
       conditions.push(or(ilike(profilesTable.name, `%${search}%`), ilike(profilesTable.headline, `%${search}%`)));
     }
@@ -38,7 +39,7 @@ router.get("/profiles", async (req, res) => {
     if (sector) conditions.push(eq(profilesTable.sector, sector));
     if (filter === "featured") conditions.push(eq(profilesTable.isFeatured, true));
 
-    const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
+    const whereClause = and(...conditions);
 
     let orderBy;
     if (filter === "most_viewed") {
@@ -49,11 +50,9 @@ router.get("/profiles", async (req, res) => {
       orderBy = desc(profilesTable.isFeatured);
     }
 
-    const profiles = whereClause
-      ? await db.select().from(profilesTable).where(whereClause).orderBy(orderBy).limit(lim).offset(off)
-      : await db.select().from(profilesTable).orderBy(orderBy).limit(lim).offset(off);
+    const profiles = await db.select().from(profilesTable).where(whereClause).orderBy(orderBy).limit(lim).offset(off);
 
-    const total = await db.select({ count: sql<number>`count(*)` }).from(profilesTable);
+    const total = await db.select({ count: sql<number>`count(*)` }).from(profilesTable).where(eq(profilesTable.editorialStatus, "approved"));
 
     res.json({ profiles: profiles.map(toProfileResponse), total: Number(total[0].count) });
   } catch (err) {
@@ -65,7 +64,7 @@ router.get("/profiles", async (req, res) => {
 router.get("/profiles/:id", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    const [profile] = await db.select().from(profilesTable).where(eq(profilesTable.id, id));
+    const [profile] = await db.select().from(profilesTable).where(and(eq(profilesTable.id, id), eq(profilesTable.editorialStatus, "approved")));
     if (!profile) { res.status(404).json({ error: "Profile not found" }); return; }
 
     await db.update(profilesTable).set({ viewCount: sql`view_count + 1` }).where(eq(profilesTable.id, id));
@@ -116,7 +115,7 @@ router.get("/profiles/:id", async (req, res) => {
     const similarProfiles = await db
       .select()
       .from(profilesTable)
-      .where(and(eq(profilesTable.sector, profile.sector), ne(profilesTable.id, id)))
+      .where(and(eq(profilesTable.sector, profile.sector), ne(profilesTable.id, id), eq(profilesTable.editorialStatus, "approved")))
       .limit(3);
 
     res.json({

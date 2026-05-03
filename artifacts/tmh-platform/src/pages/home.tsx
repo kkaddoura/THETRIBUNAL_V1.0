@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import {
   useGetFeaturedPoll,
+  useGetPoll,
   useListPolls,
   useListProfiles,
   useListCategories,
@@ -8,7 +9,9 @@ import {
 import { Layout } from "@/components/layout/Layout";
 import { PollCard } from "@/components/poll/PollCard";
 import { ProfileCard } from "@/components/profile/ProfileCard";
-import { GlobeConnections } from "@/components/globe/GlobeConnections";
+import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
+import { HeroGallery } from "@/components/home/HeroGallery";
+const AboutSection = lazy(() => import("@/components/home/AboutSection"));
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Share2, Lock, Mail, CheckCircle2 } from "lucide-react";
@@ -232,8 +235,10 @@ import {
   usePulseTopics,
   useHomepageConfig,
   useLiveCounts,
+  useSiteSettings,
   type ApiPrediction,
 } from "@/hooks/use-cms-data";
+import { usePageTitle } from "@/hooks/use-page-title";
 
 function apiToPredCard(p: ApiPrediction): PredictionCard {
   return {
@@ -249,6 +254,8 @@ function apiToPredCard(p: ApiPrediction): PredictionCard {
     data: p.trendData?.length
       ? p.trendData
       : Array.from({ length: 12 }, () => p.yesPercentage),
+    options: p.options,
+    optionResults: p.optionResults,
   };
 }
 
@@ -304,24 +311,16 @@ function ShareMenu({
     setOpen(false);
   };
 
-  const handleNativeShare = async (e: React.MouseEvent) => {
+  const handleToggleMenu = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (navigator.share) {
-      try {
-        await navigator.share({ url: shareUrl, title });
-        return;
-      } catch (err) {
-        if ((err as Error).name === "AbortError") return;
-      }
-    }
     setOpen(!open);
   };
 
   return (
     <div className="relative" ref={ref}>
       <button
-        onClick={handleNativeShare}
+        onClick={handleToggleMenu}
         className="p-1.5 rounded-sm transition-colors hover:bg-white/10"
         style={{ color }}
         title="Share"
@@ -366,12 +365,12 @@ function ShareMenu({
           <button
             onClick={() =>
               doShare(
-                `https://t.me/share/url?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(title)}`,
+                `https://www.instagram.com/`,
               )
             }
             className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
           >
-            <span className="text-[#26A5E4]">●</span> Telegram
+            <span className="text-[#E4405F]">●</span> Instagram
           </button>
           <div className="border-t border-border mt-1 pt-1">
             <button
@@ -420,7 +419,7 @@ function getPredVote(predId: number): "yes" | "no" | null {
   return localStorage.getItem(`tmh_pred_${predId}`) as "yes" | "no" | null;
 }
 
-const MENA_POP_BASE_DEFAULT = 525_000_000;
+const MENA_POP_BASE_DEFAULT = 541_000_000;
 const MENA_POP_BASE_DATE = new Date("2026-01-01T00:00:00Z").getTime();
 const MENA_GROWTH_RATE_DEFAULT = 0.0156;
 
@@ -534,7 +533,7 @@ function LiveActivity() {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.4, ease: EASE_OUT_EXPO }}
           >
-            <Link href={`/polls/${item.pollId}`} className="group block">
+            <Link href={`/debates/${item.pollId}`} className="group block">
               <p className="font-sans text-sm text-foreground/80 leading-relaxed group-hover:text-foreground transition-colors">
                 <span className="mr-2">
                   {FLAG_MAP[item.countryCode ?? ""] ?? "🌍"}
@@ -622,8 +621,16 @@ function FeaturedPredictionCard({
   );
   const [email, setEmail] = useState("");
   const [emailDone, setEmailDone] = useState(false);
+  const [newsletterOptIn, setNewsletterOptIn] = useState(true);
   const [hovIdx, setHovIdx] = useState<number | null>(null);
   const predUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/predictions`;
+
+  // Re-sync vote/phase from localStorage when the prediction ID changes
+  // (e.g. fallback → API data swap)
+  useEffect(() => {
+    setVote(getPredVote(featured.id));
+    setPhase(getPredPhase(featured.id));
+  }, [featured.id]);
 
   const handleVote = (choice: "yes" | "no") => {
     if (vote) return;
@@ -662,6 +669,11 @@ function FeaturedPredictionCard({
     if (!email.trim()) return;
     setEmailDone(true);
     localStorage.setItem("tmh_email_submitted", "true");
+    fetch("/api/email-subscribe", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.trim(), source: "prediction_gate", newsletterOptIn }),
+    }).catch(() => {});
     setTimeout(unlock, 800);
   };
 
@@ -883,7 +895,7 @@ function FeaturedPredictionCard({
       <div className="flex-1 p-5 border-t lg:border-t-0 lg:border-l border-border flex flex-col justify-between gap-3">
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-2">
-            <span className="px-2 py-0.5 bg-foreground text-background text-[8px] font-bold uppercase tracking-[0.2em] font-serif">
+            <span className="px-3 py-1 bg-foreground text-background text-[13px] font-bold uppercase tracking-[0.16em] font-serif">
               {featured.category}
             </span>
             <span
@@ -903,12 +915,14 @@ function FeaturedPredictionCard({
               onUnlock={phase === "gate" ? unlock : undefined}
             />
           </div>
-          <p
-            className="font-serif font-black uppercase text-[15px] leading-tight text-foreground tracking-tight"
-            style={{ lineHeight: 1.15 }}
-          >
-            {featured.question}
-          </p>
+          <Link href="/predictions">
+            <p
+              className="font-serif font-black uppercase text-[15px] leading-tight text-foreground tracking-tight cursor-pointer hover:text-primary transition-colors"
+              style={{ lineHeight: 1.15 }}
+            >
+              {featured.question}
+            </p>
+          </Link>
           <p className="text-[10px] text-muted-foreground font-serif mt-2">
             {featured.count} predictions locked in
           </p>
@@ -987,16 +1001,20 @@ function FeaturedPredictionCard({
                 <motion.button
                   onClick={() => handleVote("yes")}
                   whileTap={{ scale: 0.97 }}
-                  className="flex-1 py-2.5 border font-bold text-[11px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#10B981] hover:text-white hover:border-[#10B981]"
+                  className="flex-1 py-2.5 border font-bold text-[11px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#10B981] hover:border-[#10B981]"
                   style={{ borderColor: "#10B981", color: "#10B981" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "#10B981"; }}
                 >
                   Yes
                 </motion.button>
                 <motion.button
                   onClick={() => handleVote("no")}
                   whileTap={{ scale: 0.97 }}
-                  className="flex-1 py-2.5 border font-bold text-[11px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#DC143C] hover:text-white hover:border-[#DC143C]"
+                  className="flex-1 py-2.5 border font-bold text-[11px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#DC143C] hover:border-[#DC143C]"
                   style={{ borderColor: "#DC143C", color: "#DC143C" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "#DC143C"; }}
                 >
                   No
                 </motion.button>
@@ -1081,6 +1099,17 @@ function FeaturedPredictionCard({
                       )}
                     </button>
                   </form>
+                  <label className="flex items-center gap-2 cursor-pointer select-none mt-2">
+                    <input
+                      type="checkbox"
+                      checked={newsletterOptIn}
+                      onChange={e => setNewsletterOptIn(e.target.checked)}
+                      className="w-3 h-3 rounded-sm accent-[#3B82F6] cursor-pointer"
+                    />
+                    <span className="text-[9px] text-muted-foreground font-sans">
+                      Send me The Tribunal newsletter
+                    </span>
+                  </label>
                 </div>
               </div>
             </motion.div>
@@ -1168,6 +1197,11 @@ function FeaturedPredictionCard({
                 >
                   More Predictions <ArrowRight className="w-3 h-3" />
                 </Link>
+                <ShareMenu
+                  title={featured.question}
+                  shareUrl={predUrl}
+                  color="#3B82F6"
+                />
               </div>
             </motion.div>
           )}
@@ -1189,6 +1223,11 @@ function SidebarPredictionItem({
   const [vote, setVote] = useState(initialVote);
   const [phase, setPhase] = useState(initialPhase);
   const predUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/predictions`;
+
+  useEffect(() => {
+    setVote(getPredVote(pred.id));
+    setPhase(getPredPhase(pred.id));
+  }, [pred.id]);
 
   const handleQuickVote = (choice: "yes" | "no", e: React.MouseEvent) => {
     e.preventDefault();
@@ -1219,110 +1258,108 @@ function SidebarPredictionItem({
   };
 
   return (
-    <div className="py-3 border-b border-border group">
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="text-[9px] uppercase tracking-widest text-[#3B82F6] font-serif font-bold">
-            {pred.category}
-          </p>
-          <p className="font-serif font-black uppercase text-[12px] leading-tight text-foreground mt-1">
-            {pred.question.length > 70
-              ? pred.question.slice(0, 70) + "…"
-              : pred.question}
-          </p>
-        </div>
-        <div className="flex items-center gap-1">
-          <div className="flex-shrink-0 w-16 h-8">
-            <svg
-              viewBox="0 0 60 24"
-              className="w-full h-full"
-              preserveAspectRatio="none"
-            >
-              <polyline
-                points={pred.data
-                  .map(
-                    (v, i) =>
-                      `${(i / (pred.data.length - 1)) * 60},${24 - (v / 100) * 20}`,
-                  )
-                  .join(" ")}
-                fill="none"
-                stroke="#10B981"
-                strokeWidth="1.5"
-                strokeLinejoin="round"
-              />
-              <polyline
-                points={pred.data
-                  .map(
-                    (v, i) =>
-                      `${(i / (pred.data.length - 1)) * 60},${24 - ((100 - v) / 100) * 20}`,
-                  )
-                  .join(" ")}
-                fill="none"
-                stroke="#DC143C"
-                strokeWidth="1"
-                opacity="0.6"
-                strokeLinejoin="round"
-              />
-            </svg>
+    <Link href={`/predictions/${pred.id}`}>
+      <motion.div
+        className="py-3 border-b border-border group cursor-pointer"
+        whileHover={{ x: 4 }}
+        transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <p className="text-[11px] uppercase tracking-widest text-[#3B82F6] font-serif font-bold">
+              {pred.category}
+            </p>
+            <p className="font-serif font-black uppercase text-[12px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
+              {pred.question.length > 70
+                ? pred.question.slice(0, 70) + "…"
+                : pred.question}
+            </p>
           </div>
-          <ShareMenu title={pred.question} shareUrl={predUrl} color="#3B82F6" />
+          <div className="flex items-center gap-1">
+            <div className="flex-shrink-0 w-16 h-8">
+              <svg
+                viewBox="0 0 60 24"
+                className="w-full h-full"
+                preserveAspectRatio="none"
+              >
+                <polyline
+                  points={pred.data
+                    .map(
+                      (v, i) =>
+                        `${(i / (pred.data.length - 1)) * 60},${24 - (v / 100) * 20}`,
+                    )
+                    .join(" ")}
+                  fill="none"
+                  stroke="#10B981"
+                  strokeWidth="1.5"
+                  strokeLinejoin="round"
+                />
+                <polyline
+                  points={pred.data
+                    .map(
+                      (v, i) =>
+                        `${(i / (pred.data.length - 1)) * 60},${24 - ((100 - v) / 100) * 20}`,
+                    )
+                    .join(" ")}
+                  fill="none"
+                  stroke="#DC143C"
+                  strokeWidth="1"
+                  opacity="0.6"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </div>
+            <ShareMenu title={pred.question} shareUrl={predUrl} color="#3B82F6" />
+          </div>
         </div>
-      </div>
-      <div className="flex items-center gap-3 mt-1.5">
-        <span
-          className="text-[9px] font-bold font-serif"
-          style={{ color: "#10B981" }}
-        >
-          Yes {pred.yes}%
-        </span>
-        <span
-          className="text-[9px] font-bold font-serif"
-          style={{ color: "#DC143C" }}
-        >
-          No {pred.no}%
-        </span>
-        {vote ? (
-          <span className="text-[8px] font-bold font-serif ml-auto text-[#3B82F6]">
-            ✓ {vote.toUpperCase()}
+        <div className="flex items-center gap-3 mt-1.5">
+          <span
+            className="text-[9px] font-bold font-serif"
+            style={{ color: "#10B981" }}
+          >
+            Yes {pred.yes}%
           </span>
-        ) : (
-          <span className="ml-auto flex gap-1">
-            <motion.button
-              onClick={(e) => handleQuickVote("yes", e)}
-              whileTap={{ scale: 0.93 }}
-              className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider font-serif border border-[#10B981]/40 text-[#10B981] hover:bg-[#10B981] hover:text-white transition-colors rounded-sm"
-            >
-              Y
-            </motion.button>
-            <motion.button
-              onClick={(e) => handleQuickVote("no", e)}
-              whileTap={{ scale: 0.93 }}
-              className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider font-serif border border-[#DC143C]/40 text-[#DC143C] hover:bg-[#DC143C] hover:text-white transition-colors rounded-sm"
-            >
-              N
-            </motion.button>
+          <span
+            className="text-[9px] font-bold font-serif"
+            style={{ color: "#DC143C" }}
+          >
+            No {pred.no}%
           </span>
-        )}
-      </div>
-    </div>
+          {vote ? (
+            <span className="text-[8px] font-bold font-serif ml-auto text-[#3B82F6]">
+              ✓ {vote.toUpperCase()}
+            </span>
+          ) : (
+            <span className="ml-auto flex gap-1">
+              <motion.button
+                onClick={(e) => handleQuickVote("yes", e)}
+                whileTap={{ scale: 0.93 }}
+                className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider font-serif border border-[#10B981]/40 text-[#10B981] hover:bg-[#10B981] hover:text-white transition-colors rounded-sm"
+              >
+                Y
+              </motion.button>
+              <motion.button
+                onClick={(e) => handleQuickVote("no", e)}
+                whileTap={{ scale: 0.93 }}
+                className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider font-serif border border-[#DC143C]/40 text-[#DC143C] hover:bg-[#DC143C] hover:text-white transition-colors rounded-sm"
+              >
+                N
+              </motion.button>
+            </span>
+          )}
+        </div>
+      </motion.div>
+    </Link>
   );
 }
 
 export default function Home() {
-  const { data: featuredPoll, isLoading: featuredLoading } =
-    useGetFeaturedPoll();
-  const { data: trendingPolls, isLoading: trendingLoading } = useListPolls({
-    filter: "trending",
-    limit: 5,
+  usePageTitle({
+    description: "The voice of 541 million. Real debates, predictions, and voices from across MENA.",
   });
-  const { data: featuredProfiles, isLoading: profilesLoading } =
-    useListProfiles({ filter: "featured", limit: 8 });
-  const { data: categories } = useListCategories();
-  const { data: apiPredictions } = usePredictions();
-  const { data: apiPulseTopics } = usePulseTopics();
-  const { data: liveCounts } = useLiveCounts();
+  // Fetch homepage CMS config first (needed for content selection)
   const { data: homepageConfig } = useHomepageConfig<{
-    masthead?: { basePopulation?: number; growthRate?: number };
+    masthead?: { basePopulation?: number; growthRate?: number; countries?: string[] };
     populationBase?: number;
     populationBaseDate?: string;
     growthRate?: number;
@@ -1332,12 +1369,51 @@ export default function Home() {
       pulse?: string;
       voices?: string;
     };
+    sections?: Array<{ id: string; type: string; config: Record<string, unknown> }>;
   }>();
+
+  // Extract CMS-selected content IDs
+  const cmsSelectedDebateId = homepageConfig?.sections?.find(s => s.type === "lead_debate")?.config?.selectedDebateId as number | undefined;
+
+  // Lead debate: use CMS-selected debate if set, otherwise fall back to featured
+  const { data: defaultFeaturedPoll, isLoading: defaultFeaturedLoading } =
+    useGetFeaturedPoll();
+  const { data: cmsSelectedPoll, isLoading: cmsSelectedLoading } = useGetPoll(
+    cmsSelectedDebateId ?? 0,
+    { query: { enabled: !!cmsSelectedDebateId } as any },
+  );
+  const featuredPoll = cmsSelectedPoll ?? defaultFeaturedPoll;
+  const featuredLoading = cmsSelectedDebateId ? cmsSelectedLoading : defaultFeaturedLoading;
+
+  const { data: trendingPolls, isLoading: trendingLoading } = useListPolls({
+    filter: "trending",
+    limit: 5,
+  });
+  const { data: featuredProfiles, isLoading: profilesLoading } =
+    useListProfiles({ filter: "featured", limit: 8 });
+  const { data: categories } = useListCategories();
+  const { data: apiPredictions, isLoading: predictionsLoading } = usePredictions();
+  const { data: apiPulseTopics, isLoading: pulseLoading } = usePulseTopics();
+  const { data: liveCounts } = useLiveCounts();
+  const { data: siteSettings } = useSiteSettings();
+  const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false;
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true;
   const [ctaEmail, setCtaEmail] = useState("");
   const [ctaJoined, setCtaJoined] = useState(
     () => !!localStorage.getItem("tmh_cta_joined"),
   );
   const [pulseHovIdx, setPulseHovIdx] = useState<number | null>(null);
+  const [astTime, setAstTime] = useState(() => {
+    const now = new Date();
+    return now.toLocaleTimeString("en-US", { timeZone: "Asia/Riyadh", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
+  });
+  useEffect(() => {
+    const id = setInterval(() => {
+      const now = new Date();
+      setAstTime(now.toLocaleTimeString("en-US", { timeZone: "Asia/Riyadh", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true }));
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
   const menaPop = usePopulationCounter(
     homepageConfig?.masthead?.basePopulation,
     homepageConfig?.masthead?.growthRate,
@@ -1372,118 +1448,35 @@ export default function Home() {
         : (p.question ?? "Debate"),
     badge: "DEBATE" as const,
     stat: `${(p.totalVotes ?? 0).toLocaleString()} votes`,
+    href: `/debates/${p.id}`,
   }));
   const predictionItems = useMemo(() => {
-    if (apiPredictions?.items?.length) {
-      return apiPredictions.items.slice(0, 8).map((p) => ({
-        topic:
-          p.question.length > 40
-            ? p.question.substring(0, 38) + "…"
-            : p.question,
-        badge: "PREDICTION" as const,
-        stat: `${p.yesPercentage}% yes`,
-      }));
-    }
-    return [
-      {
-        topic: "NEOM's Line will have residents by 2030?",
-        badge: "PREDICTION" as const,
-        stat: "36% yes",
-      },
-      {
-        topic: "Saudi non-oil GDP to exceed 50%?",
-        badge: "PREDICTION" as const,
-        stat: "62% yes",
-      },
-      {
-        topic: "UAE income tax within 3 years?",
-        badge: "PREDICTION" as const,
-        stat: "38% yes",
-      },
-      {
-        topic: "$10B MENA startup in 2026?",
-        badge: "PREDICTION" as const,
-        stat: "44% yes",
-      },
-      {
-        topic: "Arabic mandatory in Dubai schools?",
-        badge: "PREDICTION" as const,
-        stat: "58% yes",
-      },
-      {
-        topic: "Riyadh Metro fully operational?",
-        badge: "PREDICTION" as const,
-        stat: "64% yes",
-      },
-      {
-        topic: "Saudi 2034 World Cup confirmed?",
-        badge: "PREDICTION" as const,
-        stat: "91% yes",
-      },
-      {
-        topic: "Oil above $85 all of 2026?",
-        badge: "PREDICTION" as const,
-        stat: "52% yes",
-      },
-    ];
+    if (!apiPredictions?.items?.length) return [];
+    return apiPredictions.items.slice(0, 8).map((p) => ({
+      topic:
+        p.question.length > 40
+          ? p.question.substring(0, 38) + "…"
+          : p.question,
+      badge: "PREDICTION" as const,
+      stat: `${p.yesPercentage}% yes`,
+      href: `/predictions/${p.id}`,
+    }));
   }, [apiPredictions]);
   const pulseItems = useMemo(() => {
-    if (apiPulseTopics?.items?.length) {
-      return apiPulseTopics.items.slice(0, 8).map((t) => ({
-        topic: t.title.length > 35 ? t.title.substring(0, 33) + "…" : t.title,
-        badge: "PULSE" as const,
-        stat: `${t.deltaUp ? "↑" : "↓"} ${t.delta}`,
-      }));
-    }
-    return [
-      {
-        topic: "Youth unemployment across MENA",
-        badge: "PULSE" as const,
-        stat: "↑ 23%",
-      },
-      {
-        topic: "Fintech adoption in GCC",
-        badge: "PULSE" as const,
-        stat: "↑ 340%",
-      },
-      {
-        topic: "Renewable energy investment",
-        badge: "PULSE" as const,
-        stat: "$15.2B",
-      },
-      {
-        topic: "Golden visa applications surge",
-        badge: "PULSE" as const,
-        stat: "↑ 67%",
-      },
-      {
-        topic: "Arabic content digital deficit",
-        badge: "PULSE" as const,
-        stat: "4% of web",
-      },
-      {
-        topic: "MENA cinema box office boom",
-        badge: "PULSE" as const,
-        stat: "↑ 54%",
-      },
-      {
-        topic: "Diabetes crisis in the Gulf",
-        badge: "PULSE" as const,
-        stat: "↑ 17%",
-      },
-      {
-        topic: "GCC military spending",
-        badge: "PULSE" as const,
-        stat: "$105B",
-      },
-    ];
+    if (!apiPulseTopics?.items?.length) return [];
+    return apiPulseTopics.items.slice(0, 8).map((t) => ({
+      topic: t.title.length > 35 ? t.title.substring(0, 33) + "…" : t.title,
+      badge: "PULSE" as const,
+      stat: `${t.deltaUp ? "↑" : "↓"} ${t.delta}`,
+      href: `/pulse?shared=${encodeURIComponent(t.topicId)}`,
+    }));
   }, [apiPulseTopics]);
   const maxLen = Math.max(
     debateItems.length,
     predictionItems.length,
     pulseItems.length,
   );
-  const interleaved: { topic: string; badge: string; stat: string }[] = [];
+  const interleaved: { topic: string; badge: string; stat: string; href: string }[] = [];
   for (let i = 0; i < maxLen; i++) {
     if (debateItems[i]) interleaved.push(debateItems[i]);
     if (predictionItems[i]) interleaved.push(predictionItems[i]);
@@ -1497,6 +1490,13 @@ export default function Home() {
     month: "long",
     day: "numeric",
   });
+
+  const issueNumber = (() => {
+    const now = new Date()
+    const start = new Date(2026, 0, 1)
+    const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()) + 1
+    return String(Math.max(1, months)).padStart(3, "0")
+  })()
 
   return (
     <Layout>
@@ -1528,11 +1528,11 @@ export default function Home() {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-2 text-[9px] uppercase tracking-[0.18em] text-muted-foreground border-b border-border font-serif">
-            <span>{t("EST. 2026 · ISSUE NO. 001")}</span>
+          <div className="flex items-center justify-between py-2 text-[9px] uppercase tracking-[0.18em] text-muted-foreground font-serif">
+            <span>{t(`EST. 2026 · ISSUE NO. ${issueNumber}`)}</span>
             <span className="hidden sm:block">{issueDate}</span>
-            <span className="text-primary font-bold">
-              {t("Opinion of Record")}
+            <span className="text-primary font-bold font-mono tabular-nums">
+              {astTime} AST
             </span>
           </div>
 
@@ -1546,61 +1546,64 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
           >
-            <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-6 lg:gap-10">
-              {/* Left: title + counter */}
+            <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-12">
+              {/* Left: hero copy */}
               <div className="flex flex-col items-center lg:items-start justify-center flex-1 text-center lg:text-left">
-                <motion.h1
-                  className="font-display font-black text-5xl md:text-6xl lg:text-7xl uppercase tracking-tight text-foreground leading-none"
-                  style={{ lineHeight: 0.95 }}
-                  initial={{ opacity: 0, scale: 0.96 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.1 }}
+                <motion.p
+                  className="text-[10px] font-serif font-bold tracking-[0.28em] uppercase text-primary mb-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
                 >
-                  The Tribunal<span className="text-primary">.</span>
+                  {t("The questions you can't ask out loud.")}
+                </motion.p>
+                <motion.h1
+                  className="font-display font-black uppercase tracking-tight text-foreground leading-none"
+                  style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", lineHeight: 0.92 }}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
+                >
+                  {t("The Middle East,")}{" "}
+                  <span className="italic font-display text-primary">{t("unfiltered.")}</span>
                 </motion.h1>
                 <motion.p
-                  className="text-[10px] font-serif tracking-[0.25em] uppercase text-muted-foreground mt-1"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.45 }}
-                >
-                  {t("by The Middle East Hustle")}
-                </motion.p>
-                <motion.p
-                  className="uppercase tracking-[0.22em] text-muted-foreground font-serif mt-3 flex flex-col items-center lg:items-start gap-1"
+                  className="text-base sm:text-[17px] text-foreground/80 font-sans mt-5 max-w-xl leading-relaxed"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.6 }}
+                  transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.4 }}
                 >
-                  <span className="text-[10px]">{t("The voice of")}</span>
-                  <LiveNumber
-                    value={menaPop}
-                    className="font-display font-black tracking-tight"
-                    style={{
-                      fontSize: "clamp(1.5rem, 3vw, 2.2rem)",
-                      color: "#DC143C",
-                      letterSpacing: "-0.02em",
-                    }}
-                  />
+                  {t("Anonymous votes, predictions, and trends on the topics nobody else will touch. Politics, religion, identity, money, power. From inside the region and watched by the world. 541 million people. One place where the truth is on record.")}
                 </motion.p>
-                <motion.p
-                  className="text-[9px] font-serif tracking-[0.18em] uppercase text-muted-foreground mt-4 hidden lg:block"
+                <motion.div
+                  className="mt-7 flex items-center gap-4 flex-wrap justify-center lg:justify-start"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.75 }}
+                  transition={{ duration: 0.5, delay: 0.7 }}
                 >
-                  {t("Voices connecting globally")}
-                </motion.p>
+                  <Link
+                    href="/debates"
+                    className="inline-flex items-center gap-2 bg-primary text-white font-bold uppercase tracking-widest text-xs px-7 py-3 hover:bg-primary/90 transition-colors font-serif"
+                  >
+                    {t("See Today's Debate")} <ArrowRight className="w-3 h-3" />
+                  </Link>
+                  <Link
+                    href="/about"
+                    className="inline-flex items-center gap-2 text-foreground/70 hover:text-foreground font-bold uppercase tracking-widest text-xs px-2 py-3 transition-colors font-serif underline underline-offset-4 decoration-primary/40"
+                  >
+                    {t("What is this?")}
+                  </Link>
+                </motion.div>
               </div>
 
-              {/* Right: Globe */}
+              {/* Right: HeroGallery */}
               <motion.div
-                className="flex-shrink-0 w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[360px]"
+                className="flex-shrink-0 w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[360px] mx-auto lg:mx-0"
                 initial={{ opacity: 0, scale: 0.94 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ duration: 0.9, ease: EASE_OUT_EXPO, delay: 0.2 }}
               >
-                <GlobeConnections />
+                <HeroGallery />
               </motion.div>
             </div>
           </motion.div>
@@ -1610,10 +1613,10 @@ export default function Home() {
       {/* ── SECTION HOOKS ── */}
       <section className="bg-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <StaggerGrid className="grid grid-cols-4 gap-0 divide-x divide-border">
+          <StaggerGrid className="grid grid-cols-2 md:grid-cols-4 gap-0">
             {[
               {
-                href: "/polls",
+                href: "/debates",
                 label: t("Debates"),
                 desc: "Vote on the questions shaping MENA",
                 count: String(
@@ -1636,7 +1639,7 @@ export default function Home() {
                 accent: "#3B82F6",
               },
               {
-                href: "/mena-pulse",
+                href: "/pulse",
                 label: t("The Pulse"),
                 desc: "Real trends backed by real data",
                 count: String(
@@ -1646,8 +1649,8 @@ export default function Home() {
                 ),
                 accent: "#10B981",
               },
-              {
-                href: "/profiles",
+              ...(voicesEnabled ? [{
+                href: "/voices",
                 label: t("Voices"),
                 desc: "The people shaping the region",
                 count: String(
@@ -1656,14 +1659,18 @@ export default function Home() {
                     "103",
                 ),
                 accent: "#A855F7",
-              },
-            ].map((item) => (
-              <motion.div key={item.href} variants={staggerItem}>
+              }] : []),
+            ].map((item, i) => (
+              <motion.div
+                key={item.href}
+                variants={staggerItem}
+                className={`${i % 2 !== 0 ? "border-l border-border" : ""} ${i >= 2 ? "border-t border-border md:border-t-0" : ""} ${i > 0 ? "md:border-l md:border-border" : ""}`}
+              >
                 <Link
                   href={item.href}
-                  className="group flex flex-col items-center justify-center gap-1 py-3 px-4 hover:bg-secondary/30 transition-colors"
+                  className="group flex flex-col items-center justify-center gap-1 py-3 px-2 md:px-4 hover:bg-secondary/30 transition-colors min-w-0"
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-1.5 md:gap-3 min-w-0">
                     <span
                       style={{
                         width: 3,
@@ -1673,6 +1680,7 @@ export default function Home() {
                       }}
                     />
                     <span
+                      className="truncate"
                       style={{
                         fontFamily: "'Barlow Condensed', sans-serif",
                         fontWeight: 800,
@@ -1691,11 +1699,13 @@ export default function Home() {
                         fontWeight: 900,
                         fontSize: "0.85rem",
                         color: item.accent,
+                        flexShrink: 0,
                       }}
                     />
-                    <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -ml-1" />
+                    <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -ml-1 shrink-0" />
                   </div>
                   <span
+                    className="truncate max-w-full"
                     style={{
                       fontFamily: "DM Sans, sans-serif",
                       fontSize: "0.6rem",
@@ -1713,7 +1723,11 @@ export default function Home() {
       </section>
 
       {/* ── MIXED TICKER ── */}
+      {(trendingLoading || predictionsLoading || pulseLoading) && interleaved.length === 0 ? (
+        <TickerSkeleton />
+      ) : interleaved.length > 0 ? (
       <div
+        className="min-h-[48px]"
         style={{
           background: "#0D0D0D",
           borderTop: "1px solid rgba(255,255,255,0.06)",
@@ -1723,14 +1737,17 @@ export default function Home() {
       >
         <div className="tmh-ticker-scroll">
           {tickerDoubled.map((item, i) => (
-            <div
+            <Link
               key={i}
+              href={item.href}
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "0.6rem",
                 padding: "0.7rem 2rem",
                 borderRight: "1px solid rgba(255,255,255,0.1)",
+                cursor: "pointer",
+                textDecoration: "none",
               }}
             >
               <span
@@ -1766,7 +1783,7 @@ export default function Home() {
                   fontSize: "0.7rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
-                  color: "rgba(250,250,250,0.5)",
+                  color: "rgba(250,250,250,0.75)",
                   whiteSpace: "nowrap",
                 }}
               >
@@ -1783,10 +1800,16 @@ export default function Home() {
               >
                 {item.stat}
               </span>
-            </div>
+            </Link>
           ))}
         </div>
       </div>
+      ) : null}
+
+      {/* ── ABOUT ── */}
+      <Suspense fallback={<div className="py-20" />}>
+        <AboutSection />
+      </Suspense>
 
       {/* ── FRONT PAGE: Lead Debate + Sidebar ── */}
       <section className="py-8 bg-background border-b border-border relative">
@@ -1796,7 +1819,7 @@ export default function Home() {
             {/* LEFT: Today's Lead Debate */}
             <div className="lg:pr-8 lg:border-r lg:border-border pb-8 lg:pb-0">
               <FadeIn delay={0.1}>
-              <div className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-5 flex items-center gap-2 font-serif">
+              <div className="text-sm uppercase tracking-[0.22em] font-bold text-primary mb-5 flex items-center gap-2 font-serif">
                 <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
                 {t("TODAY'S LEAD DEBATE")}
               </div>
@@ -1816,7 +1839,7 @@ export default function Home() {
                   {t("Latest Debates")}
                 </p>
                 <Link
-                  href="/polls"
+                  href="/debates"
                   className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
                 >
                   {t("View All")}
@@ -1834,13 +1857,13 @@ export default function Home() {
                 <StaggerGrid>
                   {trendingPolls?.polls?.slice(0, 4).map((poll) => (
                     <motion.div key={poll.id} variants={staggerItem}>
-                    <Link href={`/polls/${poll.id}`}>
+                    <Link href={`/debates/${poll.id}`}>
                       <motion.div
                         className="py-3 border-b border-border group cursor-pointer"
                         whileHover={{ x: 4 }}
                         transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
                       >
-                        <p className="text-[9px] uppercase tracking-widest text-primary font-serif font-bold">
+                        <p className="text-[11px] uppercase tracking-widest text-primary font-serif font-bold">
                           {poll.category}
                         </p>
                         <p className="font-serif font-black uppercase text-[13px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
@@ -1874,7 +1897,7 @@ export default function Home() {
             {/* LEFT: Today's Featured Prediction */}
             <div className="lg:pr-8 lg:border-r lg:border-border pb-8 lg:pb-0">
               <FadeIn delay={0.1}>
-              <div className="text-[10px] uppercase tracking-[0.25em] font-bold text-[#3B82F6] mb-5 flex items-center gap-2 font-serif">
+              <div className="text-base uppercase tracking-[0.2em] font-bold text-[#3B82F6] mb-5 flex items-center gap-2 font-serif">
                 <span className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
                 {t("FEATURED PREDICTION")}
               </div>
@@ -1996,13 +2019,14 @@ export default function Home() {
             {/* LEFT: Today's Featured Pulse */}
             <div className="lg:pr-8 lg:border-r lg:border-border pb-8 lg:pb-0">
               <FadeIn delay={0.1}>
-              <div className="text-[10px] uppercase tracking-[0.25em] font-bold text-[#10B981] mb-5 flex items-center gap-2 font-serif">
+              <div className="text-sm uppercase tracking-[0.22em] font-bold text-[#10B981] mb-5 flex items-center gap-2 font-serif">
                 <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
                 {t("TODAY'S PULSE")}
               </div>
               </FadeIn>
               {(() => {
                 const fallbackTopic = {
+                  id: "sovereign-wealth",
                   tag: "MONEY",
                   tagColor: "#F59E0B",
                   title: "Sovereign Wealth Power",
@@ -2019,6 +2043,7 @@ export default function Home() {
                 const apiTopic = apiPulseTopics?.items?.[0];
                 const topic = apiTopic
                   ? {
+                      id: apiTopic.topicId,
                       tag: apiTopic.tag,
                       tagColor: apiTopic.tagColor,
                       title: apiTopic.title,
@@ -2063,7 +2088,7 @@ export default function Home() {
                   "Nov",
                   "Dec",
                 ];
-                const pulseUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/mena-pulse`;
+                const pulseUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/pulse`;
                 return (
                   <div
                     className="bg-card border border-border rounded-[4px] flex flex-col lg:flex-row gap-0 overflow-hidden"
@@ -2258,7 +2283,7 @@ export default function Home() {
                     <div className="flex-1 p-5 border-t lg:border-t-0 lg:border-l border-border flex flex-col justify-center gap-3">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
-                          className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.2em] font-serif"
+                          className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] font-serif"
                           style={{
                             background: `${topic.tagColor}20`,
                             border: `1px solid ${topic.tagColor}40`,
@@ -2273,12 +2298,14 @@ export default function Home() {
                           color="#10B981"
                         />
                       </div>
-                      <p
-                        className="font-serif font-black uppercase text-[15px] leading-tight text-foreground tracking-tight"
-                        style={{ lineHeight: 1.15 }}
-                      >
-                        {topic.title}
-                      </p>
+                      <Link href={`/pulse?shared=${topic.id}`}>
+                        <p
+                          className="font-serif font-black uppercase text-[15px] leading-tight text-foreground tracking-tight cursor-pointer hover:text-primary transition-colors"
+                          style={{ lineHeight: 1.15 }}
+                        >
+                          {topic.title}
+                        </p>
+                      </Link>
                       <div className="flex items-baseline gap-2">
                         <span
                           className="font-display font-black text-2xl"
@@ -2303,7 +2330,7 @@ export default function Home() {
                           Source: {topic.source}
                         </p>
                         <Link
-                          href="/mena-pulse"
+                          href="/pulse"
                           className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-[#10B981] font-serif transition-colors flex items-center gap-1"
                         >
                           Explore <ArrowRight className="w-3 h-3" />
@@ -2323,7 +2350,7 @@ export default function Home() {
                   {t("Latest Trends")}
                 </p>
                 <Link
-                  href="/mena-pulse"
+                  href="/pulse"
                   className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
                 >
                   {t("View All")}
@@ -2334,6 +2361,7 @@ export default function Home() {
               <StaggerGrid>
                 {(apiPulseTopics?.items?.length
                   ? apiPulseTopics.items.slice(0, 3).map((t) => ({
+                      id: t.topicId,
                       tag: t.tag,
                       tagColor: t.tagColor,
                       title: t.title,
@@ -2344,6 +2372,7 @@ export default function Home() {
                     }))
                   : [
                       {
+                        id: "authoritarianism-index",
                         tag: "POWER",
                         tagColor: "#EF4444",
                         title: "Press Freedom Collapse",
@@ -2355,6 +2384,7 @@ export default function Home() {
                         ],
                       },
                       {
+                        id: "crypto-volume",
                         tag: "MONEY",
                         tagColor: "#F59E0B",
                         title: "Crypto Trading Volume",
@@ -2367,6 +2397,7 @@ export default function Home() {
                         ],
                       },
                       {
+                        id: "women-workforce",
                         tag: "SOCIETY",
                         tagColor: "#EC4899",
                         title: "Women in the Workforce",
@@ -2382,14 +2413,15 @@ export default function Home() {
                   const max = Math.max(...t2.sparkData);
                   const min = Math.min(...t2.sparkData);
                   const rng = max - min || 1;
-                  const pUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/mena-pulse`;
+                  const pUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/pulse`;
                   return (
                     <motion.div
-                      key={idx}
+                      key={t2.id}
                       variants={staggerItem}
                     >
+                    <Link href={`/pulse?shared=${t2.id}`}>
                     <motion.div
-                      className="py-3 border-b border-border group"
+                      className="py-3 border-b border-border group cursor-pointer"
                       whileHover={{ x: 4 }}
                       transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
                     >
@@ -2401,7 +2433,7 @@ export default function Home() {
                           >
                             {t2.tag}
                           </p>
-                          <p className="font-serif font-black uppercase text-[12px] leading-tight text-foreground mt-1">
+                          <p className="font-serif font-black uppercase text-[12px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
                             {t2.title}
                           </p>
                         </div>
@@ -2450,6 +2482,7 @@ export default function Home() {
                         </span>
                       </div>
                     </motion.div>
+                    </Link>
                     </motion.div>
                   );
                 })}
@@ -2461,6 +2494,7 @@ export default function Home() {
       </section>
 
       {/* ── THE VOICES ── */}
+      {voicesEnabled && (
       <section className="bg-foreground text-background py-20 border-b border-border">
         <FadeUp>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -2472,7 +2506,7 @@ export default function Home() {
               <SlideReveal color="#DC143C" height={4} className="mt-3" delay={0.3} />
             </div>
             <Link
-              href="/profiles"
+              href="/voices"
               className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-widest text-background/70 hover:text-background font-serif"
             >
               {t("View All →")}
@@ -2514,26 +2548,29 @@ export default function Home() {
           <div className="mt-8 flex items-center gap-4 flex-wrap">
             <motion.div whileTap={{ scale: 0.97 }} className="inline-flex">
             <Link
-              href="/profiles"
+              href="/voices"
               className="inline-flex items-center gap-2 bg-primary text-white font-bold uppercase tracking-widest text-xs px-8 py-3 hover:bg-primary/90 transition-colors font-serif"
             >
               {t("View All Voices")} <ArrowRight className="w-3 h-3" />
             </Link>
             </motion.div>
-            <motion.div whileTap={{ scale: 0.97 }} className="inline-flex">
-            <Link
-              href="/majlis/login"
-              className="inline-flex items-center gap-2 border border-background/30 text-background font-bold uppercase tracking-widest text-xs px-8 py-3 hover:bg-background/10 transition-colors font-serif"
-            >
-              <Lock className="w-3 h-3" />
-              {t("Enter The Majlis")}
-            </Link>
-            </motion.div>
+            {majlisEnabled && (
+              <motion.div whileTap={{ scale: 0.97 }} className="inline-flex">
+              <Link
+                href="/majlis/login"
+                className="inline-flex items-center gap-2 border border-background/30 text-background font-bold uppercase tracking-widest text-xs px-8 py-3 hover:bg-background/10 transition-colors font-serif"
+              >
+                <Lock className="w-3 h-3" />
+                {t("Enter The Majlis")}
+              </Link>
+              </motion.div>
+            )}
           </div>
           </FadeUp>
         </div>
         </FadeUp>
       </section>
+      )}
 
       {/* ── EXPLORE TOPICS ── */}
       {categories?.categories && categories.categories.length > 0 && (
@@ -2545,23 +2582,22 @@ export default function Home() {
                 {t("Explore Topics")}
               </h2>
             </div>
-            <StaggerGrid className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {categories.categories.map((cat) => (
-                <motion.div key={cat.slug} variants={staggerItem}>
                 <Link
-                  href={`/polls?category=${cat.slug}`}
+                  key={cat.slug}
+                  href={`/debates?category=${cat.slug}`}
                   className="bg-secondary p-5 flex flex-col justify-between transition-all hover:bg-foreground hover:text-background group border border-border hover:-translate-y-0.5 hover:shadow-md duration-300"
                 >
                   <span className="font-serif font-bold uppercase tracking-wider text-base mb-3 leading-tight">
                     {cat.name}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-background/50">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-background/75">
                     {cat.pollCount} Debates
                   </span>
                 </Link>
-                </motion.div>
               ))}
-            </StaggerGrid>
+            </div>
           </div>
           </FadeUp>
         </section>

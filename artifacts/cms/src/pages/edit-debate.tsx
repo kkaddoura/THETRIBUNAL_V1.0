@@ -5,7 +5,18 @@ import { api } from "@/lib/api";
 import TagInput from "@/components/tag-input";
 import ComboSelect from "@/components/combo-select";
 import PreviewPanel from "@/components/preview-panel";
-import { Save, Send, Check, Archive, RotateCcw, Eye } from "lucide-react";
+import { Save, Send, Check, Archive, RotateCcw, Eye, Flag, XCircle, FileEdit } from "lucide-react";
+import { toast } from "sonner";
+
+const ALLOWED_TRANSITIONS: Record<string, string[]> = {
+  draft: ["in_review", "approved", "rejected"],
+  in_review: ["approved", "rejected", "draft"],
+  approved: ["flagged", "archived", "draft"],
+  rejected: ["revision", "draft"],
+  revision: ["in_review", "approved", "draft"],
+  flagged: ["approved", "archived"],
+  archived: ["approved", "draft"],
+};
 
 interface VoiceOption {
   id: number;
@@ -56,6 +67,13 @@ export default function EditDebatePage() {
   const update = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }));
 
   const save = async (status?: string) => {
+    const errors: string[] = [];
+    if (!form.question?.trim()) errors.push("Question is required");
+    if (!form.category?.trim()) errors.push("Category is required");
+    if (errors.length > 0) {
+      errors.forEach(e => toast.error(e));
+      return;
+    }
     setSaving(true);
     try {
       const data = { ...form, editorialStatus: status || form.editorialStatus, endsAt: form.endsAt || null };
@@ -65,7 +83,7 @@ export default function EditDebatePage() {
         await api.updateDebate(Number(params.id), data);
       }
       navigate("/debates");
-    } catch (e: unknown) { alert(e instanceof Error ? e.message : "Save failed"); }
+    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Save failed"); }
     finally { setSaving(false); }
   };
 
@@ -107,8 +125,9 @@ export default function EditDebatePage() {
           <Field label="Poll Type">
             <select value={form.pollType} onChange={e => update("pollType", e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary">
               <option value="binary">Binary (Yes/No)</option>
-              <option value="multiple">Multiple Choice</option>
-              <option value="scale">Scale</option>
+              <option value="multiple_choice">Multiple Choice</option>
+              <option value="scale">Scale (Rating)</option>
+              <option value="hot_take">Hot Take (Agree/Disagree)</option>
             </select>
           </Field>
           <Field label="Card Layout">
@@ -189,20 +208,43 @@ export default function EditDebatePage() {
 
       <div className="flex flex-wrap gap-2 pt-4 border-t border-border">
         <button onClick={() => save()} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80 disabled:opacity-50">
-          <Save className="w-3.5 h-3.5" /> Save Draft
+          <Save className="w-3.5 h-3.5" /> Save
         </button>
-        <button onClick={() => save("in_review")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50">
-          <Send className="w-3.5 h-3.5" /> Submit for Review
-        </button>
-        <button onClick={() => save("approved")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 disabled:opacity-50">
-          <Check className="w-3.5 h-3.5" /> Approve
-        </button>
-        <button onClick={() => save("revision")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white rounded-md text-sm hover:bg-orange-700 disabled:opacity-50">
-          <RotateCcw className="w-3.5 h-3.5" /> Revision
-        </button>
-        <button onClick={() => save("archived")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-gray-600 text-white rounded-md text-sm hover:bg-gray-700 disabled:opacity-50">
-          <Archive className="w-3.5 h-3.5" /> Archive
-        </button>
+        {ALLOWED_TRANSITIONS[form.editorialStatus]?.includes("draft") && (
+          <button onClick={() => save("draft")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80 disabled:opacity-50">
+            <FileEdit className="w-3.5 h-3.5" /> Move to Draft
+          </button>
+        )}
+        {ALLOWED_TRANSITIONS[form.editorialStatus]?.includes("in_review") && (
+          <button onClick={() => save("in_review")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 disabled:opacity-50">
+            <Send className="w-3.5 h-3.5" /> Submit for Review
+          </button>
+        )}
+        {ALLOWED_TRANSITIONS[form.editorialStatus]?.includes("approved") && (
+          <button onClick={() => save("approved")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 disabled:opacity-50">
+            <Check className="w-3.5 h-3.5" /> Approve
+          </button>
+        )}
+        {ALLOWED_TRANSITIONS[form.editorialStatus]?.includes("rejected") && (
+          <button onClick={() => save("rejected")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white rounded-md text-sm hover:bg-red-700 disabled:opacity-50">
+            <XCircle className="w-3.5 h-3.5" /> Reject
+          </button>
+        )}
+        {ALLOWED_TRANSITIONS[form.editorialStatus]?.includes("revision") && (
+          <button onClick={() => save("revision")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-orange-600 text-white rounded-md text-sm hover:bg-orange-700 disabled:opacity-50">
+            <RotateCcw className="w-3.5 h-3.5" /> Revision
+          </button>
+        )}
+        {ALLOWED_TRANSITIONS[form.editorialStatus]?.includes("flagged") && (
+          <button onClick={() => save("flagged")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-yellow-600 text-white rounded-md text-sm hover:bg-yellow-700 disabled:opacity-50">
+            <Flag className="w-3.5 h-3.5" /> Flag
+          </button>
+        )}
+        {ALLOWED_TRANSITIONS[form.editorialStatus]?.includes("archived") && (
+          <button onClick={() => save("archived")} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-gray-600 text-white rounded-md text-sm hover:bg-gray-700 disabled:opacity-50">
+            <Archive className="w-3.5 h-3.5" /> Archive
+          </button>
+        )}
         <button onClick={() => navigate("/debates")} className="px-4 py-2 text-sm text-muted-foreground hover:text-foreground">Cancel</button>
       </div>
 

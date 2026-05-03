@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
-import { Save, Plus, Trash2 } from "lucide-react";
+import { Save, Plus, Trash2, ChevronUp, ChevronDown } from "lucide-react";
 
 interface NavLink {
   label: string;
@@ -17,6 +17,15 @@ interface SocialLink {
   platform: string;
   url: string;
   icon: string;
+}
+
+interface FeatureToggles {
+  majlis: { enabled: boolean };
+  voices: { enabled: boolean };
+  shareGate: { enabled: boolean };
+  emailCapture: { enabled: boolean };
+  ipConsent: { enabled: boolean };
+  chatbot: { enabled: boolean };
 }
 
 interface SiteSettings {
@@ -51,6 +60,7 @@ interface SiteSettings {
     skipText: string;
     emailPlaceholder: string;
   };
+  featureToggles: FeatureToggles;
 }
 
 export default function PageSiteSettings() {
@@ -58,10 +68,26 @@ export default function PageSiteSettings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<"navigation" | "footer" | "seo" | "cookie" | "sharegate">("navigation");
+  const [activeTab, setActiveTab] = useState<"toggles" | "navigation" | "footer" | "seo" | "cookie" | "sharegate">("toggles");
 
   useEffect(() => {
-    api.getSiteSettings().then(setConfig).catch(console.error).finally(() => setLoading(false));
+    api.getSiteSettings().then((data: any) => {
+      setConfig({
+        navigation: { links: [], ctaButton: { label: "", href: "", enabled: false }, ...data?.navigation },
+        footer: { links: [], socialLinks: [], copyright: "", tagline: "", ...data?.footer },
+        seo: { siteTitle: "", siteDescription: "", ogImage: "", ...data?.seo },
+        cookieConsent: { enabled: false, message: "", acceptLabel: "", dismissLabel: "", linkText: "", linkHref: "", ...data?.cookieConsent },
+        shareGate: { enabled: false, heading: "", body: "", shareButtonText: "", skipText: "", emailPlaceholder: "", ...data?.shareGate },
+        featureToggles: {
+          majlis: { enabled: data?.featureToggles?.majlis?.enabled ?? false },
+          voices: { enabled: data?.featureToggles?.voices?.enabled ?? true },
+          shareGate: { enabled: data?.featureToggles?.shareGate?.enabled ?? true },
+          emailCapture: { enabled: data?.featureToggles?.emailCapture?.enabled ?? true },
+          ipConsent: { enabled: data?.featureToggles?.ipConsent?.enabled ?? false },
+          chatbot: { enabled: data?.featureToggles?.chatbot?.enabled ?? true },
+        },
+      });
+    }).catch(console.error).finally(() => setLoading(false));
   }, []);
 
   const save = async () => {
@@ -88,12 +114,100 @@ export default function PageSiteSettings() {
       </div>
 
       <div className="flex gap-1 border-b border-border">
-        {(["navigation", "footer", "seo", "cookie", "sharegate"] as const).map(tab => (
+        {(["toggles", "navigation", "footer", "seo", "cookie", "sharegate"] as const).map(tab => (
           <button key={tab} onClick={() => setActiveTab(tab)} className={`px-4 py-2 text-sm font-medium capitalize transition-colors ${activeTab === tab ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"}`}>
-            {tab === "sharegate" ? "Share Gate" : tab === "cookie" ? "Cookie Consent" : tab}
+            {tab === "toggles" ? "Feature Toggles" : tab === "sharegate" ? "Share Gate" : tab === "cookie" ? "Cookie Consent" : tab}
           </button>
         ))}
       </div>
+
+      {activeTab === "toggles" && (
+        <div className="space-y-4">
+          <section className="border border-border rounded-sm p-4 space-y-4">
+            <h2 className="font-serif text-lg font-bold uppercase tracking-wide">Feature Toggles</h2>
+            <p className="text-xs text-muted-foreground">Toggle major features on/off across the website. Changes apply immediately to all visitors.</p>
+
+            <div className="space-y-3">
+              <label className="flex items-start gap-3 p-3 border border-border rounded-sm hover:border-primary/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.featureToggles.majlis.enabled}
+                  onChange={e => setConfig({ ...config, featureToggles: { ...config.featureToggles, majlis: { enabled: e.target.checked } } })}
+                  className="mt-1 accent-primary"
+                />
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Majlis</p>
+                  <p className="text-xs text-muted-foreground">Private community chat. When off: hidden from nav, footer, homepage, share buttons, and /majlis routes redirect to home.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 border border-border rounded-sm hover:border-primary/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.featureToggles.voices.enabled}
+                  onChange={e => setConfig({ ...config, featureToggles: { ...config.featureToggles, voices: { enabled: e.target.checked } } })}
+                  className="mt-1 accent-primary"
+                />
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Voices</p>
+                  <p className="text-xs text-muted-foreground">Public profiles of founders, operators, and change-makers. When off: hidden from nav, footer, homepage section + stat grid, and /voices routes redirect to home.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 border border-border rounded-sm hover:border-primary/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.featureToggles.shareGate.enabled}
+                  onChange={e => setConfig({ ...config, featureToggles: { ...config.featureToggles, shareGate: { enabled: e.target.checked } }, shareGate: { ...config.shareGate, enabled: e.target.checked } })}
+                  className="mt-1 accent-primary"
+                />
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Share Gate</p>
+                  <p className="text-xs text-muted-foreground">After voting, gate full results behind sharing or email unlock. When off: results visible immediately after voting.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 border border-border rounded-sm hover:border-primary/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.featureToggles.emailCapture.enabled}
+                  onChange={e => setConfig({ ...config, featureToggles: { ...config.featureToggles, emailCapture: { enabled: e.target.checked } } })}
+                  className="mt-1 accent-primary"
+                />
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Email Capture</p>
+                  <p className="text-xs text-muted-foreground">Show email input option in the share gate to unlock results. When off: only social share options shown.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 border border-border rounded-sm hover:border-primary/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.featureToggles.ipConsent.enabled}
+                  onChange={e => setConfig({ ...config, featureToggles: { ...config.featureToggles, ipConsent: { enabled: e.target.checked } } })}
+                  className="mt-1 accent-primary"
+                />
+                <div className="flex-1">
+                  <p className="font-bold text-sm">IP Consent Banner</p>
+                  <p className="text-xs text-muted-foreground">Show banner asking for consent to detect country from IP. Used for country-based vote breakdowns.</p>
+                </div>
+              </label>
+              <label className="flex items-start gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.featureToggles.chatbot.enabled}
+                  onChange={e => setConfig({ ...config, featureToggles: { ...config.featureToggles, chatbot: { enabled: e.target.checked } } })}
+                  className="mt-1 accent-primary"
+                />
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Noor Chatbot</p>
+                  <p className="text-xs text-muted-foreground">AI-powered chat assistant. When off: the floating chat bubble and Noor are completely hidden from all pages.</p>
+                </div>
+              </label>
+            </div>
+          </section>
+        </div>
+      )}
 
       {activeTab === "navigation" && (
         <div className="space-y-4">
@@ -106,6 +220,24 @@ export default function PageSiteSettings() {
             </div>
             {config.navigation.links.map((link, i) => (
               <div key={i} className="flex items-center gap-2 border border-border/50 rounded-sm p-2 bg-card">
+                <div className="flex flex-col gap-0.5">
+                  <button
+                    disabled={i === 0}
+                    onClick={() => { const links = [...config.navigation.links]; [links[i - 1], links[i]] = [links[i], links[i - 1]]; setConfig({ ...config, navigation: { ...config.navigation, links } }); }}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed"
+                    title="Move up"
+                  >
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    disabled={i === config.navigation.links.length - 1}
+                    onClick={() => { const links = [...config.navigation.links]; [links[i], links[i + 1]] = [links[i + 1], links[i]]; setConfig({ ...config, navigation: { ...config.navigation, links } }); }}
+                    className="text-muted-foreground hover:text-foreground disabled:opacity-25 disabled:cursor-not-allowed"
+                    title="Move down"
+                  >
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                </div>
                 <input value={link.label} onChange={e => { const links = [...config.navigation.links]; links[i] = { ...link, label: e.target.value }; setConfig({ ...config, navigation: { ...config.navigation, links } }); }} placeholder="Label" className="flex-1 px-2 py-1.5 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
                 <input value={link.href} onChange={e => { const links = [...config.navigation.links]; links[i] = { ...link, href: e.target.value }; setConfig({ ...config, navigation: { ...config.navigation, links } }); }} placeholder="/path" className="w-32 px-2 py-1.5 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
                 <label className="flex items-center gap-1 text-xs">

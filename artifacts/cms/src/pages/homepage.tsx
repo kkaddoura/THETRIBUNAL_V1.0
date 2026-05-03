@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { api } from "@/lib/api";
 import { Save, Plus, Trash2, GripVertical, Eye, EyeOff, ChevronDown, ChevronUp, X, Monitor } from "lucide-react";
+import { toast } from "sonner";
+import { ContentPicker } from "@/components/ContentPicker";
 
 interface Banner {
   id: string;
@@ -51,7 +53,7 @@ const SECTION_TYPE_LABELS: Record<string, string> = {
 export default function HomepagePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<"sections" | "banners" | "masthead" | "newsletter" | "stats">("sections");
+  const [activeTab, setActiveTab] = useState<"sections" | "banners" | "newsletter" | "stats">("sections");
   const [data, setData] = useState<HomepageData | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [expandedBanner, setExpandedBanner] = useState<string | null>(null);
@@ -68,7 +70,7 @@ export default function HomepagePage() {
     setSaving(true);
     try {
       await api.updateHomepage(data as unknown as Record<string, unknown>);
-    } catch (e: unknown) { alert(e instanceof Error ? e.message : "Save failed"); }
+    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Save failed"); }
     finally { setSaving(false); }
   };
 
@@ -77,7 +79,7 @@ export default function HomepagePage() {
       const res = await api.addBanner({ title: "New Banner", subtitle: "", ctaText: "Learn More", ctaLink: "/", bgColor: "#DC143C", textColor: "#FFFFFF", enabled: false, position: "top" });
       if (data) setData({ ...data, banners: [...data.banners, res.banner] });
       setExpandedBanner(res.banner.id);
-    } catch (e: unknown) { alert(e instanceof Error ? e.message : "Failed"); }
+    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Failed"); }
   };
 
   const removeBanner = async (id: string) => {
@@ -85,7 +87,7 @@ export default function HomepagePage() {
       await api.deleteBanner(id);
       if (data) setData({ ...data, banners: data.banners.filter(b => b.id !== id) });
       if (previewBannerId === id) setPreviewBannerId(null);
-    } catch (e: unknown) { alert(e instanceof Error ? e.message : "Failed"); }
+    } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Failed"); }
   };
 
   const updateBanner = (id: string, field: string, value: unknown) => {
@@ -231,7 +233,7 @@ export default function HomepagePage() {
       )}
 
       <div className="flex gap-1 border-b border-border">
-        {(["sections", "banners", "masthead", "newsletter", "stats"] as const).map(tab => (
+        {(["sections", "banners", "newsletter", "stats"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -244,7 +246,7 @@ export default function HomepagePage() {
 
       {activeTab === "sections" && (
         <div className="space-y-2">
-          <p className="text-sm text-muted-foreground">Drag to reorder sections. Toggle visibility to show/hide them on the homepage.</p>
+          <p className="text-sm text-muted-foreground">Use arrows to reorder sections. Toggle visibility to show/hide them on the homepage.</p>
           {[...data.sections].sort((a, b) => a.order - b.order).map(section => (
             <div key={section.id} className="border border-border rounded-md bg-card">
               <div className="flex items-center gap-3 px-4 py-3">
@@ -295,7 +297,14 @@ export default function HomepagePage() {
                     </label>
                   )}
                   {section.type === "lead_debate" && (
-                    <div className="space-y-2">
+                    <div className="space-y-3">
+                      <ContentPicker
+                        type="debates"
+                        mode="single"
+                        label="lead debate"
+                        selectedIds={section.config.selectedDebateId ? [section.config.selectedDebateId as number] : []}
+                        onChange={(ids) => updateSectionConfig(section.id, "selectedDebateId", ids[0] ?? null)}
+                      />
                       <label className="flex items-center gap-2 text-sm">
                         <input type="checkbox" checked={(section.config.showSidebar as boolean) ?? true} onChange={e => updateSectionConfig(section.id, "showSidebar", e.target.checked)} className="accent-primary" />
                         Show sidebar with latest debates
@@ -305,6 +314,33 @@ export default function HomepagePage() {
                         Show opinion bubbles (desktop)
                       </label>
                     </div>
+                  )}
+                  {section.type === "debate_grid" && (
+                    <ContentPicker
+                      type="debates"
+                      mode="multi"
+                      label="debate"
+                      selectedIds={(section.config.selectedDebateIds as number[]) ?? []}
+                      onChange={(ids) => updateSectionConfig(section.id, "selectedDebateIds", ids)}
+                    />
+                  )}
+                  {section.type === "predictions" && (
+                    <ContentPicker
+                      type="predictions"
+                      mode="multi"
+                      label="prediction"
+                      selectedIds={(section.config.selectedPredictionIds as number[]) ?? []}
+                      onChange={(ids) => updateSectionConfig(section.id, "selectedPredictionIds", ids)}
+                    />
+                  )}
+                  {section.type === "voices" && (
+                    <ContentPicker
+                      type="voices"
+                      mode="multi"
+                      label="voice"
+                      selectedIds={(section.config.selectedVoiceIds as number[]) ?? []}
+                      onChange={(ids) => updateSectionConfig(section.id, "selectedVoiceIds", ids)}
+                    />
                   )}
                 </div>
               )}
@@ -397,79 +433,6 @@ export default function HomepagePage() {
         </div>
       )}
 
-      {activeTab === "masthead" && (
-        <div className="space-y-4">
-          <p className="text-sm text-muted-foreground">Configure the masthead (hero area) at the top of the homepage.</p>
-          <Field label="Main Title">
-            <input type="text" value={data.masthead.title} onChange={e => setData({ ...data, masthead: { ...data.masthead, title: e.target.value } })} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-          </Field>
-          <Field label="Subtitle">
-            <input type="text" value={data.masthead.subtitle} onChange={e => setData({ ...data, masthead: { ...data.masthead, subtitle: e.target.value } })} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-          </Field>
-          <Field label="Issue Label">
-            <input type="text" value={data.masthead.issueLabel} onChange={e => setData({ ...data, masthead: { ...data.masthead, issueLabel: e.target.value } })} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-          </Field>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={data.masthead.showPopulationCounter} onChange={e => setData({ ...data, masthead: { ...data.masthead, showPopulationCounter: e.target.checked } })} className="accent-primary" />
-            Show live MENA population counter
-          </label>
-
-          {data.masthead.showPopulationCounter && (
-            <div className="pl-6 space-y-3 border-l-2 border-primary/20">
-              <div className="grid grid-cols-2 gap-3">
-                <Field label="Base Population">
-                  <input type="number" value={data.masthead.basePopulation || 541000000} onChange={e => setData({ ...data, masthead: { ...data.masthead, basePopulation: Number(e.target.value) } })} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-                </Field>
-                <Field label="Annual Growth Rate (%)">
-                  <input type="number" step="0.01" value={data.masthead.growthRate || 1.56} onChange={e => setData({ ...data, masthead: { ...data.masthead, growthRate: Number(e.target.value) } })} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
-                </Field>
-              </div>
-              <div className="space-y-2 mt-3">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Country Breakdown ({(data.masthead.countryBreakdown || []).length})</h4>
-                  <button
-                    onClick={() => setData({ ...data, masthead: { ...data.masthead, countryBreakdown: [...(data.masthead.countryBreakdown || []), { name: "", flag: "", population: "" }] } })}
-                    className="flex items-center gap-1 px-2 py-1 text-xs bg-secondary rounded-sm hover:bg-secondary/80"
-                  >
-                    + Add Country
-                  </button>
-                </div>
-                {(data.masthead.countryBreakdown || []).map((c: { name: string; flag: string; population: string }, idx: number) => (
-                  <div key={idx} className="flex items-center gap-2 border border-border/50 rounded-sm p-2 bg-card">
-                    <input value={c.flag} onChange={e => { const bd = [...(data.masthead.countryBreakdown || [])]; bd[idx] = { ...c, flag: e.target.value }; setData({ ...data, masthead: { ...data.masthead, countryBreakdown: bd } }); }} placeholder="🇦🇪" className="w-12 px-2 py-1.5 bg-background border border-border rounded-sm text-sm text-center" />
-                    <input value={c.name} onChange={e => { const bd = [...(data.masthead.countryBreakdown || [])]; bd[idx] = { ...c, name: e.target.value }; setData({ ...data, masthead: { ...data.masthead, countryBreakdown: bd } }); }} placeholder="Country name" className="flex-1 px-2 py-1.5 bg-background border border-border rounded-sm text-sm" />
-                    <input value={c.population} onChange={e => { const bd = [...(data.masthead.countryBreakdown || [])]; bd[idx] = { ...c, population: e.target.value }; setData({ ...data, masthead: { ...data.masthead, countryBreakdown: bd } }); }} placeholder="Population" className="w-28 px-2 py-1.5 bg-background border border-border rounded-sm text-sm" />
-                    <button onClick={() => { const bd = (data.masthead.countryBreakdown || []).filter((_: unknown, j: number) => j !== idx); setData({ ...data, masthead: { ...data.masthead, countryBreakdown: bd } }); }} className="text-muted-foreground hover:text-red-500 text-xs">✕</button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="border-t border-border pt-4 mt-4">
-            <h3 className="text-sm font-medium mb-3">News Ticker</h3>
-            <label className="flex items-center gap-2 text-sm mb-3">
-              <input type="checkbox" checked={data.ticker.enabled} onChange={e => setData({ ...data, ticker: { ...data.ticker, enabled: e.target.checked } })} className="accent-primary" />
-              Enable scrolling news ticker
-            </label>
-            <Field label="Speed">
-              <select value={data.ticker.speed} onChange={e => setData({ ...data, ticker: { ...data.ticker, speed: e.target.value } })} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary">
-                <option value="slow">Slow</option>
-                <option value="normal">Normal</option>
-                <option value="fast">Fast</option>
-              </select>
-            </Field>
-          </div>
-
-          <div className="rounded-md overflow-hidden border border-border mt-4" style={{ background: "radial-gradient(ellipse at 50% -20%, rgba(220,20,60,0.07) 0%, transparent 65%)" }}>
-            <div className="text-center py-6 px-4">
-              <p className="text-[9px] uppercase tracking-[0.18em] text-muted-foreground font-serif">{data.masthead.issueLabel}</p>
-              <h2 className="font-display font-black text-3xl uppercase tracking-tight mt-2">{data.masthead.title}</h2>
-              <p className="text-[10px] font-serif tracking-[0.25em] uppercase text-muted-foreground mt-1">{data.masthead.subtitle}</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {activeTab === "stats" && (
         <div className="space-y-4">

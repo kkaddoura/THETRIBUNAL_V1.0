@@ -21,7 +21,13 @@ async function request(path: string, options: RequestInit = {}) {
     headers["Content-Type"] = "application/json";
   }
 
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
+  // Bust CDN cache on GET requests by appending a timestamp
+  const separator = path.includes("?") ? "&" : "?";
+  const url = (!options.method || options.method === "GET")
+    ? `${API_BASE}${path}${separator}_t=${Date.now()}`
+    : `${API_BASE}${path}`;
+
+  const res = await fetch(url, { ...options, headers });
 
   if (res.status === 401) {
     setToken(null);
@@ -45,6 +51,9 @@ export const api = {
 
   getStats: () => request("/stats"),
   getTaxonomy: () => request("/taxonomy"),
+
+  getBoostCategories: () => request("/boost/categories"),
+  boostVotes: (data: { scope: "all" | "category"; category?: string }) => request("/boost", { method: "POST", body: JSON.stringify(data) }),
 
   getDebates: (status?: string) => request(`/debates${status ? `?status=${status}` : ""}`),
   getDebate: (id: number) => request(`/debates/${id}`),
@@ -119,6 +128,8 @@ export const api = {
   getApplication: (id: number) => request(`/applications/${id}`),
   updateApplication: (id: number, data: Record<string, unknown>) =>
     request(`/applications/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  inviteToMajlis: (id: number) =>
+    request(`/applications/${id}/invite-majlis`, { method: "POST" }),
 
   getAnalytics: () => request("/analytics"),
 
@@ -177,6 +188,18 @@ export const api = {
     request(`/ideation/ideas/${ideaId}/update-refined`, { method: "POST", body: JSON.stringify({ refinedContent }) }),
   publishDraft: (ideaId: number) =>
     request(`/ideation/ideas/${ideaId}/publish-draft`, { method: "POST" }),
+
+  // Majlis
+  getMajlisStats: () => request("/majlis/stats"),
+  getMajlisUsers: () => request("/majlis/users"),
+  getMajlisMessages: (limit = 100) => request(`/majlis/messages?limit=${limit}`),
+  getMajlisInvites: () => request("/majlis/invites"),
+  updateMajlisUser: (id: number, data: Record<string, unknown>) =>
+    request(`/majlis/users/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+  deleteMajlisMessage: (id: number) =>
+    request(`/majlis/messages/${id}`, { method: "DELETE" }),
+  createMajlisInvite: (data: { profileId: number; email: string }) =>
+    request("/majlis/invites", { method: "POST", body: JSON.stringify(data) }),
 
   getRejectionLog: () => request("/ideation/rejection-log"),
   deleteRejectionLogEntry: (id: number) => request(`/ideation/rejection-log/${id}`, { method: "DELETE" }),

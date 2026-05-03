@@ -3,6 +3,7 @@ import { useListPolls, useListCategories } from "@workspace/api-client-react"
 import { Layout } from "@/components/layout/Layout"
 import { PollCard } from "@/components/poll/PollCard"
 import { cn } from "@/lib/utils"
+import { usePageTitle } from "@/hooks/use-page-title"
 
 const SORT_OPTIONS = [
   { value: "recent", label: "Most Recent" },
@@ -11,6 +12,10 @@ const SORT_OPTIONS = [
 ]
 
 export default function PollArchive() {
+  usePageTitle({
+    title: "Debate Archive",
+    description: "Browse past debates and see how MENA voted on the questions that shaped the conversation.",
+  });
   const [category, setCategory] = useState("")
   const [sort, setSort] = useState("recent")
   const [page, setPage] = useState(0)

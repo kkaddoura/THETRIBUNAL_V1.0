@@ -24,6 +24,8 @@ export interface ApiPrediction {
   editorialStatus: string
   isFeatured: boolean
   tags: string[]
+  options?: string[]
+  optionResults?: Record<string, number>
   createdAt: string
   updatedAt: string
 }
@@ -68,14 +70,6 @@ export interface SiteSettings {
     links?: Array<{ label: string; href: string }>
     socialLinks?: Array<{ platform: string; icon: string; url: string }>
   }
-  cookieConsent?: {
-    enabled?: boolean
-    message?: string
-    linkText?: string
-    linkHref?: string
-    acceptLabel?: string
-    dismissLabel?: string
-  }
   shareGate?: {
     enabled?: boolean
     heading?: string
@@ -89,6 +83,14 @@ export interface SiteSettings {
     siteDescription?: string
     ogImage?: string
   }
+  featureToggles?: {
+    majlis?: { enabled: boolean }
+    voices?: { enabled: boolean }
+    shareGate?: { enabled: boolean }
+    emailCapture?: { enabled: boolean }
+    ipConsent?: { enabled: boolean }
+    chatbot?: { enabled: boolean }
+  }
 }
 
 export function usePredictions(category?: string) {
@@ -97,10 +99,19 @@ export function usePredictions(category?: string) {
     queryFn: () => {
       const params = new URLSearchParams()
       if (category) params.set("category", category)
-      params.set("limit", "100")
+      params.set("limit", "500")
       const qs = params.toString()
       return fetchJson(`/api/public/predictions${qs ? `?${qs}` : ""}`)
     },
+    staleTime: 60_000,
+  })
+}
+
+export function usePrediction(id: number) {
+  return useQuery<ApiPrediction>({
+    queryKey: ["prediction", id],
+    queryFn: () => fetchJson(`/api/public/predictions/${id}`),
+    enabled: id > 0,
     staleTime: 60_000,
   })
 }

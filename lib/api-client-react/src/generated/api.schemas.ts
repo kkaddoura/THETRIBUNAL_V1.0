@@ -40,6 +40,7 @@ export const PollPollType = {
   multiple_choice: "multiple_choice",
   head_to_head: "head_to_head",
   hot_take: "hot_take",
+  scale: "scale",
 } as const;
 
 export interface Poll {
@@ -67,6 +68,7 @@ export interface PollListResponse {
 export interface VoteRequest {
   optionId: number;
   voterToken: string;
+  ipConsent?: boolean;
 }
 
 export interface VoteResult {
@@ -82,6 +84,7 @@ export interface Profile {
   headline: string;
   role: string;
   company?: string;
+  companyUrl?: string | null;
   sector: string;
   country: string;
   city: string;
