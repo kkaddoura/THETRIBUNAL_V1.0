@@ -5,6 +5,7 @@ import { supabaseAdmin, isSupabaseStorageAvailable, STORAGE_BUCKET, getPublicUrl
 import crypto from "crypto";
 import { db, pollsTable, pollOptionsTable, votesTable, newsletterSubscribersTable, hustlerApplicationsTable, profilesTable, predictionsTable, pulseTopicsTable, cmsConfigsTable, designTokensTable, majlisInvitesTable, cmsSessionsTable } from "@workspace/db";
 import { eq, desc, sql, count, like, or, inArray, and, asc, gt } from "drizzle-orm";
+import { sendEmail } from "../lib/email.js";
 
 const router = Router();
 
@@ -1345,27 +1346,14 @@ router.post("/cms/applications/:id/invite-majlis", requireCmsAuth, async (req, r
       expiresAt,
     });
 
-    // Send invite email via Resend
-    let emailSent = false;
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    if (RESEND_API_KEY) {
-      try {
-        const emailRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: "The Tribunal <noreply@themiddleeasthustle.com>",
-            to: app.email,
-            subject: "You're invited to The Majlis",
-            text: `Hi ${app.name},\n\nYou've been approved to join The Majlis — our private chat room for verified voices across MENA.\n\nYour invite code: ${token}\n\nUse it to register at: https://themiddleeasthustle.com/majlis/register\n\nThis code expires in 30 days.\n\nThe Tribunal, by The Middle East Hustle`,
-          }),
-        });
-        emailSent = emailRes.ok;
-        console.log(`[CMS] Majlis invite email sent to ${app.email} | Code: ${token}`);
-      } catch (err) {
-        console.error("[CMS] Majlis invite email failed:", err);
-      }
-    }
+    // Send invite email via shared helper (writes to uploads/dev-emails/ when no key).
+    const emailResult = await sendEmail({
+      label: "majlis-invite",
+      to: app.email,
+      subject: "You're invited to The Majlis",
+      text: `Hi ${app.name},\n\nYou've been approved to join The Majlis — our private chat room for verified voices across MENA.\n\nYour invite code: ${token}\n\nUse it to register at: https://themiddleeasthustle.com/majlis/register\n\nThis code expires in 30 days.\n\nThe Tribunal, by The Middle East Hustle`,
+    });
+    const emailSent = emailResult.ok;
 
     console.log(`[CMS] Majlis invite created for ${app.email} | Code: ${token} | ProfileId: ${profile.id}`);
     return res.json({ success: true, token, profileId: profile.id, emailSent });

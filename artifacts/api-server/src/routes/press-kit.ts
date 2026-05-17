@@ -64,7 +64,13 @@ async function requireCmsAuth(req: Request, res: Response, next: NextFunction): 
   }
 }
 
-const APP_URL = process.env.APP_URL ?? "https://tribunal.com"
+function appUrl(): string {
+  const url = process.env.APP_URL
+  if (!url) {
+    throw new Error("APP_URL env var is required for press-kit routes (used in caption links)")
+  }
+  return url
+}
 
 const VALID_CONTENT_TYPES = new Set(["poll", "prediction", "voice", "pulse"])
 
@@ -101,7 +107,7 @@ router.post("/cms/press-kit/generate", requireCmsAuth, async (req, res) => {
 
   // Generate captions once for the content (reused across all sizes/templates)
   const captionInput = buildCaptionInput(contentType, contentId, sourceData)
-  const captions = await generateCaptions(captionInput, APP_URL)
+  const captions = await generateCaptions(captionInput, appUrl())
 
   const results: { template: string; size: string; r2Key: string; publicUrl: string }[] = []
 
@@ -198,7 +204,7 @@ router.post("/cms/press-kit/:assetId/regenerate-caption", requireCmsAuth, async 
 
   const captions = await generateCaptions(
     buildCaptionInput(row.contentType, row.contentId, sourceData),
-    APP_URL,
+    appUrl(),
   )
 
   // Re-apply captions to all assets for this content (one caption set per content).

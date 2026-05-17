@@ -3991,7 +3991,7 @@ const HOMEPAGE_CONFIG_SEED = {
   },
 };
 
-const PAGE_CONFIGS_SEED: Record<string, unknown> = {
+export const PAGE_CONFIGS_SEED: Record<string, unknown> = {
   about: {
     hero: {
       tagline: "Est. 2026 \u00B7 Founded by Kareem Kaddoura",

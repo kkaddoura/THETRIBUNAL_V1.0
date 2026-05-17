@@ -209,3 +209,88 @@ After the layout pass, the in-canvas city pills (CAIRO/DUBAI/RIYADH/…) overlap
 - [x] On mobile: shrink pill geometry — font `8px → 7px`, padX `4 → 3`, pillH `11 → 9`
 - [x] Desktop unchanged (no cap, no collision skip; previously all visible pills drew in CITIES order, now they draw in depth order — same visual outcome since they don't overlap on the larger panel)
 - [x] `pnpm typecheck` clean
+
+# Newsletter + Email — Finish-the-Job (no API keys required)
+
+User asked to finish Beehiiv + Resend setup, build out remaining pieces, audit existing code. Most of the wiring already exists. The genuine gaps are dev-mode fallbacks and an unsubscribe flow.
+
+## Audit findings
+
+- Cron exists (`api-server/src/lib/cron.ts`): Friday 9am Asia/Dubai with Postgres advisory lock, gated on `DIGEST_CRON_ENABLED=true`.
+- CMS admin pages: `/subscribers` (search/export/delete) + `/newsletter` (preview/push/history) already wired.
+- Transactional FROM consistently `noreply@themiddleeasthustle.com` across `auth.ts`, `apply.ts`, `cms.ts`.
+- Beehiiv sync wired from `newsletter.ts` (subscribe) and `polls.ts` (share-gate email unlock).
+- `services/newsletter-digest.ts:26` defaults `APP_URL` to `"https://tribunal.com"` (wrong) + footer hardcoded `"tribunal.com"`. Should default to verified domain.
+- Resend silently *skips* when key empty; Beehiiv silently *returns*. Hard to tell locally if signup actually worked.
+- No unsubscribe endpoint, no signed-token flow, no `List-Unsubscribe` headers on transactional emails.
+- Digest service uses Beehiiv's `POST /v2/publications/{pubId}/posts` with `content_html` — current spec marks this endpoint **Enterprise-beta** and the body field is `body_content`. Push may 404/422 on non-Enterprise plans. Out of scope for this pass — flagged for the founder to confirm plan tier before launch.
+
+## Plan
+
+### Phase A — Dev-mode fallbacks
+- [ ] New `api-server/src/lib/email.ts`: shared `sendEmail({label, to, subject, html, text?, listUnsubscribe?})`. If `RESEND_API_KEY` empty, writes the rendered email to `uploads/dev-emails/{ts}-{label}-{to-slug}.html` and console logs path. If key present, hits Resend.
+- [ ] `auth.ts` — swap inline `sendResendEmail()` to use the shared helper.
+- [ ] `apply.ts` + `cms.ts` — swap inline `fetch("https://api.resend.com/emails", …)` calls to use the helper.
+- [ ] `newsletter.ts syncToBeehiiv()`: when no `BEEHIIV_API_KEY`, log `[BEEHIIV-DEV] would sync {email}`.
+
+### Phase B — Unsubscribe flow
+- [ ] Migration `0008_newsletter_unsubscribed_at.sql`: add `unsubscribed_at timestamp NULL` to `newsletter_subscribers`.
+- [ ] Schema update in `lib/db/src/schema/polls.ts:51`.
+- [ ] New env var `UNSUBSCRIBE_SECRET` (HMAC signing key, 32 random bytes).
+- [ ] New `api-server/src/lib/unsubscribe.ts`: `signUnsubscribeToken(email)` / `verifyUnsubscribeToken(token)` via HMAC-SHA256 + base64url.
+- [ ] `newsletter.ts` new routes:
+  - `GET /newsletter/unsubscribe?token=…` — confirmation page HTML.
+  - `POST /newsletter/unsubscribe?token=…` — flips opt_in → false, sets `unsubscribed_at = now()`, calls Beehiiv `PATCH /publications/{pub}/subscriptions/{sub}` with `{unsubscribe: true}` (best-effort). RFC 8058 one-click compliant.
+- [ ] `newsletter.ts` new helper `unsubscribeFromBeehiiv(email)` — list subscriptions by email, PATCH match.
+- [ ] `auth.ts` (verify/welcome) + `apply.ts` (application status) emails: add `List-Unsubscribe` + `List-Unsubscribe-Post: List-Unsubscribe=One-Click` headers using signed token.
+- [ ] Digest HTML: replace broken `{{rss_feed}}` at `newsletter-digest.ts:316` with Beehiiv's `{{unsubscribe_link}}`.
+
+### Phase C — Polish
+- [ ] Fix `services/newsletter-digest.ts:26` default `APP_URL` to `https://themiddleeasthustle.com`.
+- [ ] Fix hardcoded `"tribunal.com"` in digest footer at line 315 — derive from `APP_URL`.
+- [ ] Add `UNSUBSCRIBE_SECRET` + `DIGEST_CRON_ENABLED` to `.env.production.example`.
+- [ ] Add `UNSUBSCRIBE_SECRET` placeholder to `artifacts/api-server/.env`.
+
+### Phase D — Verification
+- [x] `pnpm typecheck` for `@workspace/api-server`, `@workspace/tmh-platform`, `@workspace/cms` — all clean (after rebuilding `lib/db` .d.ts).
+- [x] Unit test: HMAC token round-trips valid emails; rejects tampered/empty/malformed; email is lowercased.
+- [x] Dev-mode email fallback writes to `uploads/dev-emails/{ts}-{label}-{to}.html` with full metadata header + body when `RESEND_API_KEY` is missing.
+
+## Review
+
+### What changed
+
+**New files**
+- `lib/db/drizzle/0008_newsletter_unsubscribed_at.sql` — adds `unsubscribed_at` timestamp column.
+- `artifacts/api-server/src/lib/email.ts` — single `sendEmail()` helper. Writes to `uploads/dev-emails/` when no Resend key (so signup flows are visibly testable locally). Supports `listUnsubscribeUrl` for RFC 8058 one-click.
+- `artifacts/api-server/src/lib/unsubscribe.ts` — HMAC-SHA256 signed tokens (`base64url(email).base64url(sig)`). Stateless — no DB write per token. `UNSUBSCRIBE_SECRET` env required in prod, falls back to a fixed dev value otherwise.
+
+**Modified**
+- `lib/db/src/schema/polls.ts` — added `unsubscribedAt: timestamp` column to `newsletter_subscribers`.
+- `artifacts/api-server/src/routes/newsletter.ts` — full rewrite:
+  - `syncToBeehiiv()` logs `[BEEHIIV-DEV] would sync …` when key missing (was silent return).
+  - New `unsubscribeFromBeehiiv()` helper: GETs subscription by email, PATCHes `{unsubscribe: true}`.
+  - New `GET /newsletter/unsubscribe` route — branded confirmation HTML page.
+  - New `POST /newsletter/unsubscribe` route — RFC 8058 one-click endpoint.
+  - Both flip `newsletter_opt_in=false` + set `unsubscribed_at = now()`, then mirror to Beehiiv best-effort.
+- `artifacts/api-server/src/routes/auth.ts` — removed inline `sendResendEmail()` helper. Verification and welcome emails now use `sendEmail()` with `listUnsubscribeUrl`. Password-reset doesn't get a List-Unsubscribe header (it's 1:1 security, not bulk).
+- `artifacts/api-server/src/routes/apply.ts` — application-status emails now use `sendEmail()`. No more empty-key silent skip.
+- `artifacts/api-server/src/routes/cms.ts` — Majlis invite email uses `sendEmail()`.
+- `artifacts/api-server/src/services/newsletter-digest.ts` — `APP_URL` defaults to `https://themiddleeasthustle.com` (was `tribunal.com`). Footer derives hostname from `APP_URL`. Broken `{{rss_feed}}` template var replaced with Beehiiv's `{{unsubscribe_link}}` (which Beehiiv interpolates at send time).
+- `artifacts/api-server/.env` + `.env.local` — added `UNSUBSCRIBE_SECRET`, `DIGEST_CRON_ENABLED=false`, `APP_URL`. Documented dev-mode fallback behavior.
+- `.env.production.example` — same docs + REQUIRED warnings for prod.
+
+### Manual steps before launch
+
+1. **Apply migration on prod DB** — `pnpm --filter @workspace/db push` (drizzle-kit push) or run `0008_newsletter_unsubscribed_at.sql` manually. Without it, `POST /newsletter/unsubscribe` will throw on the `unsubscribed_at` write.
+2. **Set `UNSUBSCRIBE_SECRET`** on Railway (32+ char hex). The app throws on boot in prod if it's missing or under 16 chars.
+3. **Set `BEEHIIV_API_KEY` + `BEEHIIV_PUBLICATION_ID`** when admin access is sorted out (currently blocked — see "manual step 2" in conversation).
+4. **Verify Resend sending domain DNS** — DNS records captured during dashboard setup; client to add at registrar.
+5. **Confirm Beehiiv plan tier** — `POST /v2/publications/{pubId}/posts` (used by the weekly digest pipeline) is marked enterprise-beta in the current Beehiiv API spec. If push fails with 403/404, fall back to Beehiiv's Automations or generate the email via Resend Broadcasts instead.
+6. **Enable cron in prod** — `DIGEST_CRON_ENABLED=true` on a **single** Railway replica. The advisory-lock guard means it's safe if you forget and set it on more than one, but cleanest to gate to one.
+
+### Known limitations
+
+- Unsubscribe operates on `newsletter_subscribers` table only. If the same email is also in `users.newsletter_opt_in=true`, that flag stays true. Acceptable — `newsletter_subscribers` is the canonical send list. If we ever query `users` for sending, revisit.
+- HMAC token has no expiry. Stolen email + secret → forever unsubscribe link. Acceptable threat model for a newsletter; rotate `UNSUBSCRIBE_SECRET` if compromised (will invalidate every outstanding link in the wild).
+- The digest pipeline still uses `content_html` as the body field, which the current Beehiiv spec calls `body_content`. Flagged but not changed — code may need adjustment once the founder confirms plan tier and we can hit the live endpoint.

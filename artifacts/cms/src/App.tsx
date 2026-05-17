@@ -31,6 +31,7 @@ import DesignTokensPage from "@/pages/design-tokens";
 import IdeationPage from "@/pages/ideation";
 import MajlisPage from "@/pages/majlis";
 import PressKitPage from "@/pages/press-kit";
+import StudioPage from "@/pages/studio";
 import NewsletterDigestPage from "@/pages/newsletter-digest";
 import { Toaster } from "sonner";
 
@@ -75,7 +76,11 @@ function ProtectedRoutes() {
         <Route path="/subscribers" component={SubscribersPage} />
         <Route path="/applications" component={ApplicationsPage} />
         <Route path="/majlis" component={MajlisPage} />
-        <Route path="/press-kit" component={PressKitPage} />
+        <Route path="/studio" component={StudioPage} />
+        <Route path="/press-kit">
+          <Redirect to="/studio" />
+        </Route>
+        <Route path="/press-kit/legacy" component={PressKitPage} />
         <Route path="/newsletter" component={NewsletterDigestPage} />
         <Route path="/">
           <Redirect to="/dashboard" />

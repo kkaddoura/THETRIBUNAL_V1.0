@@ -23,7 +23,8 @@ import {
 } from "@workspace/db"
 import { eq, gte, desc, sql } from "drizzle-orm"
 
-const APP_URL = process.env.APP_URL ?? "https://tribunal.com"
+const APP_URL = process.env.APP_URL ?? "https://themiddleeasthustle.com"
+const APP_HOST = APP_URL.replace(/^https?:\/\//, "").replace(/\/+$/, "")
 
 export interface DigestContent {
   weekStarting: string // YYYY-MM-DD
@@ -312,8 +313,8 @@ export function buildDigestHtml(content: DigestContent): string {
     </table>
   </td></tr>
   <tr><td style="padding: 32px 24px; text-align: center; border-top: 1px solid #2A2A2A;">
-    <p style="margin: 0; color: #9A9690; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">tribunal.com · by The Middle East Hustle</p>
-    <p style="margin: 12px 0 0; color: #6A655F; font-size: 11px;">You're receiving this because you signed up for our weekly digest. <a href="{{rss_feed}}" style="color: #6A655F;">Manage preferences</a></p>
+    <p style="margin: 0; color: #9A9690; font-size: 11px; text-transform: uppercase; letter-spacing: 2px;">${escapeHtml(APP_HOST)} · by The Middle East Hustle</p>
+    <p style="margin: 12px 0 0; color: #6A655F; font-size: 11px;">You're receiving this because you signed up for our weekly digest. <a href="{{unsubscribe_link}}" style="color: #6A655F;">Unsubscribe</a></p>
   </td></tr>
 </table></td></tr></table></body></html>`
 }

@@ -25,6 +25,8 @@ import { eq, sql, inArray } from "drizzle-orm"
 import { hashPassword, verifyPassword, generateToken } from "../lib/auth-shared.js"
 import { isValidAvatarId, AVATARS, getAvatarUrl } from "../lib/avatars.js"
 import { validateUsername } from "../lib/reserved-usernames.js"
+import { sendEmail } from "../lib/email.js"
+import { unsubscribeUrl } from "../lib/unsubscribe.js"
 import {
   SESSION_COOKIE_NAME,
   SESSION_TTL_MS,
@@ -500,39 +502,11 @@ router.get("/users/:username/public", async (req, res) => {
 
 // ── Email helpers ────────────────────────────────────────────
 //
-// All transactional mail goes through Resend. The "from" address must use the
-// verified domain (themiddleeasthustle.com) — sending from an unverified
-// domain causes Resend to reject the request silently in production logs.
+// All transactional mail goes through Resend via the shared `sendEmail()`
+// helper in lib/email.ts. The helper also writes to uploads/dev-emails/* when
+// no RESEND_API_KEY is set, so signup flows are visibly verifiable locally.
 
-const FROM_ADDRESS = "The Tribunal <noreply@themiddleeasthustle.com>"
 const DEFAULT_APP_URL = "https://themiddleeasthustle.com"
-
-async function sendResendEmail(
-  label: string,
-  payload: { to: string; subject: string; html: string },
-): Promise<void> {
-  const apiKey = process.env.RESEND_API_KEY
-  if (!apiKey) {
-    console.warn(`[auth] RESEND_API_KEY not set — ${label} email skipped (dev only)`)
-    return
-  }
-
-  const res = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ from: FROM_ADDRESS, ...payload }),
-  })
-
-  if (!res.ok) {
-    const body = await res.text().catch(() => "")
-    console.error(`[auth] ${label} email failed (${res.status}):`, body.slice(0, 500))
-    return
-  }
-  console.log(`[auth] ${label} email sent to ${payload.to.substring(0, 3)}***`)
-}
 
 async function sendVerificationEmail(email: string, token: string): Promise<void> {
   const appUrl = process.env.APP_URL ?? DEFAULT_APP_URL
@@ -551,10 +525,12 @@ async function sendVerificationEmail(email: string, token: string): Promise<void
 </body>
 </html>`
 
-  await sendResendEmail("verification", {
+  await sendEmail({
+    label: "verification",
     to: email,
     subject: "Verify your email — The Tribunal",
     html,
+    listUnsubscribeUrl: unsubscribeUrl(email),
   })
 }
 
@@ -576,10 +552,12 @@ async function sendWelcomeEmail(email: string, username: string): Promise<void> 
 </body>
 </html>`
 
-  await sendResendEmail("welcome", {
+  await sendEmail({
+    label: "welcome",
     to: email,
     subject: "Welcome to The Tribunal",
     html,
+    listUnsubscribeUrl: unsubscribeUrl(email),
   })
 }
 
@@ -601,7 +579,8 @@ async function sendPasswordResetEmail(email: string, token: string): Promise<voi
 </body>
 </html>`
 
-  await sendResendEmail("password-reset", {
+  await sendEmail({
+    label: "password-reset",
     to: email,
     subject: "Reset your password — The Tribunal",
     html,

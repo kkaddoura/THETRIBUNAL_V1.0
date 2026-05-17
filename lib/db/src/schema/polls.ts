@@ -1,4 +1,5 @@
 import { pgTable, serial, text, integer, boolean, timestamp, real, jsonb, uniqueIndex } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
@@ -46,7 +47,15 @@ export const pollSnapshotsTable = pgTable("poll_snapshots", {
   snapshotDate: timestamp("snapshot_date").notNull(),
   percentage: real("percentage").notNull().default(0),
   voteCount: integer("vote_count").notNull().default(0),
-});
+}, (t) => [
+  // Matches ON CONFLICT (poll_id, option_id, (DATE(snapshot_date))) in
+  // snapshot upserts. Expression-based unique index — Drizzle requires `sql`.
+  uniqueIndex("poll_snapshots_unique_per_day").on(
+    t.pollId,
+    t.optionId,
+    sql`(DATE(${t.snapshotDate}))`,
+  ),
+]);
 
 export const newsletterSubscribersTable = pgTable("newsletter_subscribers", {
   id: serial("id").primaryKey(),
@@ -55,6 +64,7 @@ export const newsletterSubscribersTable = pgTable("newsletter_subscribers", {
   pollId: integer("poll_id"),
   countryCode: text("country_code"),
   newsletterOptIn: boolean("newsletter_opt_in").notNull().default(true),
+  unsubscribedAt: timestamp("unsubscribed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 

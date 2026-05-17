@@ -20,18 +20,50 @@ export interface VoiceData {
 
 export function voiceQuote(data: VoiceData, tokens: BrandTokens, size: SizeKey): SatoriElement {
   const isStory = size === "ig_story"
+  const hasPortrait = !!data.imageUrl
 
-  return {
+  const portraitBlock: SatoriElement | null = hasPortrait
+    ? {
+        type: "div",
+        props: {
+          style: {
+            display: "flex",
+            width: "100%",
+            height: isStory ? "55%" : "48%",
+            backgroundColor: tokens.bg,
+            overflow: "hidden",
+            position: "relative",
+          },
+          children: [
+            {
+              type: "img",
+              props: {
+                src: data.imageUrl,
+                width: "100%",
+                height: "100%",
+                style: {
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  filter: "grayscale(100%) contrast(1.05)",
+                },
+              },
+            },
+          ],
+        },
+      }
+    : null
+
+  const textColumn: SatoriElement = {
     type: "div",
     props: {
       style: {
         display: "flex",
         flexDirection: "column",
-        width: "100%",
-        height: "100%",
+        flex: 1,
         backgroundColor: tokens.bg,
         fontFamily: tokens.headingFont,
-        padding: isStory ? "120px 70px" : "70px",
+        padding: isStory ? "70px 70px 120px" : "60px 70px 70px",
         justifyContent: "space-between",
       },
       children: [
@@ -50,7 +82,6 @@ export function voiceQuote(data: VoiceData, tokens: BrandTokens, size: SizeKey):
             children: "VOICE",
           },
         },
-        // Quote
         {
           type: "div",
           props: {
@@ -59,6 +90,8 @@ export function voiceQuote(data: VoiceData, tokens: BrandTokens, size: SizeKey):
               flexDirection: "column",
               flex: 1,
               justifyContent: "center",
+              paddingTop: "16px",
+              paddingBottom: "16px",
             },
             children: [
               {
@@ -66,7 +99,7 @@ export function voiceQuote(data: VoiceData, tokens: BrandTokens, size: SizeKey):
                 props: {
                   style: {
                     display: "flex",
-                    fontSize: isStory ? "120px" : "100px",
+                    fontSize: isStory ? "100px" : hasPortrait ? "72px" : "100px",
                     color: tokens.accent,
                     lineHeight: 0.6,
                     marginBottom: "16px",
@@ -79,7 +112,7 @@ export function voiceQuote(data: VoiceData, tokens: BrandTokens, size: SizeKey):
                 props: {
                   style: {
                     display: "flex",
-                    fontSize: isStory ? "44px" : "38px",
+                    fontSize: isStory ? "44px" : hasPortrait ? "32px" : "38px",
                     fontWeight: 700,
                     fontFamily: tokens.bodyFont,
                     color: tokens.fg,
@@ -91,7 +124,6 @@ export function voiceQuote(data: VoiceData, tokens: BrandTokens, size: SizeKey):
             ],
           },
         },
-        // Attribution
         {
           type: "div",
           props: {
@@ -136,6 +168,20 @@ export function voiceQuote(data: VoiceData, tokens: BrandTokens, size: SizeKey):
           },
         },
       ],
+    },
+  }
+
+  return {
+    type: "div",
+    props: {
+      style: {
+        display: "flex",
+        flexDirection: "column",
+        width: "100%",
+        height: "100%",
+        backgroundColor: tokens.bg,
+      },
+      children: portraitBlock ? [portraitBlock, textColumn] : [textColumn],
     },
   }
 }
