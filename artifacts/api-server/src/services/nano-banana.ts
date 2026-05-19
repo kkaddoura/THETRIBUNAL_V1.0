@@ -1,6 +1,6 @@
 /**
  * Generates editorial B&W portraits for Voice profiles via Google AI Studio's
- * "Nano Banana" image model (gemini-2.5-flash-image-preview).
+ * "Nano Banana" image model (gemini-2.5-flash-image, GA).
  *
  * Style is locked to match the existing Voices section aesthetic: monochrome
  * editorial portrait, soft natural lighting, head-and-shoulders framing,
@@ -10,7 +10,7 @@
 import { supabaseAdmin, isSupabaseStorageAvailable, STORAGE_BUCKET, getPublicUrl } from "../utils/supabase-storage";
 import type { CaptionInput } from "../lib/press-kit/index.js";
 
-const MODEL = "gemini-2.5-flash-image-preview";
+const MODEL = "gemini-2.5-flash-image";
 const ENDPOINT = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
 
 export interface VoiceSubject {
