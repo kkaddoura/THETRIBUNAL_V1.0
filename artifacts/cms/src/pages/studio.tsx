@@ -201,7 +201,7 @@ export default function StudioPage() {
   const [slots, setSlots] = useState<Slot[]>([null]);
   const [libraryTab, setLibraryTab] = useState<LibraryTab>("all");
   const [librarySearch, setLibrarySearch] = useState("");
-  const [sourcesCache, setSourcesCache] = useState<Partial<Record<AtomType, { id: number; label: string }[]>>>({});
+  const [sourcesCache, setSourcesCache] = useState<Partial<Record<AtomType, { id: number; label: string; createdAt?: string }[]>>>({});
   const [style, setStyle] = useState<Style>("minimal-serif");
   const [tone, setTone] = useState<Tone>(null);
   const [useAiImage, setUseAiImage] = useState(false);
@@ -251,7 +251,7 @@ export default function StudioPage() {
     if (sourcesCache[atom]) return;
     api
       .studioListSources(ATOM_TO_POSTTYPE[atom])
-      .then((r: { sources: { id: number; label: string }[] }) =>
+      .then((r: { sources: { id: number; label: string; createdAt?: string }[] }) =>
         setSourcesCache((prev) => ({ ...prev, [atom]: r.sources ?? [] })),
       )
       .catch(() => setSourcesCache((prev) => ({ ...prev, [atom]: [] })));
@@ -271,11 +271,11 @@ export default function StudioPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [libraryTab, isRecap]);
 
-  type LibRow = { atomType: AtomType; atomId: number; label: string };
+  type LibRow = { atomType: AtomType; atomId: number; label: string; createdAt?: string };
 
   const libraryRows = useMemo<LibRow[]>(() => {
     const fromCache = (atom: AtomType): LibRow[] =>
-      (sourcesCache[atom] ?? []).map((s) => ({ atomType: atom, atomId: s.id, label: s.label }));
+      (sourcesCache[atom] ?? []).map((s) => ({ atomType: atom, atomId: s.id, label: s.label, createdAt: s.createdAt }));
 
     let rows: LibRow[];
     if (libraryTab === "all") {
@@ -300,6 +300,39 @@ export default function StudioPage() {
     if (q) rows = rows.filter((r) => r.label.toLowerCase().includes(q));
     return rows;
   }, [libraryTab, sourcesCache, librarySearch]);
+
+  // Segregate the picker by day so it's clear which date a post is from.
+  // Search filters first (above), then we group the results by created date.
+  const groupedLibrary = useMemo(() => {
+    const dayKey = (iso?: string) => {
+      if (!iso) return "__other__";
+      const d = new Date(iso);
+      return isNaN(d.getTime()) ? "__other__" : d.toISOString().slice(0, 10);
+    };
+    const labelFor = (key: string) => {
+      if (key === "__other__") return "Other";
+      const d = new Date(key + "T00:00:00");
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const diff = Math.round((today.getTime() - d.getTime()) / 86400000);
+      if (diff === 0) return "Today";
+      if (diff === 1) return "Yesterday";
+      return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+    };
+    const map = new Map<string, LibRow[]>();
+    for (const r of libraryRows) {
+      const k = dayKey(r.createdAt);
+      const arr = map.get(k);
+      if (arr) arr.push(r);
+      else map.set(k, [r]);
+    }
+    const keys = [...map.keys()].sort((a, b) => {
+      if (a === "__other__") return 1;
+      if (b === "__other__") return -1;
+      return a < b ? 1 : a > b ? -1 : 0; // newest day first
+    });
+    return keys.map((k) => ({ key: k, label: labelFor(k), rows: map.get(k)! }));
+  }, [libraryRows]);
 
   const slotIndexOf = (atomType: AtomType, atomId: number): number =>
     slots.findIndex((s) => s && s.atomType === atomType && s.atomId === atomId);
@@ -668,30 +701,37 @@ export default function StudioPage() {
                   {libraryRows.length === 0 && (
                     <p className="text-[11px] text-muted-foreground/70 px-3 py-4 text-center">No items in this tab.</p>
                   )}
-                  {libraryRows.map((row) => {
-                    const inSlot = slotIndexOf(row.atomType, row.atomId);
-                    const Icon = ATOM_META[row.atomType].icon;
-                    return (
-                      <button
-                        key={`${row.atomType}-${row.atomId}-${row.label}`}
-                        type="button"
-                        onClick={() => fillSlot(row)}
-                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-md border text-left transition-colors ${
-                          inSlot !== -1
-                            ? "border-primary/40 bg-primary/[0.06]"
-                            : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.18] hover:bg-white/[0.05]"
-                        }`}
-                      >
-                        <Icon className={`w-3.5 h-3.5 shrink-0 ${inSlot !== -1 ? "text-primary" : "text-muted-foreground"}`} />
-                        <span className="flex-1 min-w-0 text-xs text-foreground/90 truncate">{row.label}</span>
-                        {inSlot !== -1 && (
-                          <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-primary shrink-0">
-                            in slot {inSlot + 1}
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
+                  {groupedLibrary.map((group) => (
+                    <div key={group.key} className="space-y-1">
+                      <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 px-3 pt-3 pb-1 first:pt-1">
+                        {group.label}
+                      </p>
+                      {group.rows.map((row) => {
+                        const inSlot = slotIndexOf(row.atomType, row.atomId);
+                        const Icon = ATOM_META[row.atomType].icon;
+                        return (
+                          <button
+                            key={`${row.atomType}-${row.atomId}-${row.label}`}
+                            type="button"
+                            onClick={() => fillSlot(row)}
+                            className={`w-full flex items-center gap-2 px-3 py-2 rounded-md border text-left transition-colors ${
+                              inSlot !== -1
+                                ? "border-primary/40 bg-primary/[0.06]"
+                                : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.18] hover:bg-white/[0.05]"
+                            }`}
+                          >
+                            <Icon className={`w-3.5 h-3.5 shrink-0 ${inSlot !== -1 ? "text-primary" : "text-muted-foreground"}`} />
+                            <span className="flex-1 min-w-0 text-xs text-foreground/90 truncate">{row.label}</span>
+                            {inSlot !== -1 && (
+                              <span className="text-[9px] font-bold uppercase tracking-[0.1em] text-primary shrink-0">
+                                in slot {inSlot + 1}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  ))}
                 </div>
               </div>
             </>

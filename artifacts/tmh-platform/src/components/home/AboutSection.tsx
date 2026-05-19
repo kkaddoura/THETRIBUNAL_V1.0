@@ -1,3 +1,4 @@
+import { useState } from "react"
 import { useI18n } from "@/lib/i18n"
 
 const PRINCIPLES = [
@@ -14,6 +15,8 @@ const CRIMSON = "#DC143C"
 
 export default function AboutSection() {
   const { t } = useI18n()
+  // Top card open by default so the section reads on load (and for no-hover/touch).
+  const [active, setActive] = useState(0)
 
   return (
     <section
@@ -25,7 +28,6 @@ export default function AboutSection() {
         overflow: "hidden",
       }}
     >
-      {/* top hairline accent */}
       <div
         aria-hidden="true"
         style={{
@@ -39,33 +41,61 @@ export default function AboutSection() {
       />
 
       <style>{`
-        .tmh-principle {
-          border-top: 1px solid rgba(245,240,235,0.10);
-          display: grid;
-          grid-template-columns: clamp(3rem, 9vw, 5.25rem) 1fr;
-          gap: clamp(1rem, 3vw, 2.25rem);
-          align-items: baseline;
-          padding: clamp(1.05rem, 2.6vw, 1.7rem) 0;
+        .tmh-deck {
           position: relative;
-          transition: background 180ms ease;
+          max-width: 46rem;
+          margin: 0 auto;
         }
-        .tmh-principle::before {
-          content: "";
-          position: absolute;
-          left: 0;
-          top: -1px;
-          bottom: 0;
-          width: 2px;
-          background: ${CRIMSON};
-          transform: scaleY(0);
-          transform-origin: top;
-          transition: transform 220ms ease;
+        .tmh-card {
+          position: relative;
+          display: grid;
+          grid-template-columns: clamp(2.6rem, 8vw, 3.75rem) 1fr;
+          gap: clamp(0.85rem, 3vw, 1.75rem);
+          align-items: start;
+          width: 100%;
+          text-align: left;
+          background: #121212;
+          border: 1px solid rgba(245,240,235,0.10);
+          border-left: 3px solid rgba(220,20,60,0.35);
+          border-radius: 10px;
+          padding: clamp(0.9rem, 2.4vw, 1.4rem) clamp(1rem, 3vw, 1.75rem);
+          margin-top: -3.05rem;            /* tight overlap — only the header strip peeks */
+          cursor: pointer;
+          color: inherit;
+          font: inherit;
+          box-shadow: 0 -10px 30px -18px rgba(0,0,0,0.9);
+          transition: margin 280ms cubic-bezier(.22,1,.36,1),
+                      transform 280ms cubic-bezier(.22,1,.36,1),
+                      border-color 200ms ease, box-shadow 280ms ease, background 200ms ease;
         }
-        .tmh-principle:hover {
-          background: linear-gradient(90deg, rgba(220,20,60,0.06), transparent 60%);
+        .tmh-card:first-child { margin-top: 0; }
+        .tmh-card:focus-visible { outline: 2px solid ${CRIMSON}; outline-offset: 3px; }
+        .tmh-card .tmh-body {
+          max-height: 0;
+          opacity: 0;
+          overflow: hidden;
+          transition: max-height 320ms cubic-bezier(.22,1,.36,1), opacity 220ms ease, margin 280ms ease;
         }
-        .tmh-principle:hover::before { transform: scaleY(1); }
-        .tmh-principle:last-child { border-bottom: 1px solid rgba(245,240,235,0.10); }
+        /* Active card lifts forward, fully opens, and stops overlapping the next one. */
+        .tmh-card[data-active="true"] {
+          background: linear-gradient(180deg, #1a1a1a, #131313);
+          border-color: rgba(245,240,235,0.18);
+          border-left-color: ${CRIMSON};
+          transform: translateY(-2px);
+          box-shadow: 0 24px 50px -24px rgba(0,0,0,0.95), 0 0 0 1px rgba(220,20,60,0.10);
+          z-index: 5;
+          margin-bottom: 0.6rem;
+        }
+        .tmh-card[data-active="true"] .tmh-body {
+          max-height: 12rem;
+          opacity: 1;
+          margin-top: 0.45rem;
+        }
+        .tmh-card[data-active="true"] + .tmh-card { margin-top: 0.45rem; }
+        @media (hover: none) {
+          /* Touch: a touch more breathing room since there's no hover affordance. */
+          .tmh-card { margin-top: -2.4rem; }
+        }
       `}</style>
 
       <div
@@ -150,7 +180,7 @@ export default function AboutSection() {
             display: "flex",
             alignItems: "center",
             gap: "clamp(0.75rem, 2.5vw, 1.5rem)",
-            marginBottom: "clamp(0.5rem, 2vw, 1rem)",
+            marginBottom: "clamp(1.25rem, 3vw, 2rem)",
           }}
         >
           <span style={{ flex: 1, height: 1, background: "rgba(245,240,235,0.18)" }} />
@@ -171,54 +201,67 @@ export default function AboutSection() {
           <span style={{ flex: 1, height: 1, background: "rgba(245,240,235,0.18)" }} />
         </div>
 
-        {/* ── 6 principles — single airy column, big numerals ────────── */}
-        <div>
-          {PRINCIPLES.map((item, idx) => (
-            <div key={idx} className="tmh-principle">
-              <span
-                style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 900,
-                  fontSize: "clamp(2.4rem, 7vw, 4rem)",
-                  lineHeight: 0.85,
-                  color: CRIMSON,
-                  letterSpacing: "-0.02em",
-                  fontVariantNumeric: "tabular-nums",
-                }}
+        {/* ── Overlapping card deck — hover/focus/tap to lift ────────── */}
+        <div className="tmh-deck">
+          {PRINCIPLES.map((item, idx) => {
+            const isActive = active === idx
+            return (
+              <button
+                key={idx}
+                type="button"
+                className="tmh-card"
+                data-active={isActive}
+                aria-expanded={isActive}
+                onMouseEnter={() => setActive(idx)}
+                onFocus={() => setActive(idx)}
+                onClick={() => setActive(idx)}
+                style={{ zIndex: isActive ? 5 : idx + 1 }}
               >
-                {String(idx + 1).padStart(2, "0")}
-              </span>
-              <div>
-                <h3
+                <span
                   style={{
                     fontFamily: "'Barlow Condensed', sans-serif",
-                    fontWeight: 800,
-                    fontSize: "clamp(1.05rem, 2.6vw, 1.45rem)",
-                    textTransform: "uppercase",
-                    letterSpacing: "0.04em",
-                    color: CREAM,
-                    margin: "0 0 0.4rem",
-                    lineHeight: 1.1,
+                    fontWeight: 900,
+                    fontSize: "clamp(1.9rem, 5.5vw, 2.9rem)",
+                    lineHeight: 0.85,
+                    color: CRIMSON,
+                    letterSpacing: "-0.02em",
+                    fontVariantNumeric: "tabular-nums",
                   }}
                 >
-                  {t(item.title)}
-                  <span style={{ color: CRIMSON }}>.</span>
-                </h3>
-                <p
-                  style={{
-                    fontFamily: "'DM Sans', sans-serif",
-                    fontSize: "clamp(0.95rem, 1.7vw, 1.1rem)",
-                    color: "rgba(245,240,235,0.6)",
-                    lineHeight: 1.55,
-                    margin: 0,
-                    maxWidth: "44rem",
-                  }}
-                >
-                  {t(item.body)}
-                </p>
-              </div>
-            </div>
-          ))}
+                  {String(idx + 1).padStart(2, "0")}
+                </span>
+                <span style={{ display: "block", minWidth: 0 }}>
+                  <span
+                    style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 800,
+                      fontSize: "clamp(1rem, 2.5vw, 1.35rem)",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.04em",
+                      color: CREAM,
+                      display: "block",
+                      lineHeight: 1.15,
+                    }}
+                  >
+                    {t(item.title)}
+                    <span style={{ color: CRIMSON }}>.</span>
+                  </span>
+                  <span
+                    className="tmh-body"
+                    style={{
+                      fontFamily: "'DM Sans', sans-serif",
+                      fontSize: "clamp(0.95rem, 1.7vw, 1.1rem)",
+                      color: "rgba(245,240,235,0.6)",
+                      lineHeight: 1.55,
+                      display: "block",
+                    }}
+                  >
+                    {t(item.body)}
+                  </span>
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
     </section>

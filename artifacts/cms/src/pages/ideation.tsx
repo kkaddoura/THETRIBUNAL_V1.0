@@ -337,6 +337,27 @@ export default function IdeationPage() {
     }
   }, [session]);
 
+  const handleResetIdeation = () => {
+    if (!window.confirm(
+      "Reset the Ideation Engine? This clears your search, filters, generated ideas, and current session."
+    )) return;
+    localStorage.removeItem(STORAGE_KEY);
+    setActiveTab("generate");
+    setMode("explore");
+    setFocusedPillar("debates");
+    setBatchSize(15);
+    setPillarCounts({ debates: 5, predictions: 5, pulse: 5 });
+    setUsePillarCounts(false);
+    setSelectedCategories([]);
+    setSelectedTags([]);
+    setSelectedRegions([]);
+    setGuardrails(DEFAULT_GUARDRAILS);
+    setCurrentStep(-1);
+    setSession(null);
+    setIdeas([]);
+    setResearchData(null);
+  };
+
   const handleSavePrompt = async (pillar: string) => {
     try {
       await api.updatePromptTemplate(pillar, promptDraft);
@@ -463,6 +484,7 @@ export default function IdeationPage() {
               setShowGuardrails={setShowGuardrails}
               onStart={startWorkflow}
               isProcessing={isProcessing}
+              onReset={handleResetIdeation}
             />
 
             <div className="space-y-4">
@@ -668,7 +690,7 @@ function ConfigPanel({
   tags, selectedTags, setSelectedTags,
   regions, selectedRegions, setSelectedRegions,
   guardrails, setGuardrails, showGuardrails, setShowGuardrails,
-  onStart, isProcessing,
+  onStart, isProcessing, onReset,
 }: {
   mode: Mode; setMode: (m: Mode) => void;
   focusedPillar: PillarType; setFocusedPillar: (p: PillarType) => void;
@@ -682,6 +704,7 @@ function ConfigPanel({
   guardrails: string[]; setGuardrails: (g: string[]) => void;
   showGuardrails: boolean; setShowGuardrails: (b: boolean) => void;
   onStart: () => void; isProcessing: boolean;
+  onReset: () => void;
 }) {
   const [newGuardrail, setNewGuardrail] = useState("");
   const [editingGuardrailIndex, setEditingGuardrailIndex] = useState<number | null>(null);
@@ -904,6 +927,15 @@ function ConfigPanel({
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={onReset}
+        disabled={isProcessing}
+        className="w-full flex items-center justify-center gap-2 border border-border text-muted-foreground py-2 text-xs font-semibold hover:text-foreground hover:border-primary/50 disabled:opacity-50 transition-colors mb-2"
+      >
+        <RotateCcw className="w-3.5 h-3.5" /> Reset search &amp; state
+      </button>
 
       <button
         onClick={onStart}

@@ -1,4 +1,4 @@
-import { useMemo, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import type { Poll, PollListResponse } from "@workspace/api-client-react";
 import { HorizontalScroller } from "./HorizontalScroller";
@@ -7,6 +7,10 @@ import { DebateCardSkeleton } from "@/components/skeletons/DebateCardSkeleton";
 import { useVoter } from "@/hooks/use-voter";
 
 const SECTION_FETCH_LIMIT = 60;
+// How long a just-voted card stays before it drops out and the next pool
+// item slides into its place (long enough for the in-card "Vote Recorded"
+// confirmation + collapse to play).
+const VOTE_GRACE_MS = 2400;
 
 export interface DebateSectionConfig {
   id: string;
@@ -72,24 +76,58 @@ export function DebateSection({ section }: Props) {
   });
 
   const { hasVoted } = useVoter();
-  // Snapshot the "already voted" set when data first arrives and freeze it.
-  // If we re-filter on every vote, the card the user *just* voted on gets
-  // unmounted mid-animation (the section's filter is re-run by useVoter's
-  // change event before the result-confirmation banner can finish). Polls
-  // voted in-session keep their slot until the next data fetch / page load,
-  // at which point they move to the Past Voted section.
-  const filterDataRef = useRef<Poll[] | null>(null);
-  const filteredCacheRef = useRef<Poll[]>([]);
-  const visiblePolls = useMemo(() => {
-    if (!data) return [];
-    if (data !== filterDataRef.current) {
-      filterDataRef.current = data;
-      filteredCacheRef.current = data.filter((p) => !hasVoted(p.id));
+
+  // Polls already voted when this pool arrives never appear. A poll voted
+  // *in this session* (here) gets a short grace window so its confirmation
+  // can play, then it drops out — and because the section over-fetches a
+  // deep pool, the next unseen item slides straight into its place.
+  const poolRef = useRef<Poll[] | null>(null);
+  const initiallyVotedRef = useRef<Set<number>>(new Set());
+  const gracedRef = useRef<Set<number>>(new Set());
+  const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const [, bump] = useState(0);
+
+  if (data && data !== poolRef.current) {
+    poolRef.current = data;
+    initiallyVotedRef.current = new Set(data.filter((p) => hasVoted(p.id)).map((p) => p.id));
+  }
+
+  // Re-runs whenever the user votes on a pool item (votedInPool changes).
+  const votedInPool = data ? data.reduce((n, p) => n + (hasVoted(p.id) ? 1 : 0), 0) : 0;
+  useEffect(() => {
+    if (!data) return;
+    const initial = initiallyVotedRef.current;
+    for (const p of data) {
+      if (
+        hasVoted(p.id) &&
+        !initial.has(p.id) &&
+        !gracedRef.current.has(p.id) &&
+        !timersRef.current.has(p.id)
+      ) {
+        gracedRef.current.add(p.id);
+        const t = setTimeout(() => {
+          gracedRef.current.delete(p.id);
+          timersRef.current.delete(p.id);
+          bump((n) => n + 1);
+        }, VOTE_GRACE_MS);
+        timersRef.current.set(p.id, t);
+      }
     }
-    return filteredCacheRef.current;
-    // hasVoted intentionally omitted — see comment above.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data]);
+  }, [data, votedInPool]);
+
+  useEffect(() => {
+    const timers = timersRef.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
+    };
+  }, []);
+
+  const initial = initiallyVotedRef.current;
+  const visiblePolls = data
+    ? data.filter((p) => !initial.has(p.id) && (!hasVoted(p.id) || gracedRef.current.has(p.id)))
+    : [];
 
   // Hide section entirely when no posts (Decision E2) or all are filtered out
   if (!isLoading && visiblePolls.length === 0) return null;

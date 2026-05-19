@@ -1292,7 +1292,7 @@ router.get("/cms/studio/sources/:postType", requireCmsAuth, async (req, res) => 
 
   if (postType === "item-poll" || postType === "carousel-debate") {
     const rows = await db
-      .select({ id: pollsTable.id, label: pollsTable.question, category: pollsTable.category })
+      .select({ id: pollsTable.id, label: pollsTable.question, category: pollsTable.category, createdAt: pollsTable.createdAt })
       .from(pollsTable)
       .where(eq(pollsTable.editorialStatus, "approved"))
       .orderBy(desc(pollsTable.createdAt))
@@ -1301,7 +1301,7 @@ router.get("/cms/studio/sources/:postType", requireCmsAuth, async (req, res) => 
   }
   if (postType === "item-prediction") {
     const rows = await db
-      .select({ id: predictionsTable.id, label: predictionsTable.question })
+      .select({ id: predictionsTable.id, label: predictionsTable.question, createdAt: predictionsTable.createdAt })
       .from(predictionsTable)
       .where(eq(predictionsTable.editorialStatus, "approved"))
       .orderBy(desc(predictionsTable.createdAt))
@@ -1310,7 +1310,7 @@ router.get("/cms/studio/sources/:postType", requireCmsAuth, async (req, res) => 
   }
   if (postType === "item-voice") {
     const rows = await db
-      .select({ id: profilesTable.id, label: profilesTable.name })
+      .select({ id: profilesTable.id, label: profilesTable.name, createdAt: profilesTable.createdAt })
       .from(profilesTable)
       .orderBy(desc(profilesTable.createdAt))
       .limit(50)
@@ -1318,7 +1318,7 @@ router.get("/cms/studio/sources/:postType", requireCmsAuth, async (req, res) => 
   }
   if (postType === "item-pulse") {
     const rows = await db
-      .select({ id: pulseTopicsTable.id, label: pulseTopicsTable.title })
+      .select({ id: pulseTopicsTable.id, label: pulseTopicsTable.title, createdAt: pulseTopicsTable.createdAt })
       .from(pulseTopicsTable)
       .where(eq(pulseTopicsTable.editorialStatus, "approved"))
       .orderBy(desc(pulseTopicsTable.createdAt))

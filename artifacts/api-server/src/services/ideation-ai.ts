@@ -76,8 +76,24 @@ async function callPerplexity(prompt: string): Promise<string> {
     return generateMockResearch(prompt);
   }
 
-  const data = await res.json() as { choices?: { message?: { content?: string } }[] };
-  return data.choices?.[0]?.message?.content ?? generateMockResearch(prompt);
+  const data = await res.json() as {
+    choices?: { message?: { content?: string } }[];
+    citations?: unknown[];
+    search_results?: unknown[];
+  };
+  const content = data.choices?.[0]?.message?.content;
+  const citationCount = data.citations?.length ?? data.search_results?.length ?? 0;
+  // A grounded `sonar` answer carries citations/search_results. With none, the
+  // model answered WITHOUT live search and will refuse ("I don't have access
+  // to current search…"). Passing that into idea generation produces generic,
+  // source-less ideas — so treat it as a failed research run and fall back.
+  if (!content || citationCount === 0) {
+    console.warn(
+      `[ideation] Perplexity returned an ungrounded result (citations=${citationCount}); using fallback research instead of refusal text.`,
+    );
+    return generateMockResearch(prompt);
+  }
+  return content;
 }
 
 async function callClaude(

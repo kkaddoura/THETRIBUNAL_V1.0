@@ -133,12 +133,12 @@ export default function About() {
     ? pageConfig.regionCoverage.map(c => ({ name: c.name, flag: c.flag, pop: c.population }))
     : COUNTRIES_DEFAULT
   const { data: liveCounts } = useLiveCounts()
-  const stats = pageConfig?.stats?.length ? pageConfig.stats : [
+  const stats = (pageConfig?.stats?.length ? pageConfig.stats : [
     { num: String(liveCounts?.voices ?? 94), label: "Founding Voices" },
     { num: `${liveCounts?.debates ?? 135}+`, label: "Active Debates" },
     { num: "19", label: "MENA Countries" },
     { num: "541M", label: "People in MENA" },
-  ]
+  ]).filter(s => voicesEnabled || !/voices?/i.test(s.label))
 
   const pageSections = [
     { id: "what-is-the-tribunal", label: t("What Is It") },
@@ -190,7 +190,9 @@ export default function About() {
           {t("It is a record of what people actually think when their names are not attached.")}
         </p>
         <p className="text-base text-muted-foreground font-sans leading-relaxed mb-8">
-          {t("Every debate, prediction, trend, and Voice adds to a growing picture of the region from the inside.")}
+          {voicesEnabled
+            ? t("Every debate, prediction, trend, and Voice adds to a growing picture of the region from the inside.")
+            : t("Every debate, prediction, and trend adds to a growing picture of the region from the inside.")}
         </p>
         <p className="text-sm font-serif italic text-foreground/70 leading-relaxed border-l-2 border-primary/60 pl-4">
           {t("Anonymous does not mean artificial. If it is not human, it is not counted.")}
