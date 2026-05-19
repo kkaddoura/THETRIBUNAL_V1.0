@@ -79,14 +79,14 @@ export function LoginPromptBanner() {
             <p className="font-serif font-black uppercase text-sm text-foreground tracking-tight mb-2">
               Save your journey<span className="text-primary">.</span>
             </p>
-            <p className="text-[12px] text-muted-foreground font-sans leading-relaxed mb-4">
+            <p className="text-[14px] text-muted-foreground font-sans leading-relaxed mb-4">
               You've cast {totalVotesAllTime} votes. Sign up to keep them, build your profile, and pick up where you left off — on any device.
             </p>
             <div className="flex gap-2">
               <Link
                 href={`/signup?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}
                 onClick={() => track("login_prompt_clicked", { action: "signup" })}
-                className="flex-1 bg-primary text-white font-bold uppercase tracking-widest text-[10px] px-4 py-2.5 hover:bg-primary/90 transition-colors font-serif inline-flex items-center justify-center gap-1.5"
+                className="flex-1 bg-primary text-white font-bold uppercase tracking-widest text-[12px] px-4 py-2.5 hover:bg-primary/90 transition-colors font-serif inline-flex items-center justify-center gap-1.5"
               >
                 Sign up
                 <ArrowRight className="w-3 h-3" />
@@ -94,7 +94,7 @@ export function LoginPromptBanner() {
               <Link
                 href={`/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`}
                 onClick={() => track("login_prompt_clicked", { action: "login" })}
-                className="flex-1 border border-border text-foreground font-bold uppercase tracking-widest text-[10px] px-4 py-2.5 hover:bg-secondary transition-colors font-serif inline-flex items-center justify-center"
+                className="flex-1 border border-border text-foreground font-bold uppercase tracking-widest text-[12px] px-4 py-2.5 hover:bg-secondary transition-colors font-serif inline-flex items-center justify-center"
               >
                 Sign in
               </Link>

@@ -20,7 +20,7 @@ export function UserMenu() {
     return (
       <Link
         href="/login"
-        className="group inline-flex items-center gap-1.5 border border-border hover:border-foreground bg-background hover:bg-foreground text-foreground hover:text-background text-[11px] font-bold uppercase tracking-[0.15em] px-3 py-1.5 transition-colors font-serif"
+        className="group inline-flex items-center gap-1.5 border border-border hover:border-foreground bg-background hover:bg-foreground text-foreground hover:text-background text-[13px] font-bold uppercase tracking-[0.15em] px-3 py-1.5 transition-colors font-serif"
       >
         <UserIcon className="w-3.5 h-3.5" />
         <span className="hidden sm:inline">Sign in</span>

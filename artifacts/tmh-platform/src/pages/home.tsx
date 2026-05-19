@@ -474,7 +474,7 @@ function ShareMenu({
                 `https://wa.me/?text=${encodeURIComponent(`${title} — ${shareUrl}`)}`,
               )
             }
-            className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+            className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
           >
             <span className="text-[#25D366]">●</span> WhatsApp
           </button>
@@ -484,7 +484,7 @@ function ShareMenu({
                 `https://x.com/intent/tweet?text=${encodeURIComponent(`"${title}" — The Tribunal`)}&url=${encodeURIComponent(shareUrl)}`,
               )
             }
-            className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+            className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
           >
             <span className="text-foreground">●</span> X / Twitter
           </button>
@@ -494,7 +494,7 @@ function ShareMenu({
                 `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
               )
             }
-            className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+            className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
           >
             <span className="text-[#0A66C2]">●</span> LinkedIn
           </button>
@@ -504,7 +504,7 @@ function ShareMenu({
                 `https://www.instagram.com/`,
               )
             }
-            className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+            className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
           >
             <span className="text-[#E4405F]">●</span> Instagram
           </button>
@@ -519,7 +519,7 @@ function ShareMenu({
                   setOpen(false);
                 }, 1500);
               }}
-              className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
             >
               {copied ? (
                 <>
@@ -657,7 +657,7 @@ function LiveActivity() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 mb-4">
           <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse flex-shrink-0" />
-          <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-muted-foreground font-serif">
+          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-muted-foreground font-serif">
             {t("Live Activity")}
           </p>
         </div>
@@ -682,7 +682,7 @@ function LiveActivity() {
                 <span className="text-primary font-bold group-hover:underline">
                   "{item.questionSnippet}"
                 </span>
-                <span className="text-muted-foreground text-[11px] ml-2">
+                <span className="text-muted-foreground text-[13px] ml-2">
                   · {formatSecondsAgo(item.secondsAgo)}
                 </span>
               </p>
@@ -824,7 +824,7 @@ function FeaturedPredictionCard({
       style={{ borderWidth: "1.5px" }}
     >
       <div className="flex-1 p-5">
-        <p className="text-[9px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
+        <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
           Confidence Over Time — Yes %
         </p>
         <svg
@@ -1026,7 +1026,7 @@ function FeaturedPredictionCard({
               );
             })()}
         </svg>
-        <p className="text-[9px] font-serif mt-2" style={{ color: "#10B981" }}>
+        <p className="text-[10px] font-serif mt-2" style={{ color: "#10B981" }}>
           {featured.up ? "▲" : "▼"} Confidence moved {featured.up ? "+" : "-"}
           {featured.momentum}% in the last 30 days
         </p>
@@ -1038,7 +1038,7 @@ function FeaturedPredictionCard({
               {featured.category}
             </span>
             <span
-              className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] font-serif rounded-sm"
+              className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] font-serif rounded-sm"
               style={{
                 background: "rgba(59,130,246,0.15)",
                 border: "1px solid rgba(59,130,246,0.3)",
@@ -1062,7 +1062,7 @@ function FeaturedPredictionCard({
               {featured.question}
             </p>
           </Link>
-          <p className="text-[10px] text-muted-foreground font-serif mt-2">
+          <p className="text-[12px] text-muted-foreground font-serif mt-2">
             {featured.count} predictions locked in
           </p>
         </div>
@@ -1079,13 +1079,13 @@ function FeaturedPredictionCard({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span
-                      className="text-[10px] uppercase tracking-[0.15em] font-bold font-serif"
+                      className="text-[12px] uppercase tracking-[0.15em] font-bold font-serif"
                       style={{ color: "#10B981" }}
                     >
                       Yes
                     </span>
                     <span
-                      className="text-[10px] font-bold font-serif"
+                      className="text-[12px] font-bold font-serif"
                       style={{ color: "#10B981" }}
                     >
                       {featured.yes}%
@@ -1107,13 +1107,13 @@ function FeaturedPredictionCard({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span
-                      className="text-[10px] uppercase tracking-[0.15em] font-bold font-serif"
+                      className="text-[12px] uppercase tracking-[0.15em] font-bold font-serif"
                       style={{ color: "#DC143C" }}
                     >
                       No
                     </span>
                     <span
-                      className="text-[10px] font-bold font-serif"
+                      className="text-[12px] font-bold font-serif"
                       style={{ color: "#DC143C" }}
                     >
                       {featured.no}%
@@ -1133,14 +1133,14 @@ function FeaturedPredictionCard({
                   </div>
                 </div>
               </div>
-              <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-serif mb-2 font-bold">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-serif mb-2 font-bold">
                 Lock your prediction
               </p>
               <div className="flex gap-2">
                 <motion.button
                   onClick={() => handleVote("yes")}
                   whileTap={{ scale: 0.97 }}
-                  className="flex-1 py-2.5 border font-bold text-[11px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#10B981] hover:border-[#10B981]"
+                  className="flex-1 py-2.5 border font-bold text-[13px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#10B981] hover:border-[#10B981]"
                   style={{ borderColor: "#10B981", color: "#10B981" }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = "#10B981"; }}
@@ -1150,7 +1150,7 @@ function FeaturedPredictionCard({
                 <motion.button
                   onClick={() => handleVote("no")}
                   whileTap={{ scale: 0.97 }}
-                  className="flex-1 py-2.5 border font-bold text-[11px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#DC143C] hover:border-[#DC143C]"
+                  className="flex-1 py-2.5 border font-bold text-[13px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#DC143C] hover:border-[#DC143C]"
                   style={{ borderColor: "#DC143C", color: "#DC143C" }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = "#DC143C"; }}
@@ -1170,11 +1170,11 @@ function FeaturedPredictionCard({
               className="tmh-gate-card"
             >
               <div className="bg-background/50 border border-border p-4 rounded-sm space-y-3">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-[#3B82F6] font-serif">
+                <div className="flex items-center gap-2 text-[12px] uppercase tracking-widest font-bold text-[#3B82F6] font-serif">
                   <Lock className="w-3.5 h-3.5" />
                   Prediction locked — {vote?.toUpperCase()}
                 </div>
-                <p className="text-[10px] text-muted-foreground font-serif">
+                <p className="text-[12px] text-muted-foreground font-serif">
                   Share to see full confidence breakdown, or enter your email:
                 </p>
                 <div className="flex gap-2">
@@ -1186,7 +1186,7 @@ function FeaturedPredictionCard({
                       );
                       setTimeout(unlock, 800);
                     }}
-                    className="flex-1 py-2 bg-[#25D366] text-white text-[10px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
+                    className="flex-1 py-2 bg-[#25D366] text-white text-[12px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
                   >
                     WhatsApp
                   </button>
@@ -1198,7 +1198,7 @@ function FeaturedPredictionCard({
                       );
                       setTimeout(unlock, 800);
                     }}
-                    className="flex-1 py-2 bg-foreground text-background text-[10px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
+                    className="flex-1 py-2 bg-foreground text-background text-[12px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
                   >
                     X
                   </button>
@@ -1210,7 +1210,7 @@ function FeaturedPredictionCard({
                       );
                       setTimeout(unlock, 800);
                     }}
-                    className="flex-1 py-2 bg-[#0A66C2] text-white text-[10px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
+                    className="flex-1 py-2 bg-[#0A66C2] text-white text-[12px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
                   >
                     LinkedIn
                   </button>
@@ -1224,12 +1224,12 @@ function FeaturedPredictionCard({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your@email.com"
-                        className="bg-transparent text-[11px] font-sans text-foreground outline-none flex-1 placeholder:text-muted-foreground/50"
+                        className="bg-transparent text-[13px] font-sans text-foreground outline-none flex-1 placeholder:text-muted-foreground/50"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="px-3 py-2 bg-[#3B82F6] text-white text-[10px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
+                      className="px-3 py-2 bg-[#3B82F6] text-white text-[12px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
                     >
                       {emailDone ? (
                         <CheckCircle2 className="w-4 h-4" />
@@ -1245,7 +1245,7 @@ function FeaturedPredictionCard({
                       onChange={e => setNewsletterOptIn(e.target.checked)}
                       className="w-3 h-3 rounded-sm accent-[#3B82F6] cursor-pointer"
                     />
-                    <span className="text-[9px] text-muted-foreground font-sans">
+                    <span className="text-[10px] text-muted-foreground font-sans">
                       Send me The Tribunal newsletter
                     </span>
                   </label>
@@ -1265,13 +1265,13 @@ function FeaturedPredictionCard({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span
-                      className="text-[10px] uppercase tracking-[0.15em] font-bold font-serif"
+                      className="text-[12px] uppercase tracking-[0.15em] font-bold font-serif"
                       style={{ color: "#10B981" }}
                     >
                       Yes
                     </span>
                     <span
-                      className="text-[10px] font-bold font-serif"
+                      className="text-[12px] font-bold font-serif"
                       style={{ color: "#10B981" }}
                     >
                       {featured.yes}%
@@ -1289,20 +1289,20 @@ function FeaturedPredictionCard({
                       style={{ background: "#10B981" }}
                     />
                   </div>
-                  <p className="text-[8px] text-muted-foreground font-serif mt-0.5">
+                  <p className="text-[9px] text-muted-foreground font-serif mt-0.5">
                     {featured.up ? "▲" : "▼"} Up {featured.momentum}% this week
                   </p>
                 </div>
                 <div>
                   <div className="flex justify-between mb-1">
                     <span
-                      className="text-[10px] uppercase tracking-[0.15em] font-bold font-serif"
+                      className="text-[12px] uppercase tracking-[0.15em] font-bold font-serif"
                       style={{ color: "#DC143C" }}
                     >
                       No
                     </span>
                     <span
-                      className="text-[10px] font-bold font-serif"
+                      className="text-[12px] font-bold font-serif"
                       style={{ color: "#DC143C" }}
                     >
                       {featured.no}%
@@ -1324,7 +1324,7 @@ function FeaturedPredictionCard({
               </div>
               <div className="flex items-center gap-2 pt-2 border-t border-border">
                 <span className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#3B82F6] font-serif">
+                <span className="text-[12px] font-bold uppercase tracking-widest text-[#3B82F6] font-serif">
                   ✓ You predicted {vote?.toUpperCase()} — Locked until{" "}
                   {featured.resolves}
                 </span>
@@ -1332,7 +1332,7 @@ function FeaturedPredictionCard({
               <div className="mt-3 flex items-center justify-between">
                 <Link
                   href="/predictions"
-                  className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors flex items-center gap-1"
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors flex items-center gap-1"
                 >
                   More Predictions <ArrowRight className="w-3 h-3" />
                 </Link>
@@ -1405,10 +1405,10 @@ function SidebarPredictionItem({
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] uppercase tracking-widest text-[#3B82F6] font-serif font-bold">
+            <p className="text-[13px] uppercase tracking-widest text-[#3B82F6] font-serif font-bold">
               {pred.category}
             </p>
-            <p className="font-serif font-black uppercase text-[12px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
+            <p className="font-serif font-black uppercase text-[14px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
               {pred.question.length > 70
                 ? pred.question.slice(0, 70) + "…"
                 : pred.question}
@@ -1453,19 +1453,19 @@ function SidebarPredictionItem({
         </div>
         <div className="flex items-center gap-3 mt-1.5">
           <span
-            className="text-[9px] font-bold font-serif"
+            className="text-[10px] font-bold font-serif"
             style={{ color: "#10B981" }}
           >
             Yes {pred.yes}%
           </span>
           <span
-            className="text-[9px] font-bold font-serif"
+            className="text-[10px] font-bold font-serif"
             style={{ color: "#DC143C" }}
           >
             No {pred.no}%
           </span>
           {vote ? (
-            <span className="text-[8px] font-bold font-serif ml-auto text-[#3B82F6]">
+            <span className="text-[9px] font-bold font-serif ml-auto text-[#3B82F6]">
               ✓ {vote.toUpperCase()}
             </span>
           ) : (
@@ -1473,14 +1473,14 @@ function SidebarPredictionItem({
               <motion.button
                 onClick={(e) => handleQuickVote("yes", e)}
                 whileTap={{ scale: 0.93 }}
-                className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider font-serif border border-[#10B981]/40 text-[#10B981] hover:bg-[#10B981] hover:text-white transition-colors rounded-sm"
+                className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider font-serif border border-[#10B981]/40 text-[#10B981] hover:bg-[#10B981] hover:text-white transition-colors rounded-sm"
               >
                 Y
               </motion.button>
               <motion.button
                 onClick={(e) => handleQuickVote("no", e)}
                 whileTap={{ scale: 0.93 }}
-                className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider font-serif border border-[#DC143C]/40 text-[#DC143C] hover:bg-[#DC143C] hover:text-white transition-colors rounded-sm"
+                className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider font-serif border border-[#DC143C]/40 text-[#DC143C] hover:bg-[#DC143C] hover:text-white transition-colors rounded-sm"
               >
                 N
               </motion.button>
@@ -1639,13 +1639,6 @@ export default function Home() {
     day: "numeric",
   });
 
-  const issueNumber = (() => {
-    const now = new Date()
-    const start = new Date(2026, 0, 1)
-    const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()) + 1
-    return String(Math.max(1, months)).padStart(3, "0")
-  })()
-
   return (
     <Layout>
       <style>{`
@@ -1676,8 +1669,7 @@ export default function Home() {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-2 text-[9px] uppercase tracking-[0.18em] text-muted-foreground font-serif">
-            <span>{t(`EST. 2026 · ISSUE NO. ${issueNumber}`)}</span>
+          <div className="flex items-center justify-between py-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-serif">
             <span className="hidden sm:block">{issueDate}</span>
             <span className="text-primary font-bold font-mono tabular-nums">
               {astTime} AST
@@ -1708,7 +1700,7 @@ export default function Home() {
                     <span className="absolute inline-flex w-full h-full rounded-full bg-[#10B981] opacity-60 animate-ping" />
                     <span className="relative inline-flex w-2 h-2 rounded-full bg-[#10B981]" />
                   </span>
-                  <span className="font-serif font-bold text-[10px] tracking-[0.32em] uppercase text-[#10B981]">
+                  <span className="font-serif font-bold text-[12px] tracking-[0.32em] uppercase text-[#10B981]">
                     {t("Live Globally · 541M Voices")}
                   </span>
                 </motion.div>
@@ -1803,10 +1795,10 @@ export default function Home() {
                         lastDigitAccent
                       />
                     </div>
-                    <div className="text-[8.5px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
+                    <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
                       {t("Votes Today")}
                     </div>
-                    <div className="text-[8px] font-serif font-bold uppercase tracking-[0.18em] text-primary mt-1 flex items-center gap-1.5">
+                    <div className="text-[9px] font-serif font-bold uppercase tracking-[0.18em] text-primary mt-1 flex items-center gap-1.5">
                       <span className="relative flex w-1.5 h-1.5">
                         <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />
                         <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-primary" />
@@ -1818,10 +1810,10 @@ export default function Home() {
                     <div className="font-display font-black text-[26px] sm:text-[28px] text-foreground tabular-nums leading-none">
                       94
                     </div>
-                    <div className="text-[8.5px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
+                    <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
                       {t("Nations Active")}
                     </div>
-                    <div className="text-[8px] font-serif font-bold uppercase tracking-[0.18em] text-foreground/45 mt-1">
+                    <div className="text-[9px] font-serif font-bold uppercase tracking-[0.18em] text-foreground/45 mt-1">
                       ↑ {t("3 Last hr")}
                     </div>
                   </div>
@@ -1840,10 +1832,10 @@ export default function Home() {
                         animation="fade"
                       />
                     </div>
-                    <div className="text-[8.5px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
+                    <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
                       {t("People Online")}
                     </div>
-                    <div className="text-[8px] font-serif font-bold uppercase tracking-[0.18em] text-foreground/45 mt-1">
+                    <div className="text-[9px] font-serif font-bold uppercase tracking-[0.18em] text-foreground/45 mt-1">
                       ↗ {t("Rising")}
                     </div>
                   </div>
@@ -1896,7 +1888,7 @@ export default function Home() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 800,
-                  fontSize: "0.55rem",
+                  fontSize: "0.63rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.12em",
                   whiteSpace: "nowrap",
@@ -1922,7 +1914,7 @@ export default function Home() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 700,
-                  fontSize: "0.7rem",
+                  fontSize: "0.80rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   color: "rgba(250,250,250,0.75)",
@@ -1935,7 +1927,7 @@ export default function Home() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 700,
-                  fontSize: "0.78rem",
+                  fontSize: "0.90rem",
                   color: "#fff",
                   whiteSpace: "nowrap",
                 }}
@@ -1972,12 +1964,12 @@ export default function Home() {
             <div className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border">
               <FadeIn delay={0.15}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
+                <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
                   {t("Latest Debates")}
                 </p>
                 <Link
                   href="/debates"
-                  className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
                 >
                   {t("View All")}
                 </Link>
@@ -2000,7 +1992,7 @@ export default function Home() {
                         whileHover={{ x: 4 }}
                         transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
                       >
-                        <p className="text-[11px] uppercase tracking-widest text-primary font-serif font-bold">
+                        <p className="text-[13px] uppercase tracking-widest text-primary font-serif font-bold">
                           {poll.category}
                         </p>
                         <p className="font-serif font-black uppercase text-[13px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
@@ -2008,7 +2000,7 @@ export default function Home() {
                             ? poll.question.slice(0, 90) + "…"
                             : poll.question}
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 font-serif">
+                        <p className="text-[12px] text-muted-foreground mt-1 font-serif">
                           {(poll.totalVotes ?? 0).toLocaleString()} votes
                         </p>
                       </motion.div>
@@ -2100,12 +2092,12 @@ export default function Home() {
             <div className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border">
               <FadeIn delay={0.15}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
+                <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
                   {t("Latest Predictions")}
                 </p>
                 <Link
                   href="/predictions"
-                  className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
                 >
                   {t("View All")}
                 </Link>
@@ -2232,7 +2224,7 @@ export default function Home() {
                     style={{ borderWidth: "1.5px" }}
                   >
                     <div className="flex-1 p-5">
-                      <p className="text-[9px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
+                      <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
                         Trend Over 12 Months
                       </p>
                       <svg
@@ -2411,7 +2403,7 @@ export default function Home() {
                           })()}
                       </svg>
                       <p
-                        className="text-[9px] font-serif mt-2"
+                        className="text-[10px] font-serif mt-2"
                         style={{ color: topic.tagColor }}
                       >
                         {topic.deltaUp ? "▲" : "▼"} {topic.delta} year-over-year
@@ -2420,7 +2412,7 @@ export default function Home() {
                     <div className="flex-1 p-5 border-t lg:border-t-0 lg:border-l border-border flex flex-col justify-center gap-3">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
-                          className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] font-serif"
+                          className="px-2.5 py-1 text-[13px] font-bold uppercase tracking-[0.18em] font-serif"
                           style={{
                             background: `${topic.tagColor}20`,
                             border: `1px solid ${topic.tagColor}40`,
@@ -2452,23 +2444,23 @@ export default function Home() {
                         </span>
                         <span
                           className={cn(
-                            "text-[10px] font-bold font-serif",
+                            "text-[12px] font-bold font-serif",
                             topic.deltaUp ? "text-[#10B981]" : "text-[#DC143C]",
                           )}
                         >
                           {topic.deltaUp ? "▲" : "▼"} {topic.delta}
                         </span>
                       </div>
-                      <p className="text-[11px] text-muted-foreground font-sans leading-relaxed">
+                      <p className="text-[13px] text-muted-foreground font-sans leading-relaxed">
                         {topic.blurb}
                       </p>
                       <div className="flex items-center justify-between">
-                        <p className="text-[8px] text-muted-foreground/60 font-serif uppercase tracking-widest">
+                        <p className="text-[9px] text-muted-foreground/60 font-serif uppercase tracking-widest">
                           Source: {topic.source}
                         </p>
                         <Link
                           href="/pulse"
-                          className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-[#10B981] font-serif transition-colors flex items-center gap-1"
+                          className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-[#10B981] font-serif transition-colors flex items-center gap-1"
                         >
                           Explore <ArrowRight className="w-3 h-3" />
                         </Link>
@@ -2483,12 +2475,12 @@ export default function Home() {
             <div className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border">
               <FadeIn delay={0.15}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
+                <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
                   {t("Latest Trends")}
                 </p>
                 <Link
                   href="/pulse"
-                  className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
                 >
                   {t("View All")}
                 </Link>
@@ -2565,12 +2557,12 @@ export default function Home() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p
-                            className="text-[9px] uppercase tracking-widest font-serif font-bold"
+                            className="text-[10px] uppercase tracking-widest font-serif font-bold"
                             style={{ color: t2.tagColor }}
                           >
                             {t2.tag}
                           </p>
-                          <p className="font-serif font-black uppercase text-[12px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
+                          <p className="font-serif font-black uppercase text-[14px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
                             {t2.title}
                           </p>
                         </div>
@@ -2604,14 +2596,14 @@ export default function Home() {
                       </div>
                       <div className="flex items-center gap-3 mt-1.5">
                         <span
-                          className="text-[9px] font-bold font-serif"
+                          className="text-[10px] font-bold font-serif"
                           style={{ color: t2.tagColor }}
                         >
                           {t2.stat}
                         </span>
                         <span
                           className={cn(
-                            "text-[8px] font-bold font-serif ml-auto",
+                            "text-[9px] font-bold font-serif ml-auto",
                             t2.deltaUp ? "text-[#10B981]" : "text-[#DC143C]",
                           )}
                         >
@@ -2644,7 +2636,7 @@ export default function Home() {
             </div>
             <Link
               href="/voices"
-              className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-widest text-background/70 hover:text-background font-serif"
+              className="hidden sm:inline-block text-[12px] font-bold uppercase tracking-widest text-background/70 hover:text-background font-serif"
             >
               {t("View All →")}
             </Link>
@@ -2734,7 +2726,7 @@ export default function Home() {
                   <span className="font-serif font-bold uppercase tracking-wider text-base mb-3 leading-tight">
                     {cat.name}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-background/75">
+                  <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-background/75">
                     {cat.pollCount} Debates
                   </span>
                 </Link>
@@ -2753,7 +2745,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-12 md:gap-16 items-center">
             <FadeUp className="flex-1 md:basis-2/3">
-              <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
+              <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
                 {t("The Weekly Newsletter")}
               </p>
               <h2 className="font-display font-black text-4xl md:text-5xl uppercase leading-none tracking-tight text-background mb-4">
@@ -2800,7 +2792,7 @@ export default function Home() {
                     {t("You're In")}
                     <span className="text-primary">.</span>
                   </p>
-                  <p className="text-[10px] uppercase tracking-widest text-background/70 mt-2 font-serif">
+                  <p className="text-[12px] uppercase tracking-widest text-background/70 mt-2 font-serif">
                     {t("Welcome to the conversation.")}
                   </p>
                 </motion.div>
@@ -2827,7 +2819,7 @@ export default function Home() {
                   >
                     {t("Join The Hustle")}
                   </motion.button>
-                  <p className="text-[9px] text-background/60 font-sans">
+                  <p className="text-[10px] text-background/60 font-sans">
                     {t("No spam. Unsubscribe anytime.")}
                   </p>
                 </form>

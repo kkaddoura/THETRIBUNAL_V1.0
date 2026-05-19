@@ -367,7 +367,7 @@ export function GlobeConnections({
           ctx.globalAlpha = 0.95;
           ctx.fillStyle   = labelBg;
           ctx.beginPath();
-          ctx.roundRect(lx, ly, lw, lh, 2);
+          ctx.roundRect(lx, ly, lw, lh, lh / 2);
           ctx.fill();
 
           // MENA border accent

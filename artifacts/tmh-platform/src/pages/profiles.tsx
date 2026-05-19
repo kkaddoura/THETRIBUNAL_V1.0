@@ -128,7 +128,7 @@ function VoicesTicker({
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.7rem",
+                fontSize: "0.80rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
                 color: "rgba(250,250,250,0.75)",
@@ -151,7 +151,7 @@ function VoicesTicker({
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.72rem",
+                fontSize: "0.83rem",
                 color: "#DC143C",
                 whiteSpace: "nowrap",
               }}
@@ -234,7 +234,7 @@ export default function Profiles() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.68rem",
+              fontSize: "0.78rem",
               textTransform: "uppercase",
               letterSpacing: "0.28em",
               color: "#DC143C",
@@ -265,7 +265,7 @@ export default function Profiles() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               textTransform: "uppercase",
               letterSpacing: "0.18em",
             }}
@@ -280,7 +280,7 @@ export default function Profiles() {
             >
               <Link
                 href="/majlis"
-                className="inline-flex items-center gap-2 mt-4 bg-primary text-white text-[11px] font-bold uppercase tracking-[0.15em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
+                className="inline-flex items-center gap-2 mt-4 bg-primary text-white text-[13px] font-bold uppercase tracking-[0.15em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
               >
                 <Lock className="w-3.5 h-3.5" />
                 Enter The Majlis
@@ -315,7 +315,7 @@ export default function Profiles() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -344,7 +344,7 @@ export default function Profiles() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -373,7 +373,7 @@ export default function Profiles() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -439,7 +439,7 @@ export default function Profiles() {
               onClick={() => setFilter(f.id)}
               whileTap={{ scale: 0.95 }}
               className={cn(
-                "px-4 py-2 text-[10px] uppercase tracking-[0.2em] font-bold transition-colors border",
+                "px-4 py-2 text-[12px] uppercase tracking-[0.2em] font-bold transition-colors border",
                 filter === f.id
                   ? "bg-foreground text-background border-foreground"
                   : "text-muted-foreground border-border hover:text-foreground hover:border-foreground",

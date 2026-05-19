@@ -129,7 +129,7 @@ export function Navbar() {
               <span className="font-display font-black text-lg uppercase tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">
                 {brandName}<span className="text-primary">.</span>
               </span>
-              <span className="text-[9px] font-serif tracking-[0.2em] uppercase text-muted-foreground leading-none mt-1.5">
+              <span className="text-[10px] font-serif tracking-[0.2em] uppercase text-muted-foreground leading-none mt-1.5">
                 {brandSub}
               </span>
             </Link>
@@ -142,7 +142,7 @@ export function Navbar() {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "text-[10px] lg:text-[11.5px] uppercase tracking-[0.15em] lg:tracking-[0.2em] font-bold transition-all font-serif flex items-center gap-1",
+                  "text-[12px] lg:text-[13px] uppercase tracking-[0.15em] lg:tracking-[0.2em] font-bold transition-all font-serif flex items-center gap-1",
                   location === link.href || (link.href === "/majlis" && location.startsWith("/majlis"))
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
@@ -158,7 +158,7 @@ export function Navbar() {
             {ctaButton && !settingsLoading && (
             <Link
               href={ctaButton.href}
-              className="hidden lg:flex items-center gap-2 bg-primary text-white text-[11px] font-bold uppercase tracking-[0.15em] px-4 py-2 hover:bg-primary/90 transition-colors font-serif"
+              className="hidden lg:flex items-center gap-2 bg-primary text-white text-[13px] font-bold uppercase tracking-[0.15em] px-4 py-2 hover:bg-primary/90 transition-colors font-serif"
             >
               {ctaButton.label}
             </Link>

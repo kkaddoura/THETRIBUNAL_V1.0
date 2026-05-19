@@ -23,7 +23,7 @@ import {
 } from "@workspace/db"
 import { eq, sql, inArray } from "drizzle-orm"
 import { hashPassword, verifyPassword, generateToken } from "../lib/auth-shared.js"
-import { isValidAvatarId, AVATARS, getAvatarUrl } from "../lib/avatars.js"
+import { isValidAvatarId, randomAvatarId, AVATARS, getAvatarUrl } from "../lib/avatars.js"
 import { validateUsername } from "../lib/reserved-usernames.js"
 import { sendEmail } from "../lib/email.js"
 import { unsubscribeUrl } from "../lib/unsubscribe.js"
@@ -125,9 +125,12 @@ router.post("/auth/signup", async (req, res) => {
   if (typeof password !== "string" || password.length < PASSWORD_MIN_LENGTH) {
     return res.status(400).json({ error: "password_too_short" })
   }
-  if (typeof avatarId !== "string" || !isValidAvatarId(avatarId)) {
-    return res.status(400).json({ error: "avatar_invalid" })
-  }
+  // Avatar is no longer chosen at signup — auto-assign a random one.
+  // Honour a valid avatarId if a client still sends one, otherwise pick.
+  const finalAvatarId =
+    typeof avatarId === "string" && isValidAvatarId(avatarId)
+      ? avatarId
+      : randomAvatarId()
 
   const lowerUsername = username.toLowerCase()
   const lowerEmail = email.toLowerCase()
@@ -159,7 +162,7 @@ router.post("/auth/signup", async (req, res) => {
         username,
         email,
         passwordHash,
-        avatarId,
+        avatarId: finalAvatarId,
         emailVerificationToken: verifyToken,
         emailVerificationSentAt: new Date(),
         newsletterOptIn: wantsNewsletter,

@@ -66,20 +66,20 @@ export function IpConsentBanner() {
             <p className="font-serif font-black uppercase text-sm text-foreground tracking-tight mb-2">
               Location-Aware Results<span className="text-primary">.</span>
             </p>
-            <p className="text-[12px] text-muted-foreground font-sans leading-relaxed mb-4">
+            <p className="text-[14px] text-muted-foreground font-sans leading-relaxed mb-4">
               We use your IP address to determine your country so you can see how voters from your region compare.
               Your vote is still anonymous — we don't store personal data.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={accept}
-                className="flex-1 bg-primary text-white font-bold uppercase tracking-widest text-[10px] px-4 py-2.5 hover:bg-primary/90 transition-colors font-serif"
+                className="flex-1 bg-primary text-white font-bold uppercase tracking-widest text-[12px] px-4 py-2.5 hover:bg-primary/90 transition-colors font-serif"
               >
                 Accept
               </button>
               <button
                 onClick={reject}
-                className="flex-1 border border-border text-foreground font-bold uppercase tracking-widest text-[10px] px-4 py-2.5 hover:bg-secondary transition-colors font-serif"
+                className="flex-1 border border-border text-foreground font-bold uppercase tracking-widest text-[12px] px-4 py-2.5 hover:bg-secondary transition-colors font-serif"
               >
                 No Thanks
               </button>

@@ -304,7 +304,7 @@ export function Chatbot() {
                 </div>
                 <div>
                   <h3 className="text-white text-sm font-bold leading-tight">Noor</h3>
-                  <p className="text-[10px] text-white/75 flex items-center gap-1.5">
+                  <p className="text-[12px] text-white/75 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     online
                   </p>
@@ -378,7 +378,7 @@ export function Chatbot() {
                       </div>
                       <div
                         className={cn(
-                          "text-[9px] mt-1 select-none",
+                          "text-[10px] mt-1 select-none",
                           isUser ? "text-white/75 text-right" : "text-white/75 text-right"
                         )}
                       >

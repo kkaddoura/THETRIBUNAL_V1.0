@@ -82,7 +82,7 @@ export default function Terms() {
     <Layout>
       <div className="bg-foreground text-background py-16 border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">Legal</p>
+          <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">Legal</p>
           <h1 className="font-display font-black text-4xl md:text-6xl uppercase tracking-tight">
             {pageConfig?.titleLine1 || "Terms &"}<br />
             {pageConfig?.titleLine2 || "Conditions"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
@@ -109,7 +109,7 @@ export default function Terms() {
           ))}
         </div>
 
-        <div className="mt-16 pt-8 border-t border-border flex flex-wrap gap-6 text-[10px] uppercase tracking-widest font-bold font-serif text-muted-foreground">
+        <div className="mt-16 pt-8 border-t border-border flex flex-wrap gap-6 text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground">
           <Link href="/faq" className="hover:text-foreground transition-colors">FAQ</Link>
           <Link href="/about" className="hover:text-foreground transition-colors">About The Tribunal</Link>
           <Link href="/" className="hover:text-foreground transition-colors">Home</Link>

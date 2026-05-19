@@ -156,17 +156,17 @@ export default function About() {
       {/* Hero */}
       <div className="bg-foreground text-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
             {t(hero?.tagline || "Est. 2026 · Founded by Kareem Kaddoura")}
           </p>
           <h1 style={{ fontFamily: isAr ? "'IBM Plex Sans Arabic', sans-serif" : "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
             {t(hero?.titleLine1 || "The Region's")}<br />
             {t(hero?.titleLine2 || "Collective Mirror")}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.18em" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.90rem", textTransform: "uppercase", letterSpacing: "0.18em" }}>
             {t(hero?.subtitle || "Anonymous votes. Human opinions. Public data.")}
           </p>
-          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.72rem", letterSpacing: "0.04em", opacity: 0.6, marginTop: "0.85rem" }}>
+          <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.83rem", letterSpacing: "0.04em", opacity: 0.6, marginTop: "0.85rem" }}>
             {t("Your vote is anonymous. The data is real.")}
           </p>
         </div>
@@ -232,7 +232,7 @@ export default function About() {
             {stats.map(stat => (
               <div key={stat.label}>
                 <div className="font-display text-4xl md:text-5xl leading-none mb-2">{stat.num}</div>
-                <div className="text-[10px] uppercase tracking-[0.2em] font-serif text-primary">{t(stat.label)}</div>
+                <div className="text-[12px] uppercase tracking-[0.2em] font-serif text-primary">{t(stat.label)}</div>
               </div>
             ))}
           </div>
@@ -321,7 +321,7 @@ export default function About() {
               <div key={c.name} className="border border-border px-3 py-2.5 text-xs font-serif uppercase tracking-widest text-foreground/80 text-center flex flex-col items-center gap-1">
                 <span className="text-xl not-italic" style={{ fontFamily: "system-ui" }}>{c.flag}</span>
                 <span>{t(c.name)}</span>
-                <span className="text-[9px] tracking-normal normal-case text-muted-foreground font-sans">{c.pop}</span>
+                <span className="text-[10px] tracking-normal normal-case text-muted-foreground font-sans">{c.pop}</span>
               </div>
             ))}
           </div>

@@ -1,7 +1,7 @@
 export function LoadingDots({ text = "Checking for more items" }: { text?: string }) {
   return (
     <span
-      className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif"
+      className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif"
     >
       {text}
       <span className="inline-flex ml-0.5 gap-[2px]">

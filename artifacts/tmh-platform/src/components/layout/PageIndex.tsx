@@ -114,13 +114,13 @@ export function PageIndex({ sections, scrollOffset = 80, title = "On This Page" 
                 >
                   <span
                     className={cn(
-                      "font-display text-[11px] font-bold tabular-nums tracking-wider transition-colors",
+                      "font-display text-[13px] font-bold tabular-nums tracking-wider transition-colors",
                       isActive ? "text-primary" : "text-muted-foreground/60 group-hover:text-foreground",
                     )}
                   >
                     {String(i + 1).padStart(2, "0")}
                   </span>
-                  <span className="font-serif uppercase text-[12px] tracking-[0.14em] font-bold truncate">
+                  <span className="font-serif uppercase text-[14px] tracking-[0.14em] font-bold truncate">
                     {section.label}
                   </span>
                 </button>
@@ -131,7 +131,7 @@ export function PageIndex({ sections, scrollOffset = 80, title = "On This Page" 
 
         <div className="border-t border-border px-5 py-2.5 flex items-center gap-2">
           <span className="w-1.5 h-1.5 bg-primary animate-pulse" />
-          <span className="text-[10px] uppercase tracking-[0.22em] font-serif font-bold text-muted-foreground">
+          <span className="text-[12px] uppercase tracking-[0.22em] font-serif font-bold text-muted-foreground">
             Scroll to navigate
           </span>
         </div>

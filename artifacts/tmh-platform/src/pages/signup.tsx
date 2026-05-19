@@ -3,7 +3,7 @@ import { Layout } from "@/components/layout/Layout"
 import { useLocation, Link } from "wouter"
 import { Eye, EyeOff, Vote, ShieldCheck, Mail, Sparkles, ArrowRight } from "lucide-react"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { useSignup, useAvatars } from "@/hooks/use-auth"
+import { useSignup } from "@/hooks/use-auth"
 import { track } from "@/lib/analytics"
 
 export default function Signup() {
@@ -13,22 +13,14 @@ export default function Signup() {
       "Create your account on The Tribunal. Build a journey of polls, predictions, and your voice in MENA's data-driven debate platform.",
   })
   const [, navigate] = useLocation()
-  const { data: avatars } = useAvatars()
   const signup = useSignup()
 
   const [username, setUsername] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
-  const [avatarId, setAvatarId] = useState<string>("")
   const [newsletterOptIn, setNewsletterOptIn] = useState(true)
   const [error, setError] = useState("")
-
-  useEffect(() => {
-    if (avatars && avatars.length > 0 && !avatarId) {
-      setAvatarId(avatars[0].id)
-    }
-  }, [avatars, avatarId])
 
   useEffect(() => {
     track("signup_started", {})
@@ -45,16 +37,11 @@ export default function Signup() {
       setError("Password must be at least 8 characters.")
       return
     }
-    if (!avatarId) {
-      setError("Pick an avatar.")
-      return
-    }
     try {
       await signup.mutateAsync({
         username: username.trim().toLowerCase(),
         email: email.trim().toLowerCase(),
         password,
-        avatarId,
         newsletterOptIn,
       })
       const params = new URLSearchParams(window.location.search)
@@ -71,7 +58,6 @@ export default function Signup() {
         email_taken: "An account with that email already exists.",
         email_invalid: "Enter a valid email address.",
         password_too_short: "Password must be at least 8 characters.",
-        avatar_invalid: "Pick a valid avatar.",
       }
       setError(map[e.message] ?? "Sign up failed. Please try again.")
     }
@@ -96,7 +82,7 @@ export default function Signup() {
           />
 
           <div className="relative">
-            <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-5 font-serif">
+            <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-5 font-serif">
               By the Middle East Hustle
             </p>
             <h1
@@ -188,7 +174,7 @@ export default function Signup() {
               "The questions you can't ask out loud — collected anonymously, at scale."
             </blockquote>
             <figcaption
-              className="text-[10px] uppercase tracking-[0.25em] font-bold mt-3 font-serif"
+              className="text-[12px] uppercase tracking-[0.25em] font-bold mt-3 font-serif"
               style={{ color: "rgba(242,237,228,0.5)" }}
             >
               — The Tribunal, on the record
@@ -201,7 +187,7 @@ export default function Signup() {
           <div className="w-full max-w-md">
             {/* Mobile-only headline (the left aside is desktop-only) */}
             <div className="lg:hidden text-center mb-8">
-              <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
+              <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
                 Join The Tribunal
               </p>
               <h1 className="font-display font-black uppercase tracking-tight text-4xl leading-[0.95]">
@@ -211,7 +197,7 @@ export default function Signup() {
             </div>
 
             <div className="bg-card border border-border p-6 md:p-8">
-              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
+              <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
                 Create account · 60 seconds
               </p>
               <h2 className="font-display font-black uppercase tracking-tight text-2xl md:text-3xl mb-6">
@@ -220,7 +206,7 @@ export default function Signup() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-1.5">
+                  <label className="block text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-1.5">
                     Username
                   </label>
                   <input
@@ -235,13 +221,13 @@ export default function Signup() {
                     className="w-full bg-background border border-border px-4 py-3 text-sm text-foreground focus:border-primary focus:outline-none transition-colors"
                     required
                   />
-                  <p className="text-[10px] text-muted-foreground/70 mt-1.5 leading-relaxed">
+                  <p className="text-[12px] text-muted-foreground/70 mt-1.5 leading-relaxed">
                     3–20 chars · lowercase, numbers, underscores · first-come, first-served
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-1.5">
+                  <label className="block text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-1.5">
                     Email
                   </label>
                   <input
@@ -259,7 +245,7 @@ export default function Signup() {
                 </div>
 
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-1.5">
+                  <label className="block text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-1.5">
                     Password
                   </label>
                   <div className="relative">
@@ -287,7 +273,7 @@ export default function Signup() {
                   </div>
                 </div>
 
-                <label className="flex items-start gap-2.5 text-[11px] text-muted-foreground cursor-pointer leading-relaxed pt-1">
+                <label className="flex items-start gap-2.5 text-[13px] text-muted-foreground cursor-pointer leading-relaxed pt-1">
                   <input
                     type="checkbox"
                     checked={newsletterOptIn}
@@ -325,7 +311,7 @@ export default function Signup() {
             </div>
 
             {/* Trust strip */}
-            <div className="mt-6 flex items-center justify-center gap-5 text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/70 font-serif">
+            <div className="mt-6 flex items-center justify-center gap-5 text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground/70 font-serif">
               <span>Anonymous votes</span>
               <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
               <span>Free forever</span>

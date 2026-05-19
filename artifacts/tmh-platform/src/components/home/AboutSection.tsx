@@ -9,61 +9,217 @@ const PRINCIPLES = [
   { title: "Real People Only", body: "No bots. No sponsored opinions. Just the region, speaking for itself." },
 ]
 
+const CREAM = "#F5F0EB"
+const CRIMSON = "#DC143C"
+
 export default function AboutSection() {
   const { t } = useI18n()
 
   return (
-    <section style={{ background: "#0A0A0A", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
-      <div style={{ maxWidth: "80rem", margin: "0 auto", padding: "1.5rem 1.5rem" }}>
+    <section
+      style={{
+        background: "#0A0A0A",
+        borderTop: "1px solid rgba(245,240,235,0.08)",
+        borderBottom: "1px solid rgba(245,240,235,0.08)",
+        position: "relative",
+        overflow: "hidden",
+      }}
+    >
+      {/* top hairline accent */}
+      <div
+        aria-hidden="true"
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          height: 2,
+          background: `linear-gradient(90deg, transparent, ${CRIMSON}, transparent)`,
+        }}
+      />
 
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.25rem 3rem", alignItems: "start" }}>
+      <style>{`
+        .tmh-principle {
+          border-top: 1px solid rgba(245,240,235,0.10);
+          display: grid;
+          grid-template-columns: clamp(3rem, 9vw, 5.25rem) 1fr;
+          gap: clamp(1rem, 3vw, 2.25rem);
+          align-items: baseline;
+          padding: clamp(1.05rem, 2.6vw, 1.7rem) 0;
+          position: relative;
+          transition: background 180ms ease;
+        }
+        .tmh-principle::before {
+          content: "";
+          position: absolute;
+          left: 0;
+          top: -1px;
+          bottom: 0;
+          width: 2px;
+          background: ${CRIMSON};
+          transform: scaleY(0);
+          transform-origin: top;
+          transition: transform 220ms ease;
+        }
+        .tmh-principle:hover {
+          background: linear-gradient(90deg, rgba(220,20,60,0.06), transparent 60%);
+        }
+        .tmh-principle:hover::before { transform: scaleY(1); }
+        .tmh-principle:last-child { border-bottom: 1px solid rgba(245,240,235,0.10); }
+      `}</style>
 
-          {/* Left: founder note */}
-          <div>
-            <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.6rem" }}>
-              {t("Founder's Note")}
-            </p>
-            <blockquote style={{ borderLeft: "3px solid #DC143C", paddingLeft: "1rem", fontFamily: "'Playfair Display', serif", fontStyle: "italic", fontSize: "0.95rem", lineHeight: 1.45, color: "#F5F0EB", marginBottom: "0.5rem" }}>
-              {t("\"Bringing the voices of the Middle East into one room. Finally.\"")}
+      <div
+        style={{
+          maxWidth: "64rem",
+          margin: "0 auto",
+          padding: "clamp(3rem, 7vw, 5.5rem) clamp(1.25rem, 5vw, 3rem)",
+        }}
+      >
+        {/* ── Founder banner ─────────────────────────────────────────── */}
+        <div
+          style={{
+            borderBottom: "1px solid rgba(245,240,235,0.12)",
+            paddingBottom: "clamp(2.25rem, 5vw, 3.5rem)",
+            marginBottom: "clamp(2.5rem, 5vw, 4rem)",
+          }}
+        >
+          <p
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 800,
+              fontSize: "0.85rem",
+              textTransform: "uppercase",
+              letterSpacing: "0.34em",
+              color: CRIMSON,
+              marginBottom: "1.25rem",
+            }}
+          >
+            {t("Founder's Note")}
+          </p>
+
+          <div style={{ position: "relative", paddingLeft: "clamp(1.25rem, 4vw, 2.75rem)" }}>
+            <span
+              aria-hidden="true"
+              style={{
+                position: "absolute",
+                left: "-0.35rem",
+                top: "-1.5rem",
+                fontFamily: "'Playfair Display', serif",
+                fontSize: "clamp(4rem, 11vw, 7rem)",
+                lineHeight: 1,
+                color: "rgba(220,20,60,0.28)",
+                pointerEvents: "none",
+                userSelect: "none",
+              }}
+            >
+              &ldquo;
+            </span>
+            <blockquote
+              style={{
+                margin: 0,
+                fontFamily: "'Playfair Display', serif",
+                fontStyle: "italic",
+                fontWeight: 600,
+                fontSize: "clamp(1.6rem, 4.2vw, 2.7rem)",
+                lineHeight: 1.2,
+                color: CREAM,
+                letterSpacing: "-0.01em",
+              }}
+            >
+              {t("Bringing the voices of the Middle East into one room. Finally.")}
             </blockquote>
-            <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.7rem", color: "rgba(245,240,235,0.45)", letterSpacing: "0.05em", marginLeft: "1.15rem" }}>
+            <p
+              style={{
+                fontFamily: "'Barlow Condensed', sans-serif",
+                fontWeight: 700,
+                fontSize: "0.95rem",
+                textTransform: "uppercase",
+                letterSpacing: "0.18em",
+                color: "rgba(245,240,235,0.55)",
+                marginTop: "1.5rem",
+              }}
+            >
               {t("— Kareem Kaddoura, Founder")}
             </p>
           </div>
-
-          {/* Right: 6 principles in 3+3 columns */}
-          <div>
-            <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "0.62rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
-              {t("What We Stand For")}
-            </p>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", columnGap: "2rem" }}>
-              {[PRINCIPLES.slice(0, 3), PRINCIPLES.slice(3, 6)].map((group, gIdx) => (
-                <div key={gIdx}>
-                  {group.map((item, i) => {
-                    const idx = gIdx * 3 + i;
-                    return (
-                      <div key={idx} style={{ borderTop: "1px solid rgba(245,240,235,0.08)", padding: "0.5rem 0", display: "flex", gap: "0.7rem", alignItems: "flex-start" }}>
-                        <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "0.62rem", color: "#DC143C", letterSpacing: "0.1em", flexShrink: 0, paddingTop: "0.1rem" }}>
-                          {String(idx + 1).padStart(2, "0")}
-                        </span>
-                        <div>
-                          <span style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 800, fontSize: "0.74rem", textTransform: "uppercase", letterSpacing: "0.08em", color: "#F5F0EB", display: "block", marginBottom: "0.1rem" }}>
-                            {t(item.title)}<span style={{ color: "#DC143C" }}>.</span>
-                          </span>
-                          <span style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.72rem", color: "rgba(245,240,235,0.5)", lineHeight: 1.4 }}>
-                            {t(item.body)}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ))}
-            </div>
-          </div>
-
         </div>
 
+        {/* ── Section header with rules ──────────────────────────────── */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "clamp(0.75rem, 2.5vw, 1.5rem)",
+            marginBottom: "clamp(0.5rem, 2vw, 1rem)",
+          }}
+        >
+          <span style={{ flex: 1, height: 1, background: "rgba(245,240,235,0.18)" }} />
+          <p
+            style={{
+              fontFamily: "'Barlow Condensed', sans-serif",
+              fontWeight: 900,
+              fontSize: "clamp(1.05rem, 2.4vw, 1.45rem)",
+              textTransform: "uppercase",
+              letterSpacing: "0.32em",
+              color: CRIMSON,
+              margin: 0,
+              whiteSpace: "nowrap",
+            }}
+          >
+            {t("What We Stand For")}
+          </p>
+          <span style={{ flex: 1, height: 1, background: "rgba(245,240,235,0.18)" }} />
+        </div>
+
+        {/* ── 6 principles — single airy column, big numerals ────────── */}
+        <div>
+          {PRINCIPLES.map((item, idx) => (
+            <div key={idx} className="tmh-principle">
+              <span
+                style={{
+                  fontFamily: "'Barlow Condensed', sans-serif",
+                  fontWeight: 900,
+                  fontSize: "clamp(2.4rem, 7vw, 4rem)",
+                  lineHeight: 0.85,
+                  color: CRIMSON,
+                  letterSpacing: "-0.02em",
+                  fontVariantNumeric: "tabular-nums",
+                }}
+              >
+                {String(idx + 1).padStart(2, "0")}
+              </span>
+              <div>
+                <h3
+                  style={{
+                    fontFamily: "'Barlow Condensed', sans-serif",
+                    fontWeight: 800,
+                    fontSize: "clamp(1.05rem, 2.6vw, 1.45rem)",
+                    textTransform: "uppercase",
+                    letterSpacing: "0.04em",
+                    color: CREAM,
+                    margin: "0 0 0.4rem",
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {t(item.title)}
+                  <span style={{ color: CRIMSON }}>.</span>
+                </h3>
+                <p
+                  style={{
+                    fontFamily: "'DM Sans', sans-serif",
+                    fontSize: "clamp(0.95rem, 1.7vw, 1.1rem)",
+                    color: "rgba(245,240,235,0.6)",
+                    lineHeight: 1.55,
+                    margin: 0,
+                    maxWidth: "44rem",
+                  }}
+                >
+                  {t(item.body)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </section>
   )

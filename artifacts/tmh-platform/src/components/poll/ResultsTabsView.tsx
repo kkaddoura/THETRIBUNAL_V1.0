@@ -35,7 +35,7 @@ export function ResultsTabsView({ resultsView, countryView, timelineView }: Resu
             key={key}
             onClick={() => setView(key)}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-2 text-[10px] uppercase tracking-[0.15em] font-bold font-serif transition-colors border-b-2 -mb-px",
+              "flex items-center gap-1.5 px-3 py-2 text-[12px] uppercase tracking-[0.15em] font-bold font-serif transition-colors border-b-2 -mb-px",
               view === key
                 ? "text-primary border-primary"
                 : "text-muted-foreground border-transparent hover:text-foreground"
@@ -58,7 +58,7 @@ export function ResultsTabsView({ resultsView, countryView, timelineView }: Resu
 export function EmptyStateCard({ title, message }: { title: string; message: string }) {
   return (
     <div className="py-10 px-4 text-center border border-dashed border-border">
-      <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
+      <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
         {title}
       </p>
       <p className="text-xs text-muted-foreground font-sans max-w-xs mx-auto leading-relaxed">

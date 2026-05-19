@@ -52,14 +52,14 @@ export default function Contact() {
       {/* Hero */}
       <div className="bg-foreground text-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
             {t("Get In Touch")}
           </p>
           <h1 style={{ fontFamily: isAr ? "'IBM Plex Sans Arabic', sans-serif" : "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
             {t(pageConfig?.titleLine1 || "Contact")}<br />
             {t(pageConfig?.titleLine2 || "Us")}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(250,250,250,0.65)" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.90rem", textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(250,250,250,0.65)" }}>
             {t("Questions, partnerships, press inquiries, or just want to say hello.")}
           </p>
         </div>
@@ -77,7 +77,7 @@ export default function Contact() {
                 <div className="flex items-start gap-3">
                   <Mail className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
+                    <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
                       {t("Email")}
                     </p>
                     <a
@@ -92,7 +92,7 @@ export default function Contact() {
                 <div className="flex items-start gap-3">
                   <MapPin className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
+                    <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
                       {t("Region")}
                     </p>
                     <p className="text-sm font-sans text-foreground">
@@ -104,7 +104,7 @@ export default function Contact() {
                 <div className="flex items-start gap-3">
                   <MessageSquare className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
+                    <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
                       {t("Social")}
                     </p>
                     <div className="flex flex-col gap-1">
@@ -124,7 +124,7 @@ export default function Contact() {
             </div>
 
             <div className="border-t border-border pt-8">
-              <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
+              <h3 className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
                 {t("What We Can Help With")}
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground font-sans">
@@ -156,7 +156,7 @@ export default function Contact() {
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="mt-6 text-[10px] uppercase tracking-widest font-bold font-serif text-primary hover:text-foreground transition-colors"
+                  className="mt-6 text-[12px] uppercase tracking-widest font-bold font-serif text-primary hover:text-foreground transition-colors"
                 >
                   {t("Send Another Message")} {isAr ? "←" : "→"}
                 </button>
@@ -165,7 +165,7 @@ export default function Contact() {
               <form onSubmit={handleSubmit} noValidate className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
+                    <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
                       {t("Name")} *
                     </label>
                     <input
@@ -179,7 +179,7 @@ export default function Contact() {
                     {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
+                    <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
                       {t("Email")} *
                     </label>
                     <input
@@ -195,7 +195,7 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
+                  <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
                     {t("Subject")}
                   </label>
                   <select
@@ -216,7 +216,7 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
+                  <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
                     {t("Message")} *
                   </label>
                   <textarea
@@ -254,13 +254,13 @@ export default function Contact() {
           <div className="flex flex-wrap gap-4 justify-center">
             <Link
               href="/debates"
-              className="bg-foreground text-background px-6 py-2.5 font-bold uppercase tracking-widest text-[10px] hover:bg-primary transition-colors font-serif"
+              className="bg-foreground text-background px-6 py-2.5 font-bold uppercase tracking-widest text-[12px] hover:bg-primary transition-colors font-serif"
             >
               {t("Enter The Debates")}
             </Link>
             <Link
               href="/apply"
-              className="border border-foreground text-foreground px-6 py-2.5 font-bold uppercase tracking-widest text-[10px] hover:bg-foreground hover:text-background transition-colors font-serif"
+              className="border border-foreground text-foreground px-6 py-2.5 font-bold uppercase tracking-widest text-[12px] hover:bg-foreground hover:text-background transition-colors font-serif"
             >
               {t("Join The Voices")}
             </Link>

@@ -48,22 +48,32 @@ export interface TopPulse {
 export async function topDebateThisWeek(): Promise<TopDebate | null> {
   const since = new Date(Date.now() - SEVEN_DAYS_MS)
 
-  const polls = await db
-    .select({
-      id: pollsTable.id,
-      question: pollsTable.question,
-      category: pollsTable.category,
-      totalVotes:
-        sql<number>`COALESCE(SUM(${pollOptionsTable.voteCount} + COALESCE(${pollOptionsTable.dummyVoteCount}, 0)), 0)`.as(
-          "total_votes",
-        ),
-    })
-    .from(pollsTable)
-    .leftJoin(pollOptionsTable, eq(pollOptionsTable.pollId, pollsTable.id))
-    .where(and(gte(pollsTable.createdAt, since), eq(pollsTable.editorialStatus, "approved")))
-    .groupBy(pollsTable.id, pollsTable.question, pollsTable.category)
-    .orderBy(desc(sql`total_votes`))
-    .limit(1)
+  const run = (windowed: boolean) =>
+    db
+      .select({
+        id: pollsTable.id,
+        question: pollsTable.question,
+        category: pollsTable.category,
+        totalVotes:
+          sql<number>`COALESCE(SUM(${pollOptionsTable.voteCount} + COALESCE(${pollOptionsTable.dummyVoteCount}, 0)), 0)`.as(
+            "total_votes",
+          ),
+      })
+      .from(pollsTable)
+      .leftJoin(pollOptionsTable, eq(pollOptionsTable.pollId, pollsTable.id))
+      .where(
+        windowed
+          ? and(gte(pollsTable.createdAt, since), eq(pollsTable.editorialStatus, "approved"))
+          : eq(pollsTable.editorialStatus, "approved"),
+      )
+      .groupBy(pollsTable.id, pollsTable.question, pollsTable.category)
+      .orderBy(desc(sql`total_votes`))
+      .limit(1)
+
+  // Prefer the last 7 days; fall back to the all-time top approved poll so
+  // the Weekly Recap still composes at handover / in low-volume periods.
+  let polls = await run(true)
+  if (polls.length === 0) polls = await run(false)
 
   if (polls.length === 0) return null
   const top = polls[0]
@@ -95,18 +105,28 @@ export async function topDebateThisWeek(): Promise<TopDebate | null> {
 export async function topPredictionThisWeek(): Promise<TopPrediction | null> {
   const since = new Date(Date.now() - SEVEN_DAYS_MS)
 
-  const rows = await db
-    .select({
-      id: predictionsTable.id,
-      question: predictionsTable.question,
-      yesPercentage: predictionsTable.yesPercentage,
-      totalCount: predictionsTable.totalCount,
-      dummyTotalCount: predictionsTable.dummyTotalCount,
-    })
-    .from(predictionsTable)
-    .where(and(gte(predictionsTable.createdAt, since), eq(predictionsTable.editorialStatus, "approved")))
-    .orderBy(desc(sql`${predictionsTable.totalCount} + COALESCE(${predictionsTable.dummyTotalCount}, 0)`))
-    .limit(1)
+  const run = (windowed: boolean) =>
+    db
+      .select({
+        id: predictionsTable.id,
+        question: predictionsTable.question,
+        yesPercentage: predictionsTable.yesPercentage,
+        totalCount: predictionsTable.totalCount,
+        dummyTotalCount: predictionsTable.dummyTotalCount,
+      })
+      .from(predictionsTable)
+      .where(
+        windowed
+          ? and(gte(predictionsTable.createdAt, since), eq(predictionsTable.editorialStatus, "approved"))
+          : eq(predictionsTable.editorialStatus, "approved"),
+      )
+      .orderBy(desc(sql`${predictionsTable.totalCount} + COALESCE(${predictionsTable.dummyTotalCount}, 0)`))
+      .limit(1)
+
+  // Prefer the last 7 days; fall back to the all-time top approved
+  // prediction so the Weekly Recap still composes when none are recent.
+  let rows = await run(true)
+  if (rows.length === 0) rows = await run(false)
 
   if (rows.length === 0) return null
   const r = rows[0]
@@ -121,12 +141,22 @@ export async function topPredictionThisWeek(): Promise<TopPrediction | null> {
 export async function topPulseThisWeek(): Promise<TopPulse | null> {
   const since = new Date(Date.now() - SEVEN_DAYS_MS)
 
-  const rows = await db
-    .select()
-    .from(pulseTopicsTable)
-    .where(and(gte(pulseTopicsTable.createdAt, since), eq(pulseTopicsTable.editorialStatus, "approved")))
-    .orderBy(desc(pulseTopicsTable.createdAt))
-    .limit(1)
+  const run = (windowed: boolean) =>
+    db
+      .select()
+      .from(pulseTopicsTable)
+      .where(
+        windowed
+          ? and(gte(pulseTopicsTable.createdAt, since), eq(pulseTopicsTable.editorialStatus, "approved"))
+          : eq(pulseTopicsTable.editorialStatus, "approved"),
+      )
+      .orderBy(desc(pulseTopicsTable.createdAt))
+      .limit(1)
+
+  // Prefer the last 7 days; fall back to the newest approved pulse so the
+  // Weekly Recap still composes when none are within the window.
+  let rows = await run(true)
+  if (rows.length === 0) rows = await run(false)
 
   if (rows.length === 0) return null
   const r = rows[0]

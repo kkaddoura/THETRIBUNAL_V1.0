@@ -730,7 +730,7 @@ function MomentumTicker({
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.7rem",
+                fontSize: "0.80rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
                 color: "rgba(250,250,250,0.75)",
@@ -752,7 +752,7 @@ function MomentumTicker({
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.72rem",
+                fontSize: "0.83rem",
                 color: item.up ? "#10B981" : "#DC143C",
               }}
             >
@@ -800,7 +800,7 @@ function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.68rem",
+              fontSize: "0.78rem",
               textTransform: "uppercase",
               letterSpacing: "0.18em",
               color: "var(--muted-foreground)",
@@ -881,7 +881,7 @@ function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (
             style={{
               fontFamily: "DM Sans, sans-serif",
               fontStyle: "italic",
-              fontSize: "0.8rem",
+              fontSize: "0.92rem",
               color: month30Change >= 0 ? "#10B981" : "#DC143C",
               marginTop: "0.5rem",
             }}
@@ -932,7 +932,7 @@ function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (
           <p
             style={{
               fontFamily: "DM Sans, sans-serif",
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               color: "var(--muted-foreground)",
               fontStyle: "italic",
             }}
@@ -965,7 +965,7 @@ function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (
           <p
             style={{
               fontFamily: "DM Sans, sans-serif",
-              fontSize: "0.8rem",
+              fontSize: "0.92rem",
               color: "var(--muted-foreground)",
             }}
           >
@@ -1129,7 +1129,7 @@ function PredictionGridCard({
               >
                 <p style={{
                   fontFamily: "DM Sans, sans-serif",
-                  fontSize: "0.75rem",
+                  fontSize: "0.86rem",
                   color: "rgba(255,255,255,0.7)",
                   margin: "0 0 4px",
                 }}>
@@ -1137,7 +1137,7 @@ function PredictionGridCard({
                 </p>
                 <p style={{
                   fontFamily: "DM Sans, sans-serif",
-                  fontSize: "0.75rem",
+                  fontSize: "0.86rem",
                   color: "rgba(255,255,255,0.7)",
                   margin: "0 0 4px",
                 }}>
@@ -1145,7 +1145,7 @@ function PredictionGridCard({
                 </p>
                 <p style={{
                   fontFamily: "DM Sans, sans-serif",
-                  fontSize: "0.75rem",
+                  fontSize: "0.86rem",
                   color: "rgba(255,255,255,0.7)",
                   margin: 0,
                 }}>
@@ -1195,7 +1195,7 @@ function PredictionGridCard({
       <p
         style={{
           fontFamily: "DM Sans, sans-serif",
-          fontSize: "0.78rem",
+          fontSize: "0.90rem",
           color: "var(--muted-foreground)",
         }}
       >
@@ -1309,7 +1309,7 @@ function ClosedPredictionCard() {
             style={{
               fontFamily: "DM Sans, sans-serif",
               fontStyle: "italic",
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               color: "var(--muted-foreground)",
               marginTop: "0.5rem",
             }}
@@ -1373,7 +1373,7 @@ function ClosedPredictionCard() {
           <p
             style={{
               fontFamily: "DM Sans, sans-serif",
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               color: "var(--muted-foreground)",
             }}
           >
@@ -1650,7 +1650,7 @@ export default function Predictions() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.68rem",
+              fontSize: "0.78rem",
               textTransform: "uppercase",
               letterSpacing: "0.28em",
               color: "#DC143C",
@@ -1682,7 +1682,7 @@ export default function Predictions() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               textTransform: "uppercase",
               letterSpacing: "0.18em",
             }}
@@ -1709,7 +1709,7 @@ export default function Predictions() {
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 700,
-            fontSize: "0.72rem",
+            fontSize: "0.83rem",
             textTransform: "uppercase",
             letterSpacing: "0.15em",
             color: "rgba(250,250,250,0.75)",
@@ -1734,7 +1734,7 @@ export default function Predictions() {
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 700,
-            fontSize: "0.72rem",
+            fontSize: "0.83rem",
             textTransform: "uppercase",
             letterSpacing: "0.15em",
             color: "rgba(250,250,250,0.75)",
@@ -1759,7 +1759,7 @@ export default function Predictions() {
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 700,
-            fontSize: "0.72rem",
+            fontSize: "0.83rem",
             textTransform: "uppercase",
             letterSpacing: "0.15em",
             color: "rgba(250,250,250,0.75)",
@@ -1903,7 +1903,7 @@ export default function Predictions() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 700,
-                  fontSize: "0.72rem",
+                  fontSize: "0.83rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.15em",
                   color: "#DC143C",

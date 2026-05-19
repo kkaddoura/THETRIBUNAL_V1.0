@@ -76,7 +76,7 @@ export default function Join() {
     <Layout>
       {/* Hero */}
       <section className="bg-foreground text-background px-5 py-20 md:py-28 text-center">
-        <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
+        <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
           By the Middle East Hustle
         </p>
         <h1 className="font-display text-primary text-4xl md:text-6xl uppercase tracking-tight leading-none mb-5 max-w-3xl mx-auto">
@@ -92,7 +92,7 @@ export default function Join() {
       {/* Primary CTA — create account */}
       <section className="max-w-2xl mx-auto w-full px-4 py-12 md:py-16">
         <div className="border-2 border-foreground bg-card p-6 md:p-10">
-          <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-3 font-serif">
+          <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-3 font-serif">
             Create an account
           </p>
           <h2 className="font-display font-black uppercase text-3xl md:text-4xl tracking-tight text-foreground mb-3">
@@ -136,7 +136,7 @@ export default function Join() {
       {/* Secondary — newsletter only */}
       <section className="max-w-2xl mx-auto w-full px-4 pb-16 md:pb-24">
         <div className="border border-border bg-background p-6 md:p-8">
-          <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground mb-2 font-serif">
+          <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground mb-2 font-serif">
             Or just the digest
           </p>
           <h3 className="font-display font-black uppercase text-xl md:text-2xl tracking-tight text-foreground mb-2">
@@ -166,7 +166,7 @@ export default function Join() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="px-6 py-3 bg-foreground text-background font-bold uppercase tracking-[0.15em] text-[11px] hover:bg-foreground/90 transition-colors whitespace-nowrap disabled:opacity-60"
+                className="px-6 py-3 bg-foreground text-background font-bold uppercase tracking-[0.15em] text-[13px] hover:bg-foreground/90 transition-colors whitespace-nowrap disabled:opacity-60"
               >
                 {submitting ? "Subscribing…" : "Get the digest"}
               </button>
@@ -177,7 +177,7 @@ export default function Join() {
         <div className="mt-8 text-center">
           <Link
             href="/debates"
-            className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground transition-colors font-serif"
+            className="text-[12px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground transition-colors font-serif"
           >
             Browse debates first →
           </Link>

@@ -110,7 +110,7 @@ export default function ProfileDetail() {
       {/* Header: portrait photo + name/meta */}
       <div className="bg-background border-b border-border">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-          <Link href="/voices" className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
+          <Link href="/voices" className="inline-flex items-center gap-2 text-[12px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
             <ArrowLeft className="w-4 h-4" /> Back to Directory
           </Link>
 
@@ -134,15 +134,15 @@ export default function ProfileDetail() {
             {/* Name / meta */}
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-3 mb-4">
-                <span className="px-3 py-1 bg-foreground text-background text-[10px] font-bold uppercase tracking-widest">
+                <span className="px-3 py-1 bg-foreground text-background text-[12px] font-bold uppercase tracking-widest">
                   {profile.sector}
                 </span>
                 {profile.isFeatured && (
-                  <span className="px-3 py-1 bg-primary text-background text-[10px] font-bold uppercase tracking-widest">
+                  <span className="px-3 py-1 bg-primary text-background text-[12px] font-bold uppercase tracking-widest">
                     Featured Voice
                   </span>
                 )}
-                <span className="text-muted-foreground text-[10px] uppercase tracking-widest font-bold flex items-center gap-1 ml-auto">
+                <span className="text-muted-foreground text-[12px] uppercase tracking-widest font-bold flex items-center gap-1 ml-auto">
                   <Eye className="w-4 h-4" /> {profile.viewCount.toLocaleString()} Views
                 </span>
               </div>
@@ -154,7 +154,7 @@ export default function ProfileDetail() {
                 {profile.headline}
               </p>
 
-              <div className="flex flex-wrap items-center gap-6 text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-6 text-[12px] uppercase tracking-widest font-bold text-muted-foreground">
                 <div className="flex items-center gap-2">
                   <Briefcase className="w-4 h-4 text-foreground" /> {profile.role}
                 </div>
@@ -171,7 +171,7 @@ export default function ProfileDetail() {
 
               <Link
                 href="/majlis"
-                className="inline-flex items-center gap-2 mt-4 text-primary hover:text-primary/80 text-[10px] font-bold uppercase tracking-widest transition-colors"
+                className="inline-flex items-center gap-2 mt-4 text-primary hover:text-primary/80 text-[12px] font-bold uppercase tracking-widest transition-colors"
               >
                 <MessageSquare className="w-3.5 h-3.5" /> Message in The Majlis
               </Link>
@@ -186,7 +186,7 @@ export default function ProfileDetail() {
           {/* Impact Statement */}
           {!!(profile as unknown as Record<string, unknown>).impactStatement && (
             <section className="bg-background border border-border p-6 md:p-8">
-              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-3">Impact</p>
+              <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-3">Impact</p>
               <p className="text-lg font-sans font-medium text-foreground leading-relaxed">
                 {String((profile as unknown as Record<string, unknown>).impactStatement)}
               </p>
@@ -196,7 +196,7 @@ export default function ProfileDetail() {
           {/* IN THEIR OWN WORDS — above The Story */}
           {profile.quote && (
             <section>
-              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-4">In Their Own Words</p>
+              <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-4">In Their Own Words</p>
               <blockquote className="font-serif italic text-2xl md:text-3xl font-black border-l-4 border-primary pl-6 py-4 text-foreground leading-snug">
                 "{profile.quote}"
               </blockquote>
@@ -248,7 +248,7 @@ export default function ProfileDetail() {
               <div className="grid gap-10">
                 {profile.relatedPolls.map(poll => (
                   <div key={poll.id}>
-                    <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-3 flex items-center gap-2">
+                    <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-3 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-primary" />
                       How does {profile.name.split(" ")[0]}'s network vote on this?
                     </p>
@@ -276,7 +276,7 @@ export default function ProfileDetail() {
           {/* Fun Fact */}
           {(profile as any).funFact && (
             <div className="bg-background border border-border p-6">
-              <p className="text-[10px] uppercase tracking-widest text-primary font-bold mb-2">Fun Fact</p>
+              <p className="text-[12px] uppercase tracking-widest text-primary font-bold mb-2">Fun Fact</p>
               <p className="text-sm text-muted-foreground italic font-sans">{(profile as any).funFact}</p>
             </div>
           )}

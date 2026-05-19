@@ -219,8 +219,8 @@
 /* ── Golden-ratio typography scale ─────────────────────────────────────────── */
 /* Base 17px, scale ~1.618 (golden ratio)                                      */
 :root {
-  --font-size-2xs: 0.6875rem;   /* 11px — absolute minimum for UI labels     */
-  --font-size-xs:  0.75rem;     /* 12px                                       */
+  --font-size-2xs: 0.79rem;     /* ~13px — was 11px, +15% (legibility pass)   */
+  --font-size-xs:  0.86rem;     /* ~15px — was 12px, +15% (legibility pass)   */
   --font-size-sm:  0.875rem;    /* 14px                                       */
   --font-size-base: 1rem;       /* 17px (from html base)                      */
   --font-size-lg:  1.125rem;    /* ~19px                                      */
@@ -269,8 +269,12 @@
     text-wrap: balance;
   }
 
-  /* Typography scale utility classes */
+  /* Typography scale utility classes.
+     .text-xs is remapped to the (bumped) scale var so the ~165 existing
+     `text-xs` call-sites get the +15% legibility pass site-wide without
+     touching each one. Tailwind keeps providing its line-height pairing. */
   .text-2xs  { font-size: var(--font-size-2xs); }
+  .text-xs   { font-size: var(--font-size-xs); }
 
   .scrollbar-hide {
     -ms-overflow-style: none;

@@ -74,7 +74,7 @@ export default function ProfilePublic() {
   return (
     <Layout>
       <div className="max-w-3xl mx-auto px-4 py-12">
-        <Link href="/" className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
+        <Link href="/" className="inline-flex items-center gap-2 text-[12px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
           <ArrowLeft className="w-3 h-3" /> Back
         </Link>
 
@@ -92,11 +92,11 @@ export default function ProfilePublic() {
 
             <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
               <div className="border border-border bg-background px-4 py-3">
-                <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">Total votes</p>
+                <p className="text-[12px] uppercase tracking-widest font-bold text-muted-foreground">Total votes</p>
                 <p className="text-2xl font-serif font-black mt-1">{user.totalVotes.toLocaleString()}</p>
               </div>
               <div className="border border-border bg-background px-4 py-3">
-                <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">On record since</p>
+                <p className="text-[12px] uppercase tracking-widest font-bold text-muted-foreground">On record since</p>
                 <p className="text-sm font-serif font-bold mt-1">
                   {new Date(user.joinedAt).getFullYear()}
                 </p>

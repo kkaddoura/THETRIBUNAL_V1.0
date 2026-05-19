@@ -185,16 +185,16 @@ export function PollTeaserCard({ poll }: Props) {
         <div className="flex flex-col h-full">
           <div className="tmh-card-bg flex-1 flex flex-col p-6 sm:p-7">
             <div className="flex items-center justify-between gap-3 mb-5">
-              <span className="inline-flex max-w-full px-1.5 py-0.5 bg-foreground text-background text-[9px] font-bold uppercase tracking-[0.08em] leading-none whitespace-nowrap overflow-hidden text-ellipsis">
+              <span className="inline-flex max-w-full px-1.5 py-0.5 bg-foreground text-background text-[10px] font-bold uppercase tracking-[0.08em] leading-none whitespace-nowrap overflow-hidden text-ellipsis">
                 {poll.category}
               </span>
               {wasVoted ? (
-                <span className="flex items-center gap-1 text-[9px] font-bold text-primary uppercase tracking-[0.18em] whitespace-nowrap">
+                <span className="flex items-center gap-1 text-[10px] font-bold text-primary uppercase tracking-[0.18em] whitespace-nowrap">
                   <CheckCircle2 className="w-3 h-3" />
                   Voted
                 </span>
               ) : isLive ? (
-                <span className="flex items-center gap-1.5 text-[9px] font-bold text-primary uppercase tracking-[0.18em] whitespace-nowrap">
+                <span className="flex items-center gap-1.5 text-[10px] font-bold text-primary uppercase tracking-[0.18em] whitespace-nowrap">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#10B981] animate-pulse" />
                   LIVE
                 </span>
@@ -213,7 +213,7 @@ export function PollTeaserCard({ poll }: Props) {
           </div>
 
           <div className="bg-card px-6 sm:px-7 py-4 border-t border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="flex items-center gap-3 text-[10px] uppercase tracking-widest text-muted-foreground">
+            <div className="flex items-center gap-3 text-[12px] uppercase tracking-widest text-muted-foreground">
               <span>{localTotal.toLocaleString()} votes</span>
               {poll.endsAt && (
                 <span>{isLive ? `Ends ${formatDistanceToNow(new Date(poll.endsAt))}` : "Ended"}</span>
@@ -266,7 +266,7 @@ function CtaButton({
         "group/cta cursor-pointer w-full sm:w-auto",
         "inline-flex items-center justify-center gap-1.5",
         "px-4 py-2.5 sm:px-3 sm:py-1.5",
-        "text-[11px] sm:text-[10px] font-black uppercase tracking-[0.2em]",
+        "text-[13px] sm:text-[12px] font-black uppercase tracking-[0.2em]",
         "border transition-colors duration-150",
         active
           ? "bg-foreground text-background border-foreground"
@@ -344,7 +344,7 @@ function ExpandedPanel({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -4 }}
                     transition={{ duration: 0.22, ease: EASE_OUT_EXPO }}
-                    className="flex items-center gap-1.5 text-[9px] uppercase tracking-[0.25em] font-bold text-primary"
+                    className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.25em] font-bold text-primary"
                   >
                     <motion.span
                       initial={{ scale: 0, rotate: -90 }}
@@ -363,7 +363,7 @@ function ExpandedPanel({
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                     transition={{ duration: 0.18 }}
-                    className="text-[9px] uppercase tracking-[0.25em] font-bold text-muted-foreground"
+                    className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground"
                   >
                     {showResults ? "Live Results" : "Cast Your Vote"}
                   </motion.span>
@@ -423,7 +423,7 @@ function VoteList({
             "disabled:opacity-50 disabled:cursor-not-allowed",
           )}
         >
-          <div className="relative px-3 py-2 min-h-[2rem] flex items-start justify-between gap-2 text-[10px] font-bold uppercase leading-snug tracking-wide text-foreground group-hover/opt:text-primary transition-colors">
+          <div className="relative px-3 py-2 min-h-[2rem] flex items-start justify-between gap-2 text-[12px] font-bold uppercase leading-snug tracking-wide text-foreground group-hover/opt:text-primary transition-colors">
             <span className="text-left transition-transform duration-150 group-hover/opt:translate-x-0.5">
               {opt.text}
             </span>
@@ -456,7 +456,7 @@ function ResultsList({
               )}
               style={{ width: `${Math.max(2, pct)}%` }}
             />
-            <div className="relative px-3 py-2 min-h-[2rem] flex items-start justify-between gap-2 text-[10px] font-bold uppercase leading-snug tracking-wide">
+            <div className="relative px-3 py-2 min-h-[2rem] flex items-start justify-between gap-2 text-[12px] font-bold uppercase leading-snug tracking-wide">
               <span className={cn("text-left", isMine ? "text-primary" : "text-foreground")}>
                 {isMine && "✓ "}
                 {opt.text}

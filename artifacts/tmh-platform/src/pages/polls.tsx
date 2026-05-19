@@ -157,7 +157,7 @@ export default function Polls() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.68rem",
+              fontSize: "0.78rem",
               textTransform: "uppercase",
               letterSpacing: "0.28em",
               color: "#DC143C",
@@ -191,7 +191,7 @@ export default function Polls() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               textTransform: "uppercase",
             }}
           >
@@ -231,7 +231,7 @@ export default function Polls() {
                       style={{
                         fontFamily: "'Barlow Condensed', sans-serif",
                         fontWeight: 700,
-                        fontSize: "0.7rem",
+                        fontSize: "0.80rem",
                         textTransform: "uppercase",
                         letterSpacing: "0.08em",
                         color: "rgba(250,250,250,0.75)",
@@ -253,7 +253,7 @@ export default function Polls() {
                       style={{
                         fontFamily: "'Barlow Condensed', sans-serif",
                         fontWeight: 700,
-                        fontSize: "0.72rem",
+                        fontSize: "0.83rem",
                         color: "#DC143C",
                       }}
                     >
@@ -370,7 +370,7 @@ function FilteredView({
 
   return (
     <div>
-      <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-4 font-serif">
+      <p className="text-[12px] uppercase tracking-widest text-muted-foreground mb-4 font-serif">
         {polls.length} of {total} debate{total === 1 ? "" : "s"}
         {searchQuery ? ` for "${searchQuery}"` : ""}
       </p>

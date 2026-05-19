@@ -54,7 +54,7 @@ export default function Login() {
           />
 
           <div className="relative">
-            <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-5 font-serif">
+            <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-5 font-serif">
               Welcome back
             </p>
             <h1
@@ -88,7 +88,7 @@ export default function Login() {
             </div>
 
             <p
-              className="text-[10px] uppercase tracking-[0.25em] font-bold font-serif"
+              className="text-[12px] uppercase tracking-[0.25em] font-bold font-serif"
               style={{ color: "rgba(242,237,228,0.45)" }}
             >
               The Tribunal · By the Middle East Hustle
@@ -100,7 +100,7 @@ export default function Login() {
         <main className="flex items-center justify-center bg-background py-10 px-4 sm:px-6 md:py-16">
           <div className="w-full max-w-md">
             <div className="lg:hidden text-center mb-8">
-              <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
+              <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
                 Welcome back
               </p>
               <h1 className="font-display font-black uppercase tracking-tight text-4xl leading-[0.95]">
@@ -110,7 +110,7 @@ export default function Login() {
             </div>
 
             <div className="bg-card border border-border p-6 md:p-8">
-              <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
+              <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
                 Sign in
               </p>
               <h2 className="font-display font-black uppercase tracking-tight text-2xl md:text-3xl mb-6">
@@ -119,7 +119,7 @@ export default function Login() {
 
               <form onSubmit={handleSubmit} className="space-y-5">
                 <div>
-                  <label className="block text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-1.5">
+                  <label className="block text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-1.5">
                     Username or email
                   </label>
                   <input
@@ -134,12 +134,12 @@ export default function Login() {
 
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
-                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">
+                    <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground">
                       Password
                     </label>
                     <Link
                       href="/forgot-password"
-                      className="text-[10px] uppercase tracking-[0.15em] font-bold text-muted-foreground hover:text-primary transition-colors"
+                      className="text-[12px] uppercase tracking-[0.15em] font-bold text-muted-foreground hover:text-primary transition-colors"
                     >
                       Forgot?
                     </Link>
@@ -188,7 +188,7 @@ export default function Login() {
               </form>
             </div>
 
-            <div className="mt-6 flex items-center justify-center gap-5 text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground/70 font-serif">
+            <div className="mt-6 flex items-center justify-center gap-5 text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground/70 font-serif">
               <span>Secure session</span>
               <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
               <span>30-day login</span>

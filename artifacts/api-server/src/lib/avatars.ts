@@ -44,6 +44,11 @@ export function isValidAvatarId(id: string): boolean {
   return AVATAR_IDS.has(id)
 }
 
+/** Pick a random valid avatar id — used when none is supplied at signup. */
+export function randomAvatarId(): string {
+  return AVATARS[Math.floor(Math.random() * AVATARS.length)].id
+}
+
 export function getAvatarUrl(id: string): string | null {
   const found = AVATARS.find((a) => a.id === id)
   return found?.url ?? null

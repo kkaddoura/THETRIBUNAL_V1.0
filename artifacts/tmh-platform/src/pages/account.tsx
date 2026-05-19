@@ -116,7 +116,7 @@ export default function Account() {
                 <p className="font-serif font-black text-2xl tracking-tight">
                   {stats ? stats.pollVotes : "—"}
                 </p>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+                <p className="text-[12px] uppercase tracking-widest text-muted-foreground mt-1">
                   Debate votes
                 </p>
               </div>
@@ -124,19 +124,19 @@ export default function Account() {
                 <p className="font-serif font-black text-2xl tracking-tight">
                   {stats ? stats.predictionVotes : "—"}
                 </p>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1">
+                <p className="text-[12px] uppercase tracking-widest text-muted-foreground mt-1">
                   Predictions
                 </p>
               </div>
             </div>
             <div className="flex flex-wrap gap-2 mt-3">
               <span
-                className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 border ${user.emailVerified ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
+                className={`text-[12px] uppercase tracking-widest font-bold px-2 py-1 border ${user.emailVerified ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
               >
                 Email {user.emailVerified ? "verified" : "unverified"}
               </span>
               <span
-                className={`text-[10px] uppercase tracking-widest font-bold px-2 py-1 border ${user.newsletterOptIn ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
+                className={`text-[12px] uppercase tracking-widest font-bold px-2 py-1 border ${user.newsletterOptIn ? "border-primary/40 text-primary" : "border-border text-muted-foreground"}`}
               >
                 Newsletter {user.newsletterOptIn ? "subscribed" : "off"}
               </span>

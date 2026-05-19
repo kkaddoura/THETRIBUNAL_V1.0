@@ -76,7 +76,8 @@ export interface SignupInput {
   username: string
   email: string
   password: string
-  avatarId: string
+  /** Optional — avatar is auto-assigned server-side; no longer chosen at signup. */
+  avatarId?: string
   newsletterOptIn?: boolean
 }
 

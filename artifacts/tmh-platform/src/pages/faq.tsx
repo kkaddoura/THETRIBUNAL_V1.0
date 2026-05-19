@@ -190,14 +190,14 @@ export default function FAQ() {
     <Layout>
       <div className="bg-foreground text-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
             {t("Help")}
           </p>
           <h1 style={{ fontFamily: isAr ? "'IBM Plex Sans Arabic', sans-serif" : "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
             {t(cmsConfig?.titleLine1 || "Frequently Asked")}<br />
             {t(cmsConfig?.titleLine2 || "Questions")}<TitlePunctuation punctuations={cmsConfig?.punctuations} />
           </h1>
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(250,250,250,0.65)" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.90rem", textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(250,250,250,0.65)" }}>
             {t("Everything you need to know about The Tribunal.")}
           </p>
         </div>
@@ -206,7 +206,7 @@ export default function FAQ() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16 space-y-14">
         {FAQ_SECTIONS.map(section => (
           <div key={section.category}>
-            <h2 className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-1 font-serif">
+            <h2 className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-1 font-serif">
               {t(section.category)}
             </h2>
             <div className="border-t-2 border-foreground">
@@ -220,13 +220,13 @@ export default function FAQ() {
         <div className="border-t border-border pt-10">
           <p className="font-sans text-sm text-muted-foreground mb-4">{t("Still have questions?")}</p>
           <div className="flex flex-wrap gap-4">
-            <Link href="/about" className="text-[10px] uppercase tracking-widest font-bold font-serif text-primary hover:text-foreground transition-colors">
+            <Link href="/about" className="text-[12px] uppercase tracking-widest font-bold font-serif text-primary hover:text-foreground transition-colors">
               {t("About The Tribunal →")}
             </Link>
-            <Link href="/apply" className="text-[10px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/apply" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
               {t("Apply to be a Voice →")}
             </Link>
-            <Link href="/terms" className="text-[10px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/terms" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
               {t("Terms & Conditions →")}
             </Link>
           </div>

@@ -96,12 +96,12 @@ export function ResultsBreakdown({ pollId, totalVotes, userCountry, hideHeader =
         className={wrapperClass}
       >
         {!hideHeader && (
-          <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-muted-foreground mb-2">
+          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-muted-foreground mb-2">
             By Country
           </p>
         )}
         <div className="py-10 px-4 text-center border border-dashed border-border">
-          <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
+          <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
             Still Gathering Data
           </p>
           <p className="text-xs text-muted-foreground font-sans max-w-xs mx-auto leading-relaxed">
@@ -123,7 +123,7 @@ export function ResultsBreakdown({ pollId, totalVotes, userCountry, hideHeader =
     >
       {!hideHeader && (
         <div className="flex items-center justify-between mb-4">
-          <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-muted-foreground">
+          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-muted-foreground">
             By Country
           </p>
         </div>
@@ -147,15 +147,15 @@ export function ResultsBreakdown({ pollId, totalVotes, userCountry, hideHeader =
                 <div className="flex items-center justify-between mb-1">
                   <div className="flex items-center gap-1.5 min-w-0">
                     <span className={cn(
-                      "text-[10px] font-sans truncate",
+                      "text-[12px] font-sans truncate",
                       isUserCountry ? "text-primary font-bold" : "text-foreground/80"
                     )}>
                       {country.name}
-                      {isUserCountry && <span className="ml-1 text-[8px] text-primary/70">(you)</span>}
+                      {isUserCountry && <span className="ml-1 text-[9px] text-primary/70">(you)</span>}
                     </span>
                   </div>
                   <span className={cn(
-                    "text-[10px] font-bold font-sans ml-2 flex-shrink-0",
+                    "text-[12px] font-bold font-sans ml-2 flex-shrink-0",
                     i === 0 ? "text-primary" : "text-foreground"
                   )}>
                     {country.percentage}%
@@ -170,13 +170,13 @@ export function ResultsBreakdown({ pollId, totalVotes, userCountry, hideHeader =
                   />
                 </div>
                 {country.topOptionText && (
-                  <p className="text-[9px] text-muted-foreground font-sans mt-1 truncate">
+                  <p className="text-[10px] text-muted-foreground font-sans mt-1 truncate">
                     Most voted: <span className="text-foreground/70 font-medium">"{country.topOptionText}"</span>
                   </p>
                 )}
               </div>
               {country.count > 0 && (
-                <span className="text-[9px] text-muted-foreground font-sans flex-shrink-0 w-10 text-right mt-0.5">
+                <span className="text-[10px] text-muted-foreground font-sans flex-shrink-0 w-10 text-right mt-0.5">
                   {country.count.toLocaleString()}
                 </span>
               )}
@@ -185,7 +185,7 @@ export function ResultsBreakdown({ pollId, totalVotes, userCountry, hideHeader =
         })}
       </div>
 
-      <p className="text-[9px] text-muted-foreground mt-4 font-sans">
+      <p className="text-[10px] text-muted-foreground mt-4 font-sans">
         {`Based on ${totalVotes.toLocaleString()} votes with location data`}
       </p>
     </motion.div>

@@ -433,7 +433,7 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
 
         ctx.fillStyle = labelBg;
         ctx.beginPath();
-        ctx.roundRect(lx, ly, pillW, labelPillH, 2);
+        ctx.roundRect(lx, ly, pillW, labelPillH, labelPillH / 2);
         ctx.fill();
 
         ctx.strokeStyle = labelBorder;

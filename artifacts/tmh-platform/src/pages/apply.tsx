@@ -134,7 +134,7 @@ export default function Apply() {
       {/* Hero */}
       <div className="bg-foreground text-background py-16 border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">{hero?.tagline || "The Voices"}</p>
+          <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">{hero?.tagline || "The Voices"}</p>
           <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
             {hero?.titleLine1 || "Think You Belong"}<br />
             {hero?.titleLine2 || "In The Voices?"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
@@ -395,10 +395,10 @@ function Field({ label, required, hint, children, className }: {
 }) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-foreground font-serif">
+      <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-foreground font-serif">
         {label}
       </label>
-      {hint && <p className="text-[11px] text-muted-foreground font-sans mb-1">{hint}</p>}
+      {hint && <p className="text-[13px] text-muted-foreground font-sans mb-1">{hint}</p>}
       {children}
     </div>
   )

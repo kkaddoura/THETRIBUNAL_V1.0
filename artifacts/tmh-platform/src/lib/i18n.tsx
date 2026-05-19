@@ -341,7 +341,7 @@ const AR: Record<string, string> = {
   "The questions are provocative because the region deserves provocative questions. The data is honest because anything less is a waste of everyone's time.": "الأسئلة استفزازية لأنه المنطقة تستاهل أسئلة استفزازية. البيانات صادقة لأنه أي شي أقل هو إضاعة وقت الكل.",
   "This is MENA's living dataset — and it grows with every vote.": "هاي الداتاسيت الحيّة للمنطقة — وبتكبر مع كل صوت.",
 
-  "\"Bringing the voices of the Middle East into one room. Finally.\"": "\"جمع أصوات الشرق الأوسط بغرفة وحدة. أخيراً.\"",
+  "Bringing the voices of the Middle East into one room. Finally.": "جمع أصوات الشرق الأوسط بغرفة وحدة. أخيراً.",
   "— Kareem Kaddoura, Founder · The Tribunal, by The Middle East Hustle · 2026": "— كريم قدورة، المؤسس · المحكمة، من ذا ميدل إيست هاسل · ٢٠٢٦",
   "Cast Your Vote": "صوّت الآن",
 
