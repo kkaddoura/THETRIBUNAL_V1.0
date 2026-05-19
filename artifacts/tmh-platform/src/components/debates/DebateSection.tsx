@@ -7,10 +7,16 @@ import { DebateCardSkeleton } from "@/components/skeletons/DebateCardSkeleton";
 import { useVoter } from "@/hooks/use-voter";
 
 const SECTION_FETCH_LIMIT = 60;
-// How long a just-voted card stays before it drops out and the next pool
-// item slides into its place (long enough for the in-card "Vote Recorded"
-// confirmation + collapse to play).
-const VOTE_GRACE_MS = 2400;
+// A just-voted card lives through two phases before the next pool item
+// takes its place:
+//   1. "held"    — stays put at full opacity long enough for the in-card
+//                   "Vote Recorded" confirmation + collapse to play.
+//   2. "exiting"  — slides left + fades, then is removed so siblings reflow.
+// Total visible grace ≈ VOTE_HOLD_MS + VOTE_EXIT_MS (~3450ms).
+const VOTE_HOLD_MS = 3000;
+const VOTE_EXIT_MS = 450;
+// Kept for callers/readers expecting a single tunable: total grace window.
+const VOTE_GRACE_MS = VOTE_HOLD_MS + VOTE_EXIT_MS;
 
 export interface DebateSectionConfig {
   id: string;
@@ -83,8 +89,12 @@ export function DebateSection({ section }: Props) {
   // deep pool, the next unseen item slides straight into its place.
   const poolRef = useRef<Poll[] | null>(null);
   const initiallyVotedRef = useRef<Set<number>>(new Set());
+  // Polls still rendered post-vote (held OR exiting).
   const gracedRef = useRef<Set<number>>(new Set());
+  // Subset of gracedRef currently playing the slide-left + fade exit.
+  const exitingRef = useRef<Set<number>>(new Set());
   const timersRef = useRef<Map<number, ReturnType<typeof setTimeout>>>(new Map());
+  const unmountedRef = useRef(false);
   const [, bump] = useState(0);
 
   if (data && data !== poolRef.current) {
@@ -104,13 +114,25 @@ export function DebateSection({ section }: Props) {
         !gracedRef.current.has(p.id) &&
         !timersRef.current.has(p.id)
       ) {
-        gracedRef.current.add(p.id);
-        const t = setTimeout(() => {
-          gracedRef.current.delete(p.id);
-          timersRef.current.delete(p.id);
+        const id = p.id;
+        gracedRef.current.add(id);
+        // Phase 1 (held): stay put at full opacity, then begin exiting.
+        const holdTimer = setTimeout(() => {
+          if (unmountedRef.current) return;
+          exitingRef.current.add(id);
           bump((n) => n + 1);
-        }, VOTE_GRACE_MS);
-        timersRef.current.set(p.id, t);
+          // Phase 2 (exiting): slide-left + fade, then drop from the pool
+          // so siblings reflow and the next item takes its place.
+          const exitTimer = setTimeout(() => {
+            if (unmountedRef.current) return;
+            gracedRef.current.delete(id);
+            exitingRef.current.delete(id);
+            timersRef.current.delete(id);
+            bump((n) => n + 1);
+          }, VOTE_EXIT_MS);
+          timersRef.current.set(id, exitTimer);
+        }, VOTE_HOLD_MS);
+        timersRef.current.set(id, holdTimer);
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -119,6 +141,7 @@ export function DebateSection({ section }: Props) {
   useEffect(() => {
     const timers = timersRef.current;
     return () => {
+      unmountedRef.current = true;
       timers.forEach((t) => clearTimeout(t));
       timers.clear();
     };
@@ -162,10 +185,25 @@ export function DebateSection({ section }: Props) {
         </div>
       ) : (
         <HorizontalScroller ariaLabel={section.title}>
+          <style>{`
+            .tmh-poll-item {
+              transition: transform ${VOTE_EXIT_MS}ms cubic-bezier(.4,0,.2,1),
+                          opacity ${VOTE_EXIT_MS}ms cubic-bezier(.4,0,.2,1);
+              will-change: transform, opacity;
+            }
+            .tmh-poll-exit {
+              transform: translateX(-115%);
+              opacity: 0;
+              pointer-events: none;
+            }
+          `}</style>
           {visiblePolls.map((poll) => (
             <div
               key={poll.id}
-              className="snap-start shrink-0 w-[85%] sm:w-[55%] lg:w-[38%] xl:w-[32%] min-h-[340px] sm:min-h-[360px]"
+              className={
+                "tmh-poll-item snap-start shrink-0 w-[85%] sm:w-[55%] lg:w-[38%] xl:w-[32%] min-h-[340px] sm:min-h-[360px]" +
+                (exitingRef.current.has(poll.id) ? " tmh-poll-exit" : "")
+              }
             >
               <PollTeaserCard poll={poll} />
             </div>

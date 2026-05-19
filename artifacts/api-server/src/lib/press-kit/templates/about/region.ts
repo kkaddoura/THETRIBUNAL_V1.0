@@ -49,6 +49,7 @@ export function regionCard(
                 display: "flex",
                 fontSize: `${scale.hero}px`,
                 fontWeight: 900,
+                fontFamily: spec.displayFont,
                 color: spec.accent,
                 lineHeight: 1,
                 letterSpacing: "-0.04em",
@@ -91,7 +92,10 @@ export function regionCard(
               alignItems: "center",
               gap: "12px",
               width: `${100 / cols - 4}%`,
-              padding: "8px 0",
+              padding: "10px 14px",
+              borderRadius: spec.radius,
+              backgroundColor: spec.panelBg,
+              border: `1px solid ${spec.border}`,
             },
             children: [
               {

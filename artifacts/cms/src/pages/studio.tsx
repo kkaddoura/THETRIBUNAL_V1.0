@@ -1,5 +1,5 @@
 import type React from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { api } from "@/lib/api";
 import { track as trackCms } from "@/lib/analytics";
 import { Link } from "wouter";
@@ -435,19 +435,17 @@ export default function StudioPage() {
 
       const kit: { assets: StudioAsset[] } = await api.studioGetKit(res.kitId);
       const kitAssets = kit.assets ?? [];
-      setAssets(kitAssets);
-      if (kitAssets.length) {
-        setActiveSize(kitAssets[0].size);
-        setActiveSlide(0);
-      }
 
-      const variants = res.captionVariants ?? {};
-      setEditedCaption({
-        x: variants.x?.[0] ?? "",
-        ig: variants.ig?.[0] ?? "",
-        linkedin: variants.linkedin?.[0] ?? "",
-      });
-      setChosenIndex({ x: 0, ig: 0, linkedin: 0 });
+      // Seed the compose-level variants as the per-slide fallback, then force the
+      // caption resync effect to re-run for the first asset of the new kit.
+      composeVariantsRef.current = res.captionVariants ?? {};
+      captionAssetRef.current = null;
+
+      setAssets(kitAssets);
+      // Reset to the first slide of the first size so Single vs Carousel-N is
+      // immediately obvious (Single → 1 slide / no nav, Carousel → N + nav).
+      setActiveSlide(0);
+      if (kitAssets.length) setActiveSize(kitAssets[0].size);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Generation failed");
     } finally {
@@ -515,6 +513,41 @@ export default function StudioPage() {
   const currentAsset = sizeAssets[Math.min(activeSlide, Math.max(0, sizeAssets.length - 1))];
   const slideTotal = sizeAssets.length;
   const isCarousel = slideTotal > 1;
+  const activeLayoutMeta = useMemo(() => LAYOUTS.find((l) => l.id === (currentAsset?.layout ?? layout)), [currentAsset, layout]);
+
+  // The asset whose captions are currently loaded into the editor. When the
+  // selected slide/size changes (currentAsset.id changes) we resync the caption
+  // UI to THAT asset's own variants — the compose-level variants are only a
+  // first-slot fallback, so without this every slide shows slide-1's captions.
+  const captionAssetRef = useRef<number | null>(null);
+  const composeVariantsRef = useRef<{ x?: string[]; ig?: string[]; linkedin?: string[] }>({});
+
+  useEffect(() => {
+    if (!currentAsset) {
+      captionAssetRef.current = null;
+      return;
+    }
+    if (captionAssetRef.current === currentAsset.id) return;
+    captionAssetRef.current = currentAsset.id;
+
+    const av = currentAsset.captionVariants ?? {};
+    const fb = composeVariantsRef.current;
+    const pick = (p: Platform): string[] => {
+      const fromAsset = av[p];
+      if (fromAsset && fromAsset.length) return fromAsset;
+      const fromCompose = fb[p];
+      return fromCompose && fromCompose.length ? fromCompose : ["", "", ""];
+    };
+    const xv = pick("x");
+    const igv = pick("ig");
+    const liv = pick("linkedin");
+    setChosenIndex({ x: 0, ig: 0, linkedin: 0 });
+    setEditedCaption({
+      x: currentAsset.chosenCaptionX ?? xv[0] ?? "",
+      ig: currentAsset.chosenCaptionIg ?? igv[0] ?? "",
+      linkedin: currentAsset.chosenCaptionLi ?? liv[0] ?? "",
+    });
+  }, [currentAsset]);
 
   const downloadCurrent = async () => {
     if (!currentAsset) return;
@@ -901,6 +934,17 @@ export default function StudioPage() {
                 </div>
               )}
             </div>
+            {currentAsset && (
+              <div className="flex items-center justify-center gap-2 pb-2">
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-primary">
+                  {activeLayoutMeta?.label ?? currentAsset.layout ?? "Kit"}
+                </span>
+                <span className="text-[10px] text-muted-foreground/40">·</span>
+                <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                  Slide {Math.min(activeSlide, slideTotal - 1) + 1} of {slideTotal}
+                </span>
+              </div>
+            )}
             {isCarousel && (
               <div className="flex items-center justify-center gap-2 pb-3">
                 <button
@@ -945,7 +989,10 @@ export default function StudioPage() {
 
             {(["x", "ig", "linkedin"] as const).map((platform) => {
               const platformLabel = platform === "x" ? "X" : platform === "ig" ? "Instagram" : "LinkedIn";
-              const variants = currentAsset?.captionVariants?.[platform] ?? ["", "", ""];
+              const variants =
+                (currentAsset?.captionVariants?.[platform]?.length
+                  ? currentAsset.captionVariants[platform]
+                  : composeVariantsRef.current[platform]) ?? ["", "", ""];
               const chosen = chosenIndex[platform];
               const isRegen = regenPlatform === platform;
               const captionActionsDisabled = !singleSlotMap;

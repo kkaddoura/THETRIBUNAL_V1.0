@@ -23,19 +23,32 @@ export function pillarCard(
   const scale = sizeScale(size)
   const isStory = size === "ig_story"
 
+  const dropCap = spec.numberStyle === "drop-cap"
   const body = [
     {
       type: "div",
       props: {
         style: {
           display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          alignSelf: "flex-start",
           fontSize: `${scale.hero}px`,
           fontWeight: 900,
-          fontFamily: spec.headingFont,
-          color: spec.accent,
+          fontFamily: spec.displayFont,
+          color: dropCap ? spec.fg : spec.accent,
           lineHeight: 1,
           letterSpacing: "-0.04em",
-          marginBottom: isStory ? "48px" : "32px",
+          marginBottom: isStory ? "44px" : "30px",
+          ...(dropCap
+            ? {
+                width: `${scale.hero * 1.15}px`,
+                height: `${scale.hero * 1.15}px`,
+                backgroundColor: spec.accent,
+                color: spec.bg,
+                borderRadius: spec.panelRadius,
+              }
+            : {}),
         },
         children: data.num,
       },
@@ -47,9 +60,10 @@ export function pillarCard(
           display: "flex",
           fontSize: `${isStory ? scale.h1 : scale.h2}px`,
           fontWeight: spec.headingWeight,
+          fontFamily: spec.displayFont,
           color: spec.fg,
-          lineHeight: 1.05,
-          letterSpacing: "-0.01em",
+          lineHeight: 1.04,
+          letterSpacing: spec.displayTracking,
           textTransform: "uppercase" as const,
           marginBottom: isStory ? "32px" : "24px",
         },

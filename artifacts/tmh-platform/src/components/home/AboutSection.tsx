@@ -41,61 +41,52 @@ export default function AboutSection() {
       />
 
       <style>{`
-        .tmh-deck {
-          position: relative;
-          max-width: 46rem;
-          margin: 0 auto;
-        }
+        .tmh-deck { position: relative; max-width: 46rem; margin: 0 auto; --card-h: clamp(8.25rem, 16vw, 9.25rem); }
         .tmh-card {
           position: relative;
           display: grid;
           grid-template-columns: clamp(2.6rem, 8vw, 3.75rem) 1fr;
           gap: clamp(0.85rem, 3vw, 1.75rem);
+          align-content: start;
           align-items: start;
           width: 100%;
+          height: var(--card-h);
           text-align: left;
-          background: #121212;
+          background: #131313;
           border: 1px solid rgba(245,240,235,0.10);
           border-left: 3px solid rgba(220,20,60,0.35);
-          border-radius: 10px;
+          border-radius: 12px;
           padding: clamp(0.9rem, 2.4vw, 1.4rem) clamp(1rem, 3vw, 1.75rem);
-          margin-top: -3.05rem;            /* tight overlap — only the header strip peeks */
+          margin-top: calc(var(--card-h) * -0.28);
           cursor: pointer;
           color: inherit;
           font: inherit;
-          box-shadow: 0 -10px 30px -18px rgba(0,0,0,0.9);
-          transition: margin 280ms cubic-bezier(.22,1,.36,1),
-                      transform 280ms cubic-bezier(.22,1,.36,1),
-                      border-color 200ms ease, box-shadow 280ms ease, background 200ms ease;
+          overflow: hidden;
+          box-shadow: 0 -8px 24px -16px rgba(0,0,0,0.85);
+          transition: transform 360ms cubic-bezier(.22,1,.36,1),
+                      box-shadow 360ms ease,
+                      border-color 240ms ease,
+                      background 240ms ease;
+          transform: translateY(0) scale(1);
         }
         .tmh-card:first-child { margin-top: 0; }
-        .tmh-card:focus-visible { outline: 2px solid ${CRIMSON}; outline-offset: 3px; }
+        .tmh-card:focus-visible { outline: 2px solid #DC143C; outline-offset: 3px; }
         .tmh-card .tmh-body {
-          max-height: 0;
           opacity: 0;
-          overflow: hidden;
-          transition: max-height 320ms cubic-bezier(.22,1,.36,1), opacity 220ms ease, margin 280ms ease;
+          transform: translateY(5px);
+          transition: opacity 320ms ease 40ms, transform 320ms cubic-bezier(.22,1,.36,1) 40ms;
         }
-        /* Active card lifts forward, fully opens, and stops overlapping the next one. */
         .tmh-card[data-active="true"] {
-          background: linear-gradient(180deg, #1a1a1a, #131313);
-          border-color: rgba(245,240,235,0.18);
-          border-left-color: ${CRIMSON};
-          transform: translateY(-2px);
-          box-shadow: 0 24px 50px -24px rgba(0,0,0,0.95), 0 0 0 1px rgba(220,20,60,0.10);
-          z-index: 5;
-          margin-bottom: 0.6rem;
+          background: linear-gradient(180deg, #1c1c1c, #141414);
+          border-color: rgba(245,240,235,0.20);
+          border-left-color: #DC143C;
+          transform: translateY(-6px) scale(1.012);
+          box-shadow: 0 28px 56px -26px rgba(0,0,0,0.95), 0 0 0 1px rgba(220,20,60,0.12);
+          z-index: 10;
         }
-        .tmh-card[data-active="true"] .tmh-body {
-          max-height: 12rem;
-          opacity: 1;
-          margin-top: 0.45rem;
-        }
-        .tmh-card[data-active="true"] + .tmh-card { margin-top: 0.45rem; }
-        @media (hover: none) {
-          /* Touch: a touch more breathing room since there's no hover affordance. */
-          .tmh-card { margin-top: -2.4rem; }
-        }
+        .tmh-card[data-active="true"] .tmh-body { opacity: 1; transform: translateY(0); }
+        @media (hover: none) { .tmh-deck { --card-h: clamp(9rem, 34vw, 11rem); } }
+        @media (prefers-reduced-motion: reduce) { .tmh-card, .tmh-card .tmh-body { transition: none; } }
       `}</style>
 
       <div
