@@ -2,6 +2,8 @@ import app from "./app";
 import { seedCmsData } from "@workspace/db/seed-cms";
 import { pool } from "@workspace/db";
 import { initCron } from "./lib/cron";
+import { warmFonts } from "./lib/og-fonts";
+import { getBrandTokens } from "./lib/design-tokens-cache";
 
 // Warn if critical security env vars are missing in production
 if (process.env.NODE_ENV === "production") {
@@ -37,6 +39,17 @@ const server = app.listen(port, "0.0.0.0", async () => {
   } catch (err) {
     console.error("Cron init error (non-fatal):", err);
   }
+  // Pre-warm the Studio font cache so the first carousel compose isn't blocked
+  // on a CDN Playfair fetch (the dominant cold-start latency that was making
+  // long composes time out and leave partial kits).
+  void (async () => {
+    try {
+      const tokens = await getBrandTokens();
+      await warmFonts({ headingFamily: tokens.headingFont, bodyFamily: tokens.bodyFont });
+    } catch (err) {
+      console.warn("[boot] font pre-warm skipped:", err);
+    }
+  })();
 });
 
 const gracefulShutdown = (signal: string) => {

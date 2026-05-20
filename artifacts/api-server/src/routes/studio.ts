@@ -902,17 +902,45 @@ router.post("/cms/studio/compose", requireCmsAuth, async (req, res) => {
     }),
   )
 
-  const generated: Array<Record<string, unknown>> = []
+  // First pass: collect render outcomes WITHOUT touching the DB. Persisting a
+  // partial kit is the actual user-facing "looks half-baked / SLIDE 1 OF 1"
+  // bug — guard against it by deciding all-or-nothing before any insert.
   const failures: Array<{ size: string; slideIndex: number; error: string }> = []
-
+  const successfulJobs: Array<{ job: typeof renderJobs[number]; upload: Awaited<ReturnType<typeof uploadAsset>> }> = []
   for (let i = 0; i < results.length; i++) {
     const job = renderJobs[i]
     const result = results[i]
     if (result.status === "rejected") {
       failures.push({ size: job.size, slideIndex: job.slideIndex, error: String(result.reason ?? "render_failed") })
-      continue
+    } else {
+      successfulJobs.push({ job, upload: result.value.upload })
     }
-    const { upload } = result.value
+  }
+
+  // If the client gave up while we were rendering (slow compose, proxy/browser
+  // timeout), don't persist anything — the socket is gone and any partial
+  // commit would leave a kit the user already abandoned.
+  if (req.aborted || res.writableEnded) {
+    console.warn(`[studio/compose] aborted mid-render; discarding ${successfulJobs.length} successful renders to avoid a partial kit (kit=${kitId})`)
+    return
+  }
+
+  // All-or-nothing: a single render failure poisons the whole kit. Surfacing
+  // a clear error is much better than silently writing a subset (the source
+  // of the "carousel shows 1 of 1" symptom).
+  if (failures.length > 0) {
+    console.error(`[studio/compose] ${failures.length}/${results.length} renders failed — refusing to persist a partial kit:`, failures.slice(0, 3))
+    return res.status(500).json({
+      error: "compose_partial_failure",
+      attempted: results.length,
+      succeeded: successfulJobs.length,
+      failures: failures.slice(0, 10),
+    })
+  }
+
+  // Second pass: every render succeeded — persist the complete kit.
+  const generated: Array<Record<string, unknown>> = []
+  for (const { job, upload } of successfulJobs) {
     const [row] = await db
       .insert(pressKitAssetsTable)
       .values({

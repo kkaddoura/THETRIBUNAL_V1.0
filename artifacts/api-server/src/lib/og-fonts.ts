@@ -102,3 +102,24 @@ async function fetchTtf(url: string): Promise<ArrayBuffer> {
   if (!res.ok) throw new Error(`Font fetch failed: ${res.status} ${url}`)
   return res.arrayBuffer()
 }
+
+/**
+ * Pre-warm the font cache at server boot so the first Studio compose isn't
+ * blocked on a CDN font fetch (~5–15s cold). Fire-and-forget — any failure
+ * is logged and the next request will retry on-demand. Once warmed, fonts
+ * stay cached for the process lifetime (no TTL).
+ */
+export async function warmFonts(opts: LoadFontsOptions): Promise<void> {
+  try {
+    const start = Date.now()
+    const fonts = await loadFonts(opts)
+    console.log(
+      `[og-fonts] warmed ${fonts.length} fonts in ${Date.now() - start}ms ` +
+        `(${opts.headingFamily} / ${opts.bodyFamily}; serif: ${
+          fonts.some((f) => f.name === SERIF_FAMILY) ? "yes" : "no"
+        })`,
+    )
+  } catch (err) {
+    console.warn("[og-fonts] warm-up failed (compose will retry on first request):", err)
+  }
+}

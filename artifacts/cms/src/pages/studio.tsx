@@ -209,6 +209,15 @@ export default function StudioPage() {
   const [assets, setAssets] = useState<StudioAsset[]>([]);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Live elapsed timer while a compose is in flight — carousels with the
+  // richer styles can take ~30–60s on a cold run; an explicit counter beats
+  // a silent spinner and prevents "is it stuck?" double-triggers.
+  const [elapsed, setElapsed] = useState(0);
+  useEffect(() => {
+    if (!generating) { setElapsed(0); return; }
+    const t = setInterval(() => setElapsed((s) => s + 1), 1000);
+    return () => clearInterval(t);
+  }, [generating]);
 
   const [activeSize, setActiveSize] = useState<string>("ig_square");
   const [activeSlide, setActiveSlide] = useState<number>(0);
@@ -853,8 +862,13 @@ export default function StudioPage() {
             className="w-full px-4 py-3 rounded-md bg-gradient-to-r from-primary to-primary/80 text-white text-xs font-bold uppercase tracking-[0.2em] hover:from-primary/95 disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-[0_4px_24px_-8px_rgba(220,20,60,0.6)] transition-all hover:shadow-[0_4px_32px_-4px_rgba(220,20,60,0.7)]"
           >
             {generating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
-            {generating ? "Generating…" : "Generate kit"}
+            {generating ? `Generating… ${elapsed}s` : "Generate kit"}
           </button>
+          {generating && (
+            <p className="text-[10px] text-muted-foreground/70 text-center mt-2 leading-relaxed">
+              Rendering {SLOT_COUNT[layout] || 1} slide{(SLOT_COUNT[layout] || 1) > 1 ? "s" : ""} × 4 sizes + AI captions. Carousels can take ~30–60s; please don't re-click.
+            </p>
+          )}
 
           {error && (() => {
             if (errIsFill) {
