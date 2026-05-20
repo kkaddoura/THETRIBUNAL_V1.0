@@ -305,8 +305,13 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
         winningOption: winner?.text,
         winningPercentage: winner?.percentage,
       },
-      buildElements: (_style, size) => [
-        pollResultSplit({ question: poll.question, category: poll.category, totalVotes: total, options }, tokens, size),
+      buildElements: (style, size) => [
+        pollResultSplit(
+          { question: poll.question, category: poll.category, totalVotes: total, options },
+          tokens,
+          size,
+          style,
+        ),
       ],
       slideCount: 1,
     }
@@ -323,7 +328,7 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
       sourceId,
       storedContentType: "prediction",
       caption: { contentType: "prediction", contentId: sourceId, question: pred.question },
-      buildElements: (_style, size) => [
+      buildElements: (style, size) => [
         predictionMomentum(
           {
             question: pred.question,
@@ -333,6 +338,7 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
           },
           tokens,
           size,
+          style,
         ),
       ],
       slideCount: 1,
@@ -352,7 +358,7 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
         voicesName: profile.name,
         quote: profile.quote ?? profile.headline ?? "",
       },
-      buildElements: (_style, size) => [
+      buildElements: (style, size) => [
         voiceQuote(
           {
             name: profile.name,
@@ -363,6 +369,7 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
           },
           tokens,
           size,
+          style,
         ),
       ],
       slideCount: 1,
@@ -377,7 +384,7 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
       sourceId,
       storedContentType: "pulse",
       caption: { contentType: "pulse", contentId: sourceId, stat: topic.stat },
-      buildElements: (_style, size) => [
+      buildElements: (style, size) => [
         pulseStat(
           {
             title: topic.title,
@@ -388,6 +395,7 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
           },
           tokens,
           size,
+          style,
         ),
       ],
       slideCount: 1,

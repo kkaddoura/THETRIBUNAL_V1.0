@@ -1,9 +1,20 @@
 /**
- * Pulse-stat template. One striking number + label + delta.
+ * Pulse-stat template (v1 single-item / Studio "Single" layout).
+ *
+ * Renders one striking statistic: a short title, an oversized number rendered
+ * in `spec.displayFont` (Playfair when loaded), and an optional delta chip
+ * coloured by direction (accent for down, green for up). The framing shell
+ * (background, padding, accent rule, eyebrow, footer) comes from the shared
+ * `frame()` helper driven by the selected `TemplateStyle`. The drop-cap
+ * style uplifts the number further via `spec.numberStyle === "drop-cap"`.
+ *
+ * Style is the OPTIONAL last param (default "minimal-serif") so existing
+ * callers in `routes/press-kit.ts` continue to work unchanged.
  */
 
 import type { BrandTokens } from "../../design-tokens-cache.js"
 import type { SizeKey } from "../sizes.js"
+import { frame, sizeScale, styleFor, type TemplateStyle } from "./styles.js"
 
 interface SatoriElement {
   type: string
@@ -18,129 +29,94 @@ export interface PulseData {
   source?: string
 }
 
-export function pulseStat(data: PulseData, tokens: BrandTokens, size: SizeKey): SatoriElement {
+export function pulseStat(
+  data: PulseData,
+  tokens: BrandTokens,
+  size: SizeKey,
+  style: TemplateStyle = "minimal-serif",
+): SatoriElement {
+  const spec = styleFor(style, tokens, size)
+  const scale = sizeScale(size)
   const isStory = size === "ig_story"
-  const deltaColor = data.deltaUp === false ? tokens.accent : "#22C55E"
-  const deltaArrow = data.deltaUp === false ? "▼" : "▲"
+  const deltaIsDown = data.deltaUp === false
+  const deltaColor = deltaIsDown ? spec.accent : "#22C55E"
+  const deltaArrow = deltaIsDown ? "▼" : "▲"
+  // Slightly oversize the stat when the style asks for "drop-cap" emphasis.
+  const statScale = spec.numberStyle === "drop-cap" ? 1.1 : 1
 
-  return {
+  const title: SatoriElement = {
+    type: "div",
+    props: {
+      style: {
+        display: "flex",
+        fontSize: `${isStory ? scale.h1 * 0.75 : scale.h2 * 0.78}px`,
+        fontWeight: spec.headingWeight,
+        fontFamily: spec.displayFont,
+        color: spec.fg,
+        lineHeight: 1.15,
+        letterSpacing: spec.displayTracking,
+        textTransform: "uppercase" as const,
+        marginBottom: "auto",
+        maxWidth: "82%",
+      },
+      children: data.title,
+    },
+  }
+
+  const statBlock: SatoriElement = {
     type: "div",
     props: {
       style: {
         display: "flex",
         flexDirection: "column",
-        width: "100%",
-        height: "100%",
-        backgroundColor: tokens.bg,
-        fontFamily: tokens.headingFont,
-        padding: isStory ? "120px 60px" : "60px",
+        alignItems: "flex-start",
+        marginTop: "auto",
       },
       children: [
         {
           type: "div",
           props: {
-            style: { display: "flex", height: "5px", backgroundColor: tokens.accent, marginBottom: "32px" },
-          },
-        },
-        {
-          type: "div",
-          props: {
             style: {
               display: "flex",
-              fontSize: "16px",
-              color: tokens.muted,
-              fontFamily: tokens.bodyFont,
-              fontWeight: 700,
-              letterSpacing: "3px",
-              textTransform: "uppercase" as const,
-              marginBottom: "20px",
-            },
-            children: "MENA PULSE",
-          },
-        },
-        {
-          type: "div",
-          props: {
-            style: {
-              display: "flex",
-              fontSize: isStory ? "44px" : "32px",
+              fontSize: `${(isStory ? scale.hero * 1.25 : scale.hero) * statScale}px`,
               fontWeight: 900,
-              color: tokens.fg,
-              lineHeight: 1.15,
-              textTransform: "uppercase" as const,
-              marginBottom: "auto",
-              maxWidth: "80%",
+              fontFamily: spec.displayFont,
+              color: spec.fg,
+              lineHeight: 1,
+              letterSpacing: spec.displayTracking,
             },
-            children: data.title,
+            children: data.stat,
           },
         },
-        {
-          type: "div",
-          props: {
-            style: {
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-start",
-              marginTop: "auto",
-            },
-            children: [
+        ...(data.delta
+          ? [
               {
                 type: "div",
                 props: {
                   style: {
                     display: "flex",
-                    fontSize: isStory ? "180px" : "140px",
-                    fontWeight: 900,
-                    color: tokens.fg,
-                    lineHeight: 1,
+                    alignItems: "center",
+                    fontSize: `${scale.body * 1.05}px`,
+                    fontWeight: 800,
+                    fontFamily: spec.bodyFont,
+                    color: "#FFFFFF",
+                    marginTop: "20px",
+                    padding: "10px 18px",
+                    borderRadius: spec.radius,
+                    backgroundColor: deltaColor,
+                    letterSpacing: "1px",
                   },
-                  children: data.stat,
+                  children: `${deltaArrow} ${data.delta}`,
                 },
-              },
-              ...(data.delta
-                ? [
-                    {
-                      type: "div",
-                      props: {
-                        style: {
-                          display: "flex",
-                          fontSize: "32px",
-                          fontWeight: 700,
-                          fontFamily: tokens.bodyFont,
-                          color: deltaColor,
-                          marginTop: "16px",
-                        },
-                        children: `${deltaArrow} ${data.delta}`,
-                      },
-                    } as SatoriElement,
-                  ]
-                : []),
-            ],
-          },
-        },
-        {
-          type: "div",
-          props: {
-            style: {
-              display: "flex",
-              justifyContent: "space-between",
-              marginTop: "40px",
-              paddingTop: "20px",
-              borderTop: `1px solid ${tokens.border}`,
-              color: tokens.muted,
-              fontSize: "14px",
-              fontWeight: 700,
-              fontFamily: tokens.bodyFont,
-              letterSpacing: "2px",
-              textTransform: "uppercase" as const,
-            },
-            children: [
-              { type: "div", props: { children: data.source ?? "Live data" } },
-              { type: "div", props: { children: "TRIBUNAL.COM" } },
-            ],
-          },
-        },
+              } as SatoriElement,
+            ]
+          : []),
       ],
     },
   }
+
+  return frame(spec, size, [title, statBlock], {
+    eyebrow: "MENA PULSE",
+    footerLeft: data.source ?? "LIVE DATA",
+  })
 }

@@ -117,10 +117,79 @@ const ABOUT_SINGLETONS: { atomType: AtomType; label: string }[] = [
   { atomType: "manifesto", label: "Manifesto" },
 ];
 
-const STYLES: { id: Style; label: string; description: string; swatch: string }[] = [
-  { id: "minimal-serif", label: "Minimal Serif", description: "Restrained dark, editorial calm.", swatch: "linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%)" },
-  { id: "bold-crimson", label: "Bold Crimson", description: "Loud, full-bleed brand.", swatch: "linear-gradient(135deg, #DC143C 0%, #B30E2F 100%)" },
-  { id: "magazine", label: "Magazine", description: "Cream paper, accent rules.", swatch: "linear-gradient(180deg, #F2EDE4 0%, #EAE3D6 100%)" },
+// Mini-preview thumbnails — tiny, static, pure-CSS representations of what
+// a generated card looks like in each style so the picker is choosable by sight.
+// All three share the same outer geometry (w-20 h-14) so the picker layout
+// doesn't shift between selections.
+const StylePreview: Record<Style, React.ReactNode> = {
+  "minimal-serif": (
+    <div
+      className="w-20 h-14 rounded-md shrink-0 border border-white/10 overflow-hidden relative"
+      style={{ background: "linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%)" }}
+    >
+      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "#DC143C" }} />
+      <div className="px-1.5 pt-1.5 pb-1 flex flex-col gap-0.5">
+        <div className="text-[5px] uppercase tracking-[0.18em] font-bold" style={{ color: "#9A9A9A" }}>
+          Debate
+        </div>
+        <div
+          className="text-[8px] leading-[1.05] text-white truncate"
+          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+        >
+          Quiet headline<span style={{ color: "#DC143C" }}>.</span>
+        </div>
+      </div>
+    </div>
+  ),
+  "bold-crimson": (
+    <div
+      className="w-20 h-14 rounded-md shrink-0 border border-white/10 overflow-hidden relative shadow-[inset_0_-6px_12px_-6px_rgba(0,0,0,0.45)]"
+      style={{ background: "linear-gradient(135deg, #DC143C 0%, #8A0A24 100%)" }}
+    >
+      <div className="px-1.5 pt-1 pb-1 flex flex-col h-full justify-between">
+        <div
+          className="inline-block self-start text-[5px] uppercase tracking-[0.18em] font-bold px-1 py-[1px] rounded-sm"
+          style={{ background: "rgba(255,255,255,0.18)", color: "#FFFFFF" }}
+        >
+          Voice
+        </div>
+        <div
+          className="text-[10px] leading-[0.95] font-extrabold text-white truncate"
+          style={{ fontFamily: "'Inter', system-ui, sans-serif", letterSpacing: "-0.02em" }}
+        >
+          LOUD TAKE
+        </div>
+      </div>
+    </div>
+  ),
+  magazine: (
+    <div
+      className="w-20 h-14 rounded-md shrink-0 border border-white/10 overflow-hidden relative"
+      style={{ background: "linear-gradient(180deg, #F2EDE4 0%, #EAE3D6 100%)" }}
+    >
+      <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: "#DC143C" }} />
+      <div className="px-1.5 pt-1.5 pb-1 flex flex-col h-full justify-between">
+        <div
+          className="text-[8px] leading-[1.05] truncate"
+          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#0A0A0A" }}
+        >
+          Print feature
+        </div>
+        <div
+          className="text-[5px] uppercase tracking-[0.18em] font-bold truncate"
+          style={{ color: "#7A5A3A" }}
+        >
+          Issue · 05
+        </div>
+      </div>
+    </div>
+  ),
+};
+
+const STYLES: { id: Style; label: string; description: string }[] = [
+  { id: "minimal-serif", label: "Minimal Serif", description: "Restrained dark, editorial calm." },
+  { id: "bold-crimson", label: "Bold Crimson", description: "Loud, full-bleed brand." },
+  { id: "magazine", label: "Magazine", description: "Cream paper, accent rules." },
 ];
 
 const SIZE_LABELS: Record<string, string> = {
@@ -786,7 +855,7 @@ export default function StudioPage() {
               {STYLES.map((s) => (
                 <GlassCard key={s.id} onClick={() => setStyle(s.id)} active={style === s.id} className="px-2.5 py-2">
                   <div className="flex items-center gap-2.5">
-                    <div className="w-10 h-10 rounded-md shrink-0 border border-white/10" style={{ background: s.swatch }} />
+                    {StylePreview[s.id]}
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold">{s.label}</p>
                       <p className="text-[10px] text-muted-foreground leading-snug">{s.description}</p>
