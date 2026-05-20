@@ -102,27 +102,33 @@ export function DebateSection({ section }: Props) {
     initiallyVotedRef.current = new Set(data.filter((p) => hasVoted(p.id)).map((p) => p.id));
   }
 
-  // Re-runs whenever the user votes on a pool item (votedInPool changes).
-  const votedInPool = data ? data.reduce((n, p) => n + (hasVoted(p.id) ? 1 : 0), 0) : 0;
-  useEffect(() => {
-    if (!data) return;
-    const initial = initiallyVotedRef.current;
+  // Detect newly-voted polls SYNCHRONOUSLY during render (not in a post-
+  // render useEffect): otherwise the filter below runs first on the
+  // vote-triggered re-render with `hasVoted=true` and grace empty, so the
+  // card unmounts in that frame — the user-visible "card disappears
+  // immediately on vote" bug. Mutating refs + scheduling timers during
+  // render is a deliberate side effect; the guards (`!gracedRef.current.has`
+  // / `!timersRef.current.has`) keep it idempotent across Strict Mode
+  // re-invocations and React 18 render retries (refs persist across both).
+  if (data) {
+    const initialNow = initiallyVotedRef.current;
     for (const p of data) {
       if (
         hasVoted(p.id) &&
-        !initial.has(p.id) &&
+        !initialNow.has(p.id) &&
         !gracedRef.current.has(p.id) &&
         !timersRef.current.has(p.id)
       ) {
         const id = p.id;
         gracedRef.current.add(id);
-        // Phase 1 (held): stay put at full opacity, then begin exiting.
+        // Phase 1 (held): stay put at full opacity ~3s — lets the in-card
+        // "Vote Recorded" confirmation play.
         const holdTimer = setTimeout(() => {
           if (unmountedRef.current) return;
           exitingRef.current.add(id);
           bump((n) => n + 1);
-          // Phase 2 (exiting): slide-left + fade, then drop from the pool
-          // so siblings reflow and the next item takes its place.
+          // Phase 2 (exiting): slide-left + fade ~450ms, then drop from
+          // the pool so siblings reflow and the next item slides in.
           const exitTimer = setTimeout(() => {
             if (unmountedRef.current) return;
             gracedRef.current.delete(id);
@@ -135,8 +141,7 @@ export function DebateSection({ section }: Props) {
         timersRef.current.set(id, holdTimer);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [data, votedInPool]);
+  }
 
   useEffect(() => {
     const timers = timersRef.current;
