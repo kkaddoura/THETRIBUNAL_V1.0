@@ -117,7 +117,7 @@ async function toPollResponse(poll: any, options: any[], includeDummyBreakdown =
 
 router.get("/polls", async (req, res) => {
   try {
-    const { filter, category, limit = "20", offset = "0", search, tag, ids } = req.query as Record<string, string>;
+    const { filter, category, limit = "20", offset = "0", search, tag, ids, categories, tags } = req.query as Record<string, string>;
     const lim = Math.min(parseInt(limit) || 20, 50);
     const off = parseInt(offset) || 0;
 
@@ -155,6 +155,80 @@ router.get("/polls", async (req, res) => {
         ordered.map((poll: any) => toPollResponse(poll, optionsByPoll.get(poll.id) ?? [])),
       );
       return res.json({ polls: result, total: result.length });
+    }
+
+    // Branch: multi-select filter sections (CMS debates page). Accepts
+    // comma-separated `categories` (slugs) and/or `tags`, OR'd together
+    // both within each list and across the two types. Always newest-first.
+    // Kept separate from the single-`category`/`tag` branches below so old
+    // callers keep working unchanged.
+    if ((categories && categories.trim()) || (tags && tags.trim())) {
+      const slugList = (categories ?? "")
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .slice(0, 20);
+      const tagList = (tags ?? "")
+        .split(",")
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean)
+        .slice(0, 20);
+
+      // Resolve slugs → canonical category names. Slug→name is not 1:1 in
+      // the DB (duplicate slug variants exist), so we DISTINCT the names
+      // we find and match against `category` rather than `categorySlug`.
+      let categoryNames: string[] = [];
+      if (slugList.length > 0) {
+        const rows = await db
+          .selectDistinct({ category: pollsTable.category })
+          .from(pollsTable)
+          .where(inArray(pollsTable.categorySlug, slugList));
+        categoryNames = rows.map((r) => r.category).filter((n): n is string => !!n);
+      }
+
+      // Build the OR'd filter. If neither side resolved to anything (e.g.
+      // slugs don't exist + no tags), short-circuit to an empty result.
+      if (categoryNames.length === 0 && tagList.length === 0) {
+        return res.json({ polls: [], total: 0 });
+      }
+
+      const conditions = [] as any[];
+      if (categoryNames.length > 0) {
+        conditions.push(inArray(pollsTable.category, categoryNames));
+      }
+      if (tagList.length > 0) {
+        // Inline list to avoid drizzle param-array gotchas on jsonb subqueries.
+        const lowered = tagList.map((t) => sql`${t}`);
+        conditions.push(
+          sql`EXISTS (SELECT 1 FROM jsonb_array_elements_text(tags) t WHERE LOWER(t) IN (${sql.join(lowered, sql`, `)}))`,
+        );
+      }
+      const orClause = conditions.length === 1
+        ? conditions[0]
+        : sql`(${sql.join(conditions, sql` OR `)})`;
+      const multiWhere = and(approvedFilter, orClause);
+
+      const polls = await db
+        .select()
+        .from(pollsTable)
+        .where(multiWhere)
+        .orderBy(desc(pollsTable.createdAt))
+        .limit(lim)
+        .offset(off);
+      const pollIds = polls.map((p: any) => p.id);
+      const allOptions = pollIds.length > 0
+        ? await db.select().from(pollOptionsTable).where(inArray(pollOptionsTable.pollId, pollIds))
+        : [];
+      const optionsByPoll = new Map<number, typeof allOptions>();
+      for (const opt of allOptions) {
+        if (!optionsByPoll.has(opt.pollId)) optionsByPoll.set(opt.pollId, []);
+        optionsByPoll.get(opt.pollId)!.push(opt);
+      }
+      const result = await Promise.all(
+        polls.map((poll: any) => toPollResponse(poll, optionsByPoll.get(poll.id) ?? [])),
+      );
+      const [countRow] = await db.select({ count: sql<number>`count(*)` }).from(pollsTable).where(multiWhere);
+      return res.json({ polls: result, total: Number(countRow.count) });
     }
 
     // Branch: tag filter (tag-driven sections). Always newest-first.

@@ -24,7 +24,13 @@ export interface DebateSectionConfig {
   order: number;
   title: string;
   subtitle?: string;
-  mode: "manual" | "tag" | "category";
+  // New multi-select shape (preferred). categorySlugs OR tags, OR'd
+  // together across both types.
+  categorySlugs?: string[];
+  tags?: string[];
+  // Legacy single-value fields, kept optional so older configs still
+  // render before the CMS rewrites them via migrateSection() on save.
+  mode?: "manual" | "tag" | "category";
   manualPostIds?: number[];
   tag?: string;
   categorySlug?: string;
@@ -39,7 +45,17 @@ interface Props {
 async function fetchSectionPolls(section: DebateSectionConfig): Promise<Poll[]> {
   const params = new URLSearchParams();
   params.set("limit", String(Math.max(section.cardLimit, SECTION_FETCH_LIMIT)));
-  if (section.mode === "manual") {
+
+  const categorySlugs = (section.categorySlugs ?? []).filter((s) => typeof s === "string" && s.trim());
+  const sectionTags = (section.tags ?? []).filter((s) => typeof s === "string" && s.trim());
+
+  // Preferred: new multi-select shape — hit the OR'd /api/polls?categories=…&tags=… branch.
+  if (categorySlugs.length > 0 || sectionTags.length > 0) {
+    if (categorySlugs.length > 0) params.set("categories", categorySlugs.join(","));
+    if (sectionTags.length > 0) params.set("tags", sectionTags.join(","));
+  } else if (section.mode === "manual") {
+    // Legacy fallbacks — pre-migration configs may still hit this path
+    // briefly until the CMS re-saves them on next load.
     const ids = (section.manualPostIds ?? []).filter((n) => Number.isFinite(n) && n > 0);
     if (ids.length === 0) return [];
     params.set("ids", ids.join(","));
@@ -48,10 +64,13 @@ async function fetchSectionPolls(section: DebateSectionConfig): Promise<Poll[]> 
     if (!slug) return [];
     params.set("category", slug);
     params.set("filter", "latest");
-  } else {
+  } else if (section.mode === "tag") {
     const tag = (section.tag ?? "").trim();
     if (!tag) return [];
     params.set("tag", tag);
+  } else {
+    // No legacy mode AND no new filters → nothing to fetch.
+    return [];
   }
   const res = await fetch(`/api/polls?${params.toString()}`);
   if (!res.ok) return [];
@@ -60,15 +79,23 @@ async function fetchSectionPolls(section: DebateSectionConfig): Promise<Poll[]> 
 }
 
 export function DebateSection({ section }: Props) {
-  const queryKey =
-    section.mode === "manual"
+  const categorySlugs = section.categorySlugs ?? [];
+  const sectionTags = section.tags ?? [];
+  const hasMultiFilters = categorySlugs.length > 0 || sectionTags.length > 0;
+
+  // Include both the new multi-select arrays and the legacy fields so
+  // toggling between shapes (e.g. live CMS edits) doesn't cache-collide.
+  const queryKey = hasMultiFilters
+    ? ["debates-section", section.id, "multi", categorySlugs, sectionTags]
+    : section.mode === "manual"
       ? ["debates-section", section.id, "ids", section.manualPostIds]
       : section.mode === "category"
         ? ["debates-section", section.id, "category", section.categorySlug]
         : ["debates-section", section.id, "tag", section.tag];
 
-  const enabled =
-    section.mode === "manual"
+  const enabled = hasMultiFilters
+    ? true
+    : section.mode === "manual"
       ? (section.manualPostIds ?? []).length > 0
       : section.mode === "category"
         ? !!section.categorySlug?.trim()

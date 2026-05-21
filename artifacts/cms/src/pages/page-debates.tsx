@@ -1,21 +1,28 @@
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { api } from "@/lib/api";
-import { Save, Plus, Trash2, GripVertical, Eye, EyeOff, ChevronDown, ChevronUp, X, ExternalLink, Search } from "lucide-react";
+import { Save, Plus, Trash2, GripVertical, Eye, EyeOff, ChevronDown, ChevronUp, X, ExternalLink, AlertTriangle } from "lucide-react";
 
 const PAGE_KEY = "polls";
 
+// Multi-select sections: categories OR tags are OR'd together across both
+// types. `mode`, `manualPostIds`, `tag`, `categorySlug` are kept as optional
+// legacy fields so we can migrate older configs on load (see migrateSection
+// below) without forcing a DB script.
 interface DebateSectionConfig {
   id: string;
   enabled: boolean;
   order: number;
   title: string;
   subtitle?: string;
-  mode: "manual" | "tag" | "category";
-  manualPostIds: number[];
-  tag: string;
-  categorySlug: string;
+  categorySlugs: string[];
+  tags: string[];
   cardLimit: number;
   showSeeAll: boolean;
+  // Legacy fields — preserved for round-trip safety but no longer edited.
+  mode?: "manual" | "tag" | "category";
+  manualPostIds?: number[];
+  tag?: string;
+  categorySlug?: string;
 }
 
 interface CategoryOption {
@@ -33,12 +40,6 @@ interface DebatesPageConfig {
   sections?: DebateSectionConfig[];
 }
 
-interface DebateOption {
-  id: number;
-  question: string;
-  category?: string;
-}
-
 const DEFAULT_CARD_LIMIT = 8;
 const MAX_CARD_LIMIT = 20;
 const MAX_SECTIONS = 12;
@@ -54,13 +55,60 @@ function defaultSection(order: number): DebateSectionConfig {
     order,
     title: "New Section",
     subtitle: "",
-    mode: "manual",
-    manualPostIds: [],
-    tag: "",
-    categorySlug: "",
+    categorySlugs: [],
+    tags: [],
     cardLimit: DEFAULT_CARD_LIMIT,
     showSeeAll: false,
   };
+}
+
+// Migrate a single saved section to the multi-select shape. Idempotent — if
+// the section is already in the new shape, just normalises types.
+// - mode: "category" + categorySlug → categorySlugs: [slug]
+// - mode: "tag"      + tag          → tags: [tag]
+// - mode: "manual" / unknown        → both empty (UI surfaces a warning)
+function migrateSection(raw: any, fallbackOrder: number): DebateSectionConfig {
+  const base: DebateSectionConfig = {
+    id: typeof raw?.id === "string" && raw.id ? raw.id : newSectionId(),
+    enabled: raw?.enabled !== false,
+    order: typeof raw?.order === "number" ? raw.order : fallbackOrder,
+    title: typeof raw?.title === "string" ? raw.title : "",
+    subtitle: typeof raw?.subtitle === "string" ? raw.subtitle : "",
+    categorySlugs: [],
+    tags: [],
+    cardLimit:
+      typeof raw?.cardLimit === "number" && raw.cardLimit > 0
+        ? Math.min(raw.cardLimit, MAX_CARD_LIMIT)
+        : DEFAULT_CARD_LIMIT,
+    showSeeAll: !!raw?.showSeeAll,
+    mode: raw?.mode,
+    manualPostIds: Array.isArray(raw?.manualPostIds) ? raw.manualPostIds : undefined,
+    tag: typeof raw?.tag === "string" ? raw.tag : undefined,
+    categorySlug: typeof raw?.categorySlug === "string" ? raw.categorySlug : undefined,
+  };
+
+  // Already on the new shape — trust + dedupe.
+  if (Array.isArray(raw?.categorySlugs) || Array.isArray(raw?.tags)) {
+    const cats = Array.isArray(raw?.categorySlugs)
+      ? raw.categorySlugs.filter((s: any) => typeof s === "string" && s.trim())
+      : [];
+    const tgs = Array.isArray(raw?.tags)
+      ? raw.tags.filter((s: any) => typeof s === "string" && s.trim()).map((s: string) => s.trim())
+      : [];
+    base.categorySlugs = Array.from(new Set(cats));
+    base.tags = Array.from(new Set(tgs));
+    return base;
+  }
+
+  // Legacy single-value shape.
+  if (raw?.mode === "category" && typeof raw?.categorySlug === "string" && raw.categorySlug.trim()) {
+    base.categorySlugs = [raw.categorySlug.trim()];
+  } else if (raw?.mode === "tag" && typeof raw?.tag === "string" && raw.tag.trim()) {
+    base.tags = [raw.tag.trim()];
+  }
+  // Manual mode (or anything else) → both empty; UI shows a "legacy manual
+  // section" banner so the editor can pick filters or delete the section.
+  return base;
 }
 
 export default function PageDebates() {
@@ -69,7 +117,6 @@ export default function PageDebates() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
-  const [debateOptions, setDebateOptions] = useState<DebateOption[]>([]);
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
 
   useEffect(() => {
@@ -86,13 +133,18 @@ export default function PageDebates() {
       .getPage(PAGE_KEY)
       .then((c: any) => {
         const raw = c ?? {};
+        const rawSections = Array.isArray(raw.sections) ? raw.sections : [];
         const cfg: DebatesPageConfig = {
           ...defaults,
           ...raw,
           hero: { ...defaults.hero, ...(raw.hero ?? {}) },
           ticker: { ...defaults.ticker, ...(raw.ticker ?? {}) },
           emptyState: { ...defaults.emptyState, ...(raw.emptyState ?? {}) },
-          sections: Array.isArray(raw.sections) ? raw.sections : [],
+          // Migrate each saved section on load. Legacy single-value shapes
+          // (mode: "category"|"tag"|"manual") are mapped to the new multi-
+          // select shape; manual sections come through as empty filter
+          // sections + the editor surfaces a warning banner on the card.
+          sections: rawSections.map((s: any, idx: number) => migrateSection(s, idx)),
         };
         setConfig(cfg);
       })
@@ -101,18 +153,6 @@ export default function PageDebates() {
         setConfig(defaults);
       })
       .finally(() => setLoading(false));
-  }, []);
-
-  useEffect(() => {
-    api
-      .getDebates("approved")
-      .then((res: any) => {
-        const raw: any[] = res?.items ?? res ?? [];
-        setDebateOptions(
-          raw.map((r: any) => ({ id: r.id, question: r.question, category: r.category })),
-        );
-      })
-      .catch(() => setDebateOptions([]));
   }, []);
 
   useEffect(() => {
@@ -286,14 +326,16 @@ export default function PageDebates() {
                   <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{section.title || "(untitled)"}</p>
-                    <p className="text-xs text-muted-foreground capitalize">
-                      {section.mode === "manual"
-                        ? `${section.manualPostIds.length} debate${section.manualPostIds.length === 1 ? "" : "s"} picked`
-                        : section.mode === "tag"
-                          ? section.tag ? `Tag: ${section.tag}` : "Tag: (not set)"
-                          : section.categorySlug
-                            ? `Category: ${categoryOptions.find((c) => c.slug === section.categorySlug)?.name ?? section.categorySlug}`
-                            : "Category: (not set)"}
+                    <p className="text-xs text-muted-foreground">
+                      {(() => {
+                        const catCount = section.categorySlugs.length;
+                        const tagCount = section.tags.length;
+                        if (catCount === 0 && tagCount === 0) return "No filters — empty section";
+                        const parts: string[] = [];
+                        if (catCount > 0) parts.push(`${catCount} categor${catCount === 1 ? "y" : "ies"}`);
+                        if (tagCount > 0) parts.push(`${tagCount} tag${tagCount === 1 ? "" : "s"}`);
+                        return parts.join(" + ");
+                      })()}
                     </p>
                   </div>
                   <div className="flex items-center gap-1">
@@ -318,6 +360,26 @@ export default function PageDebates() {
 
                 {expandedSection === section.id && (
                   <div className="px-4 pb-4 pt-1 border-t border-border space-y-3">
+                    {/*
+                      Legacy "manual" sections from before the multi-select
+                      refactor migrate to empty filter sections (no
+                      categories, no tags). Surface a clear banner so editors
+                      know to either configure filters or delete the section.
+                      The same banner also covers brand-new sections that
+                      haven't had any filters picked yet, which is fine —
+                      message reads cleanly in both cases.
+                    */}
+                    {section.categorySlugs.length === 0 && section.tags.length === 0 && (
+                      <div className="flex items-start gap-2 px-3 py-2 border border-red-500/40 bg-red-500/10 rounded-sm text-xs text-red-300">
+                        <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                        <span>
+                          {section.mode === "manual"
+                            ? "Legacy manual section — pick categories/tags or delete."
+                            : "No filters selected — pick at least one category or tag, or delete this section."}
+                        </span>
+                      </div>
+                    )}
+
                     <Field label="Section Title">
                       <input
                         type="text"
@@ -338,55 +400,20 @@ export default function PageDebates() {
                       />
                     </Field>
 
-                    <Field label="Population Mode">
-                      <div className="flex items-center gap-4 text-sm flex-wrap">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            checked={section.mode === "manual"}
-                            onChange={() => updateSection(section.id, { mode: "manual" })}
-                          />
-                          Manual pick
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            checked={section.mode === "category"}
-                            onChange={() => updateSection(section.id, { mode: "category" })}
-                          />
-                          Category (newest first)
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            checked={section.mode === "tag"}
-                            onChange={() => updateSection(section.id, { mode: "tag" })}
-                          />
-                          Tag (newest first)
-                        </label>
-                      </div>
-                    </Field>
-
-                    {section.mode === "manual" && (
-                      <ManualPicker
-                        options={debateOptions}
-                        selectedIds={section.manualPostIds}
-                        onChange={(ids) => updateSection(section.id, { manualPostIds: ids })}
-                      />
-                    )}
-                    {section.mode === "category" && (
-                      <CategoryPicker
-                        options={categoryOptions}
-                        slug={section.categorySlug}
-                        onChange={(slug) => updateSection(section.id, { categorySlug: slug })}
-                      />
-                    )}
-                    {section.mode === "tag" && (
-                      <TagPicker
-                        tag={section.tag}
-                        onChange={(tag) => updateSection(section.id, { tag })}
-                      />
-                    )}
+                    {/*
+                      Filters: categories + tags. OR within each list, OR
+                      across both lists ("show debates matching ANY selected
+                      category OR ANY selected tag"). Newest-first.
+                    */}
+                    <CategoryMultiPicker
+                      options={categoryOptions}
+                      slugs={section.categorySlugs}
+                      onChange={(slugs) => updateSection(section.id, { categorySlugs: slugs })}
+                    />
+                    <TagMultiPicker
+                      tags={section.tags}
+                      onChange={(tags) => updateSection(section.id, { tags })}
+                    />
 
                     <div className="grid grid-cols-2 gap-3">
                       <Field label={`Cards shown (max ${MAX_CARD_LIMIT})`}>
@@ -440,239 +467,168 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function ManualPicker({
+// Multi-select chips for categories. OR within the picker (server treats
+// multiple categories as a SQL IN list). Click an unselected category to
+// add; click a chip's X (or the chip again) to remove.
+function CategoryMultiPicker({
   options,
-  selectedIds,
-  onChange,
-}: {
-  options: DebateOption[];
-  selectedIds: number[];
-  onChange: (ids: number[]) => void;
-}) {
-  const [search, setSearch] = useState("");
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, []);
-
-  const optionById = useMemo(() => {
-    const m = new Map<number, DebateOption>();
-    for (const o of options) m.set(o.id, o);
-    return m;
-  }, [options]);
-
-  const selected = useMemo(
-    () => selectedIds.map((id) => optionById.get(id)).filter((o): o is DebateOption => !!o),
-    [selectedIds, optionById],
-  );
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    return options
-      .filter((o) => !selectedIds.includes(o.id))
-      .filter((o) =>
-        !q ||
-        o.question?.toLowerCase().includes(q) ||
-        String(o.id).includes(q) ||
-        o.category?.toLowerCase().includes(q),
-      )
-      .slice(0, 25);
-  }, [options, selectedIds, search]);
-
-  const add = (id: number) => {
-    onChange([...selectedIds, id]);
-    setSearch("");
-  };
-  const remove = (id: number) => onChange(selectedIds.filter((i) => i !== id));
-  const move = (id: number, direction: "up" | "down") => {
-    const idx = selectedIds.indexOf(id);
-    if (idx < 0) return;
-    if (direction === "up" && idx === 0) return;
-    if (direction === "down" && idx === selectedIds.length - 1) return;
-    const next = [...selectedIds];
-    const swap = direction === "up" ? idx - 1 : idx + 1;
-    [next[idx], next[swap]] = [next[swap], next[idx]];
-    onChange(next);
-  };
-
-  return (
-    <div className="space-y-2">
-      <Field label={`Selected debates (${selected.length})`}>
-        {selected.length === 0 ? (
-          <p className="text-xs text-muted-foreground border border-dashed border-border rounded-sm py-3 px-2 text-center">
-            None yet. Search below to add debates.
-          </p>
-        ) : (
-          <ul className="space-y-1">
-            {selected.map((s, idx) => (
-              <li key={s.id} className="flex items-center gap-2 px-2 py-1.5 bg-secondary/40 rounded-sm">
-                <span className="text-primary font-mono text-[10px] w-12 flex-shrink-0">#{s.id}</span>
-                <span className="flex-1 truncate text-sm">{s.question}</span>
-                {s.category && <span className="text-[10px] text-muted-foreground flex-shrink-0">{s.category}</span>}
-                <button
-                  onClick={() => move(s.id, "up")}
-                  disabled={idx === 0}
-                  className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  title="Move up"
-                >
-                  <ChevronUp className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => move(s.id, "down")}
-                  disabled={idx === selected.length - 1}
-                  className="p-1 text-muted-foreground hover:text-foreground disabled:opacity-30"
-                  title="Move down"
-                >
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => remove(s.id)}
-                  className="p-1 text-muted-foreground hover:text-red-500"
-                  title="Remove"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </Field>
-
-      <div ref={ref} className="relative">
-        <div className="relative">
-          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setOpen(true);
-            }}
-            onFocus={() => setOpen(true)}
-            placeholder="Search debates by question, category, or ID..."
-            className="w-full pl-8 pr-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          />
-        </div>
-        {open && (
-          <div className="absolute z-50 mt-1 w-full max-h-56 overflow-auto bg-card border border-border rounded-sm shadow-lg">
-            {filtered.length === 0 ? (
-              <p className="px-3 py-2 text-xs text-muted-foreground">No matches</p>
-            ) : (
-              filtered.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => add(item.id)}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-secondary/50 flex items-center gap-2 border-b border-border/30 last:border-0"
-                >
-                  <span className="text-primary font-mono text-[10px] flex-shrink-0">#{item.id}</span>
-                  <span className="truncate flex-1">{item.question}</span>
-                  {item.category && <span className="text-[10px] text-muted-foreground flex-shrink-0">{item.category}</span>}
-                </button>
-              ))
-            )}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function CategoryPicker({
-  options,
-  slug,
+  slugs,
   onChange,
 }: {
   options: CategoryOption[];
-  slug: string;
-  onChange: (slug: string) => void;
+  slugs: string[];
+  onChange: (slugs: string[]) => void;
 }) {
-  const selected = options.find((c) => c.slug === slug);
+  const selectedSet = useMemo(() => new Set(slugs), [slugs]);
+  const selected = useMemo(
+    () => slugs.map((s) => options.find((o) => o.slug === s) ?? { slug: s, name: s }),
+    [slugs, options],
+  );
+  const available = useMemo(
+    () => options.filter((o) => !selectedSet.has(o.slug)),
+    [options, selectedSet],
+  );
+
+  const remove = (slug: string) => onChange(slugs.filter((s) => s !== slug));
+  const add = (slug: string) => {
+    if (!slug || selectedSet.has(slug)) return;
+    onChange([...slugs, slug]);
+  };
+
   return (
     <div className="space-y-1">
-      <Field label="Category">
-        <select
-          value={slug}
-          onChange={(e) => onChange(e.target.value)}
-          className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-        >
-          <option value="">— Select a category —</option>
-          {options.map((c) => (
-            <option key={c.slug} value={c.slug}>
-              {c.name}
-              {typeof c.pollCount === "number" ? ` (${c.pollCount})` : ""}
-            </option>
-          ))}
-        </select>
+      <Field label={`Categories (${selected.length})`}>
+        {selected.length === 0 ? (
+          <p className="text-xs text-muted-foreground border border-dashed border-border rounded-sm py-2 px-2 text-center">
+            None selected. Pick one or more below.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {selected.map((c) => (
+              <span
+                key={c.slug}
+                className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 bg-primary/20 border border-primary/40 rounded-sm text-xs"
+                title={c.slug}
+              >
+                {c.name}
+                <button
+                  onClick={() => remove(c.slug)}
+                  className="p-0.5 text-muted-foreground hover:text-red-400"
+                  title="Remove"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </Field>
+      <select
+        value=""
+        onChange={(e) => {
+          add(e.target.value);
+          // Reset native select back to placeholder so the same option can
+          // be re-picked after removal in the same session.
+          e.currentTarget.value = "";
+        }}
+        className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+      >
+        <option value="">— Add a category —</option>
+        {available.map((c) => (
+          <option key={c.slug} value={c.slug}>
+            {c.name}
+            {typeof c.pollCount === "number" ? ` (${c.pollCount})` : ""}
+          </option>
+        ))}
+      </select>
       <p className="text-xs text-muted-foreground">
-        {!slug
-          ? "Posts will populate by category, sorted newest-first."
-          : selected
-            ? `≈ ${selected.pollCount ?? "?"} debate${selected.pollCount === 1 ? "" : "s"} in ${selected.name}`
-            : "Selected category not in current list (saved value preserved)."}
+        Debates matching ANY selected category will appear (OR logic).
       </p>
     </div>
   );
 }
 
-function TagPicker({ tag, onChange }: { tag: string; onChange: (tag: string) => void }) {
-  const [count, setCount] = useState<number | null>(null);
-  const [loading, setLoading] = useState(false);
+// Multi-tag chip input. Comma or Enter splits / commits the typed term.
+// Tags are lowercased + trimmed + de-duped at write time.
+function TagMultiPicker({
+  tags,
+  onChange,
+}: {
+  tags: string[];
+  onChange: (tags: string[]) => void;
+}) {
+  const [draft, setDraft] = useState("");
 
-  useEffect(() => {
-    const trimmed = tag.trim();
-    if (!trimmed) {
-      setCount(null);
-      return;
-    }
-    let cancelled = false;
-    setLoading(true);
-    const timer = setTimeout(() => {
-      fetch(`/api/polls?tag=${encodeURIComponent(trimmed)}&limit=1`)
-        .then((r) => (r.ok ? r.json() : null))
-        .then((data) => {
-          if (cancelled) return;
-          if (data && typeof data.total === "number") setCount(data.total);
-          else setCount(null);
-        })
-        .catch(() => {
-          if (!cancelled) setCount(null);
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
-    }, 350);
-    return () => {
-      cancelled = true;
-      clearTimeout(timer);
-    };
-  }, [tag]);
+  const commit = (raw: string) => {
+    const next = new Set(tags);
+    raw
+      .split(",")
+      .map((s) => s.trim().toLowerCase())
+      .filter(Boolean)
+      .forEach((t) => next.add(t));
+    onChange(Array.from(next));
+    setDraft("");
+  };
+
+  const remove = (t: string) => onChange(tags.filter((x) => x !== t));
 
   return (
     <div className="space-y-1">
-      <Field label="Tag">
-        <input
-          type="text"
-          value={tag}
-          onChange={(e) => onChange(e.target.value)}
-          placeholder="e.g. israel-palestine, economy, energy"
-          className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-        />
+      <Field label={`Tags (${tags.length})`}>
+        {tags.length === 0 ? (
+          <p className="text-xs text-muted-foreground border border-dashed border-border rounded-sm py-2 px-2 text-center">
+            None yet. Type below and press Enter or comma.
+          </p>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {tags.map((t) => (
+              <span
+                key={t}
+                className="inline-flex items-center gap-1 pl-2 pr-1 py-0.5 bg-secondary/60 border border-border rounded-sm text-xs"
+              >
+                {t}
+                <button
+                  onClick={() => remove(t)}
+                  className="p-0.5 text-muted-foreground hover:text-red-400"
+                  title="Remove"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </Field>
+      <input
+        type="text"
+        value={draft}
+        onChange={(e) => {
+          const v = e.target.value;
+          // Commit on comma typed mid-string so a paste of "a,b,c" lands as
+          // three chips even without an Enter press.
+          if (v.includes(",")) {
+            commit(v);
+            return;
+          }
+          setDraft(v);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            if (draft.trim()) commit(draft);
+          } else if (e.key === "Backspace" && !draft && tags.length > 0) {
+            // Quick remove-last on backspace in an empty input.
+            onChange(tags.slice(0, -1));
+          }
+        }}
+        onBlur={() => {
+          if (draft.trim()) commit(draft);
+        }}
+        placeholder="e.g. israel-palestine, economy, energy"
+        className="w-full px-3 py-2 bg-background border border-border rounded-sm text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+      />
       <p className="text-xs text-muted-foreground">
-        {!tag.trim()
-          ? "Posts will populate by tag, sorted newest-first."
-          : loading
-            ? "Counting matches..."
-            : count === null
-              ? "Tag does not match anything yet"
-              : `≈ ${count} debate${count === 1 ? "" : "s"} currently match this tag`}
+        Debates matching ANY selected tag will appear (OR logic, also OR'd with categories).
       </p>
     </div>
   );
