@@ -73,21 +73,32 @@ export default function PageDebates() {
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
 
   useEffect(() => {
+    // Saved config may be partial (older entries pre-date some fields, fresh
+    // installs start empty). Backfill every required key with a sane default
+    // so the JSX below can read .ticker.enabled etc. without crashing.
+    const defaults: DebatesPageConfig = {
+      hero: { titleLine1: "", titleLine2: "", subtitle: "" },
+      ticker: { enabled: true, source: "latest_debates" },
+      emptyState: { title: "", body: "" },
+      sections: [],
+    };
     api
       .getPage(PAGE_KEY)
       .then((c: any) => {
-        const cfg = c ?? {};
-        if (!Array.isArray(cfg.sections)) cfg.sections = [];
+        const raw = c ?? {};
+        const cfg: DebatesPageConfig = {
+          ...defaults,
+          ...raw,
+          hero: { ...defaults.hero, ...(raw.hero ?? {}) },
+          ticker: { ...defaults.ticker, ...(raw.ticker ?? {}) },
+          emptyState: { ...defaults.emptyState, ...(raw.emptyState ?? {}) },
+          sections: Array.isArray(raw.sections) ? raw.sections : [],
+        };
         setConfig(cfg);
       })
       .catch((err: unknown) => {
         console.error(err);
-        setConfig({
-          hero: { titleLine1: "", titleLine2: "", subtitle: "" },
-          ticker: { enabled: true, source: "latest_debates" },
-          emptyState: { title: "", body: "" },
-          sections: [],
-        });
+        setConfig(defaults);
       })
       .finally(() => setLoading(false));
   }, []);
