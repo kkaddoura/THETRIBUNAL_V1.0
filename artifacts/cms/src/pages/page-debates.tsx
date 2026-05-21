@@ -164,6 +164,18 @@ export default function PageDebates() {
     const created = defaultSection(nextOrder);
     updateSections([...sections, created]);
     setExpandedSection(created.id);
+    // New section + its editor render below the existing list. Without
+    // scrolling, the user just sees "New Section · 0 debates picked" at the
+    // top of the row and misses the editor (title, mode, picker) sitting
+    // below the fold. Scroll the editor into view + autofocus the title
+    // input so they can rename + link a topic right away.
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-section-id="${created.id}"]`) as HTMLElement | null;
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const input = el?.querySelector<HTMLInputElement>('input[type="text"]');
+      input?.focus();
+      input?.select();
+    });
   };
 
   const removeSection = (id: string) => {
@@ -269,7 +281,7 @@ export default function PageDebates() {
         ) : (
           <div className="space-y-2">
             {sortedSections.map((section) => (
-              <div key={section.id} className="border border-border rounded-md bg-card">
+              <div key={section.id} data-section-id={section.id} className="border border-border rounded-md bg-card">
                 <div className="flex items-center gap-3 px-4 py-3">
                   <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                   <div className="flex-1 min-w-0">
