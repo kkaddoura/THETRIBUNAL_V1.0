@@ -157,8 +157,15 @@ export function DebateSection({ section }: Props) {
     ? data.filter((p) => !initial.has(p.id) && (!hasVoted(p.id) || gracedRef.current.has(p.id)))
     : [];
 
-  // Hide section entirely when no posts (Decision E2) or all are filtered out
-  if (!isLoading && visiblePolls.length === 0) return null;
+  // Section has zero posts from the server (manual list empty, tag/category
+  // unused) — hide entirely.
+  if (!isLoading && (data?.length ?? 0) === 0) return null;
+
+  // Posts exist but the user has voted on all of them. Keep the section
+  // visible with an "all caught up" empty state instead of yanking the
+  // whole section out — yanking caused a "card disappears and reappears"
+  // flicker when a section had a single card and the user voted on it.
+  const allCaughtUp = !isLoading && visiblePolls.length === 0;
 
   return (
     <section className="py-12 sm:py-14 border-t border-foreground/15 first:border-t-0 first:pt-4">
@@ -187,6 +194,15 @@ export function DebateSection({ section }: Props) {
               <DebateCardSkeleton />
             </div>
           ))}
+        </div>
+      ) : allCaughtUp ? (
+        <div className="px-1 py-10 border border-dashed border-foreground/15 bg-secondary/20 text-center">
+          <p className="font-serif font-bold text-base uppercase tracking-wider text-foreground/80">
+            You're all caught up here.
+          </p>
+          <p className="text-xs text-muted-foreground mt-1.5 font-sans">
+            You've voted on every debate in this section.
+          </p>
         </div>
       ) : (
         <HorizontalScroller ariaLabel={section.title}>
