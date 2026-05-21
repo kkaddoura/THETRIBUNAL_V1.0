@@ -561,31 +561,6 @@ export default function StudioPage() {
     }
   };
 
-  const saveCaption = async (platform: Platform) => {
-    const text = editedCaption[platform];
-    if (!text.trim()) return;
-    if (!singleSlotMap) {
-      // Per-slide save isn't wired yet for carousels/recap — surface that
-      // instead of silently no-op'ing while the toast falsely says "Saved".
-      setCopyToast("Save is single-layout only — use Copy");
-      setTimeout(() => setCopyToast(null), 2000);
-      return;
-    }
-    try {
-      await api.studioSaveCaption({
-        postType: singleSlotMap.postType,
-        sourceId: singleSlotMap.sourceId,
-        platform,
-        text,
-      });
-      setCopyToast("Saved");
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : "save_failed";
-      setCopyToast(`Save failed: ${msg}`);
-    }
-    setTimeout(() => setCopyToast(null), 2000);
-  };
-
   const copyText = async (text: string) => {
     if (!text) return;
     await navigator.clipboard.writeText(text);
@@ -1150,19 +1125,6 @@ export default function StudioPage() {
                       {editedCaption[platform].length} chars
                     </span>
                     <div className="flex-1" />
-                    <button
-                      type="button"
-                      onClick={() => saveCaption(platform)}
-                      disabled={!editedCaption[platform].trim() || captionActionsDisabled}
-                      title={
-                        captionActionsDisabled
-                          ? "Per-slide caption editing comes later — edit & copy still works."
-                          : "Save chosen caption"
-                      }
-                      className="px-2 py-1 text-[10px] font-bold uppercase tracking-[0.15em] rounded bg-white/5 border border-white/10 hover:bg-white/10 disabled:opacity-30"
-                    >
-                      Save
-                    </button>
                     <button
                       type="button"
                       onClick={() => copyText(editedCaption[platform])}
