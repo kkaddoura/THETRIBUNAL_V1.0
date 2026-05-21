@@ -564,16 +564,26 @@ export default function StudioPage() {
   const saveCaption = async (platform: Platform) => {
     const text = editedCaption[platform];
     if (!text.trim()) return;
-    if (singleSlotMap) {
+    if (!singleSlotMap) {
+      // Per-slide save isn't wired yet for carousels/recap — surface that
+      // instead of silently no-op'ing while the toast falsely says "Saved".
+      setCopyToast("Save is single-layout only — use Copy");
+      setTimeout(() => setCopyToast(null), 2000);
+      return;
+    }
+    try {
       await api.studioSaveCaption({
         postType: singleSlotMap.postType,
         sourceId: singleSlotMap.sourceId,
         platform,
         text,
       });
+      setCopyToast("Saved");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "save_failed";
+      setCopyToast(`Save failed: ${msg}`);
     }
-    setCopyToast("Saved");
-    setTimeout(() => setCopyToast(null), 1200);
+    setTimeout(() => setCopyToast(null), 2000);
   };
 
   const copyText = async (text: string) => {
@@ -904,24 +914,33 @@ export default function StudioPage() {
             <button
               type="button"
               onClick={() => setUseAiImage((v) => !v)}
-              className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg border transition-colors ${
+              className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg border-2 transition-colors ${
                 useAiImage
-                  ? "border-primary/50 bg-primary/[0.08]"
-                  : "border-white/[0.08] bg-white/[0.03] hover:border-white/[0.18]"
+                  ? "border-primary bg-primary/[0.12]"
+                  : "border-primary/40 bg-primary/[0.04] hover:border-primary/70 hover:bg-primary/[0.08]"
               }`}
             >
               <span
-                className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ${
-                  useAiImage ? "bg-primary border-primary" : "border-white/30"
+                className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
+                  useAiImage ? "bg-primary border-primary" : "border-primary/60"
                 }`}
               >
-                {useAiImage && <Check className="w-3 h-3 text-white" />}
+                {useAiImage && <Check className="w-3.5 h-3.5 text-white" />}
               </span>
-              <span className="text-xs font-bold text-foreground/90 text-left">Generate AI image (brand-styled)</span>
+              <span className="flex-1 text-left">
+                <span className="block text-xs font-bold uppercase tracking-[0.12em] text-foreground">
+                  Generate AI image
+                </span>
+                <span className="block text-[10px] text-muted-foreground mt-0.5">
+                  Brand-styled background via Gemini 2.5 Flash Image
+                </span>
+              </span>
             </button>
           ) : aiGatedByAtom ? (
             <p className="text-[10px] text-muted-foreground/70 leading-snug px-1">AI image unavailable for this selection.</p>
-          ) : null}
+          ) : (
+            <p className="text-[10px] text-muted-foreground/60 leading-snug px-1">Fill a slot above to enable AI imagery.</p>
+          )}
 
           {/* Generate */}
           <button
