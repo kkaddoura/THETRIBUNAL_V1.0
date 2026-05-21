@@ -82,6 +82,42 @@ export function usePageView(): void {
   }, [location])
 }
 
+const SCROLL_MILESTONES = [25, 50, 75, 100] as const
+
+export function useScrollDepth(): void {
+  const [location] = useLocation()
+
+  useEffect(() => {
+    const fired = new Set<number>()
+    let raf = 0
+
+    const compute = () => {
+      raf = 0
+      const doc = document.documentElement
+      const scrollable = doc.scrollHeight - doc.clientHeight
+      if (scrollable <= 0) return
+      const pct = (window.scrollY / scrollable) * 100
+      for (const milestone of SCROLL_MILESTONES) {
+        if (pct >= milestone && !fired.has(milestone)) {
+          fired.add(milestone)
+          rawTrack("scroll_depth", { depth: milestone, path: location })
+        }
+      }
+    }
+
+    const onScroll = () => {
+      if (raf) return
+      raf = window.requestAnimationFrame(compute)
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true })
+    return () => {
+      window.removeEventListener("scroll", onScroll)
+      if (raf) window.cancelAnimationFrame(raf)
+    }
+  }, [location])
+}
+
 export function useTrack() {
   return useCallback((event: string, props: Record<string, unknown> = {}) => {
     rawTrack(event, props)

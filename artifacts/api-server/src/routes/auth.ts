@@ -92,17 +92,22 @@ function toPublic(user: typeof usersTable.$inferSelect): PublicUserShape {
   }
 }
 
-async function linkVoterTokenToUser(userId: number, voterToken: string | undefined): Promise<void> {
-  if (!voterToken) return
-  // Skip if already linked anywhere — first link wins (per plan: a token can
-  // only ever belong to one user). ON CONFLICT NOTHING via unique index.
+// Returns true if a new (userId, voterToken) row was inserted; false if the
+// token was already linked to some user (ON CONFLICT NOTHING fired) or if no
+// token was supplied. Lets callers distinguish a real merge from a no-op so
+// support can debug "votes didn't carry over" tickets.
+async function linkVoterTokenToUser(userId: number, voterToken: string | undefined): Promise<boolean> {
+  if (!voterToken) return false
   try {
-    await db
+    const inserted = await db
       .insert(userVoterTokensTable)
       .values({ userId, voterToken })
       .onConflictDoNothing()
+      .returning({ userId: userVoterTokensTable.userId })
+    return inserted.length > 0
   } catch (err) {
     console.warn("[auth] linkVoterToken failed:", err)
+    return false
   }
 }
 
@@ -332,8 +337,8 @@ router.post("/auth/link-voter-token", optionalAuth, requireAuth, async (req, res
   if (typeof voterToken !== "string" || !voterToken) {
     return res.status(400).json({ error: "voter_token_required" })
   }
-  await linkVoterTokenToUser(r.userId!, voterToken)
-  return res.json({ ok: true })
+  const linked = await linkVoterTokenToUser(r.userId!, voterToken)
+  return res.json({ ok: true, linked })
 })
 
 // ── Email verification ────────────────────────────────────────

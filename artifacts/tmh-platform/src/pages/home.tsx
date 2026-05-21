@@ -1764,12 +1764,14 @@ export default function Home() {
                 >
                   <Link
                     href="/debates"
+                    onClick={() => track("cta_clicked", { label: "join_the_debate", surface: "home_hero" })}
                     className="inline-flex items-center gap-2 bg-primary text-white font-bold uppercase tracking-widest text-xs px-7 py-3 hover:bg-primary/90 transition-colors font-serif"
                   >
                     {t("Join the Debate")} <ArrowRight className="w-3 h-3" />
                   </Link>
                   <Link
                     href="/predictions"
+                    onClick={() => track("cta_clicked", { label: "call_the_future", surface: "home_hero" })}
                     className="inline-flex items-center gap-2 text-foreground/70 hover:text-foreground font-bold uppercase tracking-widest text-xs px-2 py-3 transition-colors font-serif underline underline-offset-4 decoration-primary/40"
                   >
                     {t("Call The Future")}

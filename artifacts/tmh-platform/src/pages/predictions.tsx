@@ -11,6 +11,7 @@ import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { PredictionGridSkeleton } from "@/components/skeletons/PredictionCardSkeleton";
 import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
+import { track } from "@/lib/analytics";
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -1506,6 +1507,7 @@ export default function Predictions() {
       const controller = new AbortController();
       searchAbortRef.current = controller;
       const params = new URLSearchParams({ search: q, limit: "100" });
+      track("search_used", { surface: "predictions", queryLength: q.length });
       fetch(`/api/public/predictions?${params}`, { signal: controller.signal })
         .then(r => r.ok ? r.json() : null)
         .then(data => {

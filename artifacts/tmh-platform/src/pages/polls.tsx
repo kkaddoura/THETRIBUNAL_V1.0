@@ -13,6 +13,7 @@ import { DebateGridSkeleton } from "@/components/skeletons/DebateCardSkeleton";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { FilterSidebar } from "@/components/layout/FilterSidebar";
 import { DebatesSections } from "@/components/debates/DebatesSections";
+import { track } from "@/lib/analytics";
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -82,6 +83,7 @@ export default function Polls() {
     searchTimerRef.current = setTimeout(() => {
       const ctrl = new AbortController();
       searchAbortRef.current = ctrl;
+      track("search_used", { surface: "debates", queryLength: q.length });
       fetch(`/api/polls?search=${encodeURIComponent(q)}&limit=50`, { signal: ctrl.signal })
         .then((r) => (r.ok ? r.json() : null))
         .then((data) => {

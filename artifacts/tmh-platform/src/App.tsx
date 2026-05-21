@@ -34,7 +34,7 @@ import { Chatbot } from "@/components/Chatbot"
 import { IpConsentBanner } from "@/components/IpConsentBanner"
 import { LoginPromptBanner } from "@/components/auth/LoginPromptBanner"
 import { useSiteSettings } from "@/hooks/use-cms-data"
-import { useAnalyticsBootstrap, usePageView } from "@/hooks/use-analytics"
+import { useAnalyticsBootstrap, usePageView, useScrollDepth } from "@/hooks/use-analytics"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -51,6 +51,7 @@ function Router() {
   const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true
   useAnalyticsBootstrap()
   usePageView()
+  useScrollDepth()
 
   return (
     <Switch>

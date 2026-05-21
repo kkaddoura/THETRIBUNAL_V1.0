@@ -129,6 +129,11 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
               })
             )
             setLocalTotal(data.totalVotes)
+            toast({
+              title: isChangeVote ? "Vote updated" : "Vote recorded",
+              description: isChangeVote ? "Your pick has been updated." : "Thanks — your vote is in.",
+              duration: 2500,
+            })
           }
         },
         onError: () => {
