@@ -760,6 +760,15 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
           transform: translateY(-50%);
           z-index: 10;
         }
+        /* Light mode: feather the sphere silhouette into the cream page bg so
+           the dark globe edge doesn't read as a hard rectangular crop. The
+           cobe sphere occupies ~80% of the canvas (radius ~40% of wrap), so
+           we mask just outside that radius. Dark mode skips the mask — the
+           sphere already blends with the near-black page background. */
+        .hg-root[data-theme="light"] .hg-globe-wrap {
+          -webkit-mask-image: radial-gradient(circle at center, #000 38%, transparent 46%);
+                  mask-image: radial-gradient(circle at center, #000 38%, transparent 46%);
+        }
 
         .hg-bentham {
           position: absolute;
