@@ -2,7 +2,7 @@ import { useEffect } from "react"
 
 const SITE_NAME = "The Tribunal"
 const DEFAULT_DESCRIPTION =
-  "The voice of 541 million. Real debates, predictions, and voices from across MENA."
+  "Private voting on what the region really thinks. Debates and predictions from across the Middle East and North Africa."
 const DEFAULT_OG_IMAGE = "/opengraph.jpg"
 
 export interface MetaTagsConfig {

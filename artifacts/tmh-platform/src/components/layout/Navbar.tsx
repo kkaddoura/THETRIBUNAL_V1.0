@@ -61,13 +61,14 @@ export function Navbar() {
   }, [mobileMenuOpen])
 
   const majlisEnabled = settings?.featureToggles?.majlis?.enabled ?? false
-  const voicesEnabled = settings?.featureToggles?.voices?.enabled ?? true
+  const voicesEnabled = settings?.featureToggles?.voices?.enabled ?? false
+  const pulseEnabled = settings?.featureToggles?.pulse?.enabled ?? false
 
   const defaultLinks = [
-    { label: t("About"), href: "/about" },
-    { label: t("Pulse"), href: "/pulse" },
     { label: t("Debates"), href: "/debates" },
     { label: t("Predictions"), href: "/predictions" },
+    { label: t("About"), href: "/about" },
+    ...(pulseEnabled ? [{ label: t("Pulse"), href: "/pulse" }] : []),
     ...(voicesEnabled ? [{ label: t("Voices"), href: "/voices" }] : []),
     ...(majlisEnabled ? [{ label: t("The Majlis"), href: "/majlis", icon: "lock" }] : []),
   ]
@@ -82,7 +83,8 @@ export function Navbar() {
   }
   const cmsLinks = settings?.navigation?.links?.filter(link => link.enabled !== false
     && (majlisEnabled || !matchesFeature(link, "majlis"))
-    && (voicesEnabled || !matchesFeature(link, "voices")))
+    && (voicesEnabled || !matchesFeature(link, "voices"))
+    && (pulseEnabled || !matchesFeature(link, "pulse")))
   const navLinks = (cmsLinks?.length ? cmsLinks : defaultLinks).map(link => ({
     ...link,
     icon: link.icon === "lock" ? Lock : undefined,
@@ -93,15 +95,19 @@ export function Navbar() {
   // "Join The Voices" → /apply when Voices is off). The hero already carries
   // the primary debates CTA, so we don't fall back to a generic label here.
   const ctaCandidate = rawCtaButton?.enabled !== false
-    ? (rawCtaButton || { label: t("Join The Voices"), href: "/apply" })
+    ? (rawCtaButton || (voicesEnabled
+      ? { label: t("Join The Voices"), href: "/apply" }
+      : { label: t("Sign In"), href: "/login" }))
     : null
   const ctaButton = (() => {
     if (!ctaCandidate) return null
     const href = (ctaCandidate.href ?? "").toLowerCase().trim().replace(/^https?:\/\/[^/]+/, "")
     const targetsVoices = href.startsWith("/voices") || href.startsWith("/apply")
     const targetsMajlis = href.startsWith("/majlis")
+    const targetsPulse = href.startsWith("/pulse")
     if (targetsVoices && !voicesEnabled) return null
     if (targetsMajlis && !majlisEnabled) return null
+    if (targetsPulse && !pulseEnabled) return null
     return ctaCandidate
   })()
 

@@ -155,7 +155,7 @@ export function ogTagsMiddleware(req: Request, res: Response, next: NextFunction
       .catch(() => {
         const html = buildHtml({
           title: "A Voice Profile | The Tribunal",
-          description: "Meet the founders, operators, and change-makers shaping the Middle East's future.",
+          description: "Curated profiles of people with a clear connection to the region and a body of work we can verify.",
           url: fullUrl,
           image: DEFAULT_IMAGE,
         })
@@ -197,54 +197,54 @@ export function ogTagsMiddleware(req: Request, res: Response, next: NextFunction
   // Default OG for all other pages
   const pageMeta: Record<string, { title: string; description: string }> = {
     "/": {
-      title: "The Tribunal — The Voice of 541 Million",
-      description: "MENA's premium polling and opinion platform. Real debates. Real people. Real opinions.",
+      title: "The Tribunal — The region, on record",
+      description: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
     },
     "/polls": {
-      title: "All Debates | The Tribunal",
-      description: "Browse every debate. 135+ questions about the future of the Arab world.",
+      title: "Debates | The Tribunal",
+      description: "Vote privately on direct questions about the Middle East and North Africa. Your vote is private. The result is public.",
     },
     "/debates": {
-      title: "All Debates | The Tribunal",
-      description: "Browse every debate. 135+ questions about the future of the Arab world.",
+      title: "Debates | The Tribunal",
+      description: "Vote privately on direct questions about the Middle East and North Africa. Your vote is private. The result is public.",
     },
     "/debates/archive": {
       title: "Debate Archive | The Tribunal",
-      description: "Past debates and their results. See how MENA voted on the questions that mattered.",
+      description: "Past debates and their results.",
     },
     "/voices": {
       title: "The Voices | The Tribunal",
-      description: "100+ curated founders, operators, and change-makers shaping MENA.",
+      description: "Curated profiles of people with a clear connection to the region and a body of work we can verify.",
     },
     "/join": {
-      title: "Join The Tribunal",
-      description: "The most honest conversation in the Middle East. Founders and operators voting every day.",
+      title: "Get Updates | The Tribunal",
+      description: "Get the sharpest questions, results and prediction shifts from The Tribunal.",
     },
     "/apply": {
-      title: "Become a Voice | The Tribunal",
-      description: "Think you belong? Apply now. Bar is high.",
+      title: "Apply to be a Voice | The Tribunal",
+      description: "Applications are reviewed by a human.",
     },
     "/predictions": {
       title: "Predictions | The Tribunal",
-      description: "Bloomberg-style prediction market for MENA. Track confidence, watch consensus shift, and call the future.",
+      description: "What people think will happen. Not what should happen. What people expect will happen.",
     },
     "/pulse": {
-      title: "MENA Pulse — Real-Time Regional Data",
-      description: "Live economic, social, and geopolitical data from across the Middle East and North Africa. Tracked on The Tribunal.",
+      title: "The Pulse | The Tribunal",
+      description: "Sourced data points that give context to the questions people are voting on.",
     },
     "/mena-pulse": {
-      title: "MENA Pulse — Real-Time Regional Data",
-      description: "Live economic, social, and geopolitical data from across the Middle East and North Africa. Tracked on The Tribunal.",
+      title: "The Pulse | The Tribunal",
+      description: "Sourced data points that give context to the questions people are voting on.",
     },
     "/about": {
       title: "About | The Tribunal",
-      description: "The voice of 541 million. Why we built MENA's most honest opinion platform — and what comes next.",
+      description: "The Tribunal is a private voting platform for the Middle East and North Africa.",
     },
   }
 
   const page = pageMeta[req.path] ?? {
     title: SITE_NAME,
-    description: "The voice of 541 million. Real debates. Real opinions.",
+    description: "The region, on record. Private voting on what the region really thinks.",
   }
 
   const html = buildHtml({ ...page, url: fullUrl, image: DEFAULT_IMAGE })

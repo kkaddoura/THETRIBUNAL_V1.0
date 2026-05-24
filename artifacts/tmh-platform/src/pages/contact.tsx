@@ -246,10 +246,10 @@ export default function Contact() {
       <div className="bg-secondary/20 border-t border-border py-12">
         <div className="max-w-3xl mx-auto px-4 text-center">
           <p className="font-display text-xl text-foreground mb-2 leading-snug">
-            {t("541 million voices. One platform.")}
+            {t("The region, on record.")}
           </p>
           <p className="text-sm text-muted-foreground font-sans mb-6">
-            {t("Join the conversation shaping the future of the Middle East.")}
+            {t("Vote privately. See the result publicly.")}
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link

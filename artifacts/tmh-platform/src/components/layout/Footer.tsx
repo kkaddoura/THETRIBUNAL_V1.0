@@ -8,7 +8,7 @@ const FALLBACK_SOCIALS = [
   { label: "Instagram", href: "https://instagram.com/tmhustle" },
 ]
 
-const FALLBACK_TAGLINE = "The voice of 541 million. Real people. Real hustle. Real change."
+const FALLBACK_TAGLINE = "The region, on record."
 const FALLBACK_COPYRIGHT = "© 2026 The Middle East Hustle. All rights reserved."
 
 export function Footer() {
@@ -17,8 +17,9 @@ export function Footer() {
   const { data: designTokens } = useDesignTokens()
 
   const footerSettings = siteSettings?.footer
-  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false
+  const pulseEnabled = siteSettings?.featureToggles?.pulse?.enabled ?? false
   const SOCIALS = footerSettings?.socialLinks?.length
     ? footerSettings.socialLinks.map(s => ({ label: s.platform, href: s.url }))
     : designTokens?.items
@@ -35,16 +36,17 @@ export function Footer() {
   const NAV = (footerSettings?.links?.length
     ? footerSettings.links.map(link => ({ label: t(link.label), href: link.href }))
     : [
-        { label: t("About"), href: "/about" },
-        { label: t("Pulse"), href: "/pulse" },
         { label: t("Debates"), href: "/debates" },
         { label: t("Predictions"), href: "/predictions" },
+        { label: t("About"), href: "/about" },
+        ...(pulseEnabled ? [{ label: t("Pulse"), href: "/pulse" }] : []),
         ...(voicesEnabled ? [{ label: t("Voices"), href: "/voices" }] : []),
-        { label: t("Join The Voices"), href: "/apply" },
+        ...(voicesEnabled ? [{ label: t("Join The Voices"), href: "/apply" }] : []),
       ]
   ).filter(link =>
-    (voicesEnabled || !link.href?.startsWith("/voices"))
+    (voicesEnabled || (!link.href?.startsWith("/voices") && !link.href?.startsWith("/apply")))
     && (majlisEnabled || !link.href?.startsWith("/majlis"))
+    && (pulseEnabled || !link.href?.startsWith("/pulse"))
   )
 
   return (
@@ -95,7 +97,7 @@ export function Footer() {
           <div className="max-w-xs">
             <h4 className="text-[13px] uppercase tracking-[0.3em] font-bold text-background/75 mb-4 font-serif">{t("Stay Informed")}</h4>
             <p className="text-sm text-background/75 font-sans leading-relaxed mb-4">
-              {t("The questions no one else asks. The data no one else collects. Straight to your inbox.")}
+              {t("Get the sharpest questions, results and prediction shifts from The Tribunal.")}
             </p>
             <Link
               href="/join"

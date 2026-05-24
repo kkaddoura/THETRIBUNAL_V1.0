@@ -2,12 +2,12 @@ import { useState } from "react"
 import { useI18n } from "@/lib/i18n"
 
 const PRINCIPLES = [
-  { title: "A Social Experiment", body: "Every question is a controlled provocation. The point is honesty." },
-  { title: "No Editorial Agenda", body: "We write the questions. We never write the answers." },
-  { title: "Private Opinions, Public Data", body: "Your vote is anonymous. The aggregate is not. That gap is the truth." },
-  { title: "The Questions No One Asks", body: "Not because they're dangerous. Because nobody built the room yet." },
-  { title: "Youngest Region on Earth", body: "60% of MENA is under 30. That's 541 million opinions waiting to be heard." },
-  { title: "Real People Only", body: "No bots. No sponsored opinions. Just the region, speaking for itself." },
+  { title: "Ask directly", body: "Soft questions produce soft answers." },
+  { title: "Do not answer for people", body: "The Tribunal asks the question. People decide the result." },
+  { title: "Keep votes private", body: "Your name is not shown with your vote." },
+  { title: "Show the result publicly", body: "The value is in the aggregate." },
+  { title: "Let people save their own record", body: "If someone signs up, they can view their previous activity and return to it later." },
+  { title: "Count people, not noise", body: "No bots. No sponsored sentiment. No manufactured consensus." },
 ]
 
 const CREAM = "#F5F0EB"
@@ -147,7 +147,7 @@ export default function AboutSection() {
                 letterSpacing: "-0.01em",
               }}
             >
-              {t("Bringing the voices of the Middle East into one room. Finally.")}
+              {t("People do not lack opinions. They lack a place to say them honestly.")}
             </blockquote>
             <p
               style={{

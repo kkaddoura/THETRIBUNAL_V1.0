@@ -7,12 +7,11 @@ import { usePageTitle } from "@/hooks/use-page-title"
 import { TitlePunctuation } from "@/components/TitlePunctuation"
 
 const FALLBACK_CRITERIA = [
-  "Real, verifiable impact — named outcomes, not just job titles",
-  "Based in MENA or with a deep, ongoing connection to the region",
-  "A unique story — pivots, failures, non-linear journeys",
-  "Built, led, or founded something tangible",
-  "An original quote — specific to your experience, not a LinkedIn cliché",
-  "A public profile verifiable on LinkedIn or in the press",
+  "A clear body of work we can verify",
+  "A serious connection to the region",
+  "Something specific to say — a position, belief, or view",
+  "Something you have built, led, or founded",
+  "A public profile we can review (e.g. LinkedIn or press)",
 ]
 
 const FALLBACK_COUNTRIES = [
@@ -42,8 +41,8 @@ type Status = "idle" | "submitting" | "success" | "error"
 
 export default function Apply() {
   usePageTitle({
-    title: "Join The Voices",
-    description: "Apply to become a featured voice on The Tribunal. Share your perspective with 541 million people across MENA.",
+    title: "Apply to be a Voice",
+    description: "Apply to become a curated profile on The Tribunal. Applications are reviewed by a human.",
   });
   const [status, setStatus] = useState<Status>("idle")
   const [refNumber, setRefNumber] = useState("")

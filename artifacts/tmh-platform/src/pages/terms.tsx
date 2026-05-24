@@ -8,67 +8,67 @@ const SECTIONS = [
   {
     id: "acceptance",
     title: "1. Acceptance of Terms",
-    content: `By accessing or using The Tribunal, by The Middle East Hustle ("The Tribunal," "we," "our," or "us") at themiddleeasthustle.com and any related subdomains, you agree to be bound by these Terms and Conditions. If you do not agree to all of these terms, please do not use the platform. We may update these terms at any time; continued use of the platform constitutes acceptance of the revised terms.`,
+    content: `By accessing or using The Tribunal, you agree to these Terms of Use.\n\nIf you do not agree, please do not use the platform.\n\nWe may update these Terms from time to time. Continued use of the platform means you accept the updated Terms.`,
   },
   {
     id: "platform",
     title: "2. What The Tribunal Is",
-    content: `The Tribunal is an independent opinion and polling platform by The Middle East Hustle, focused on the Middle East and North Africa region. We publish poll questions, aggregate anonymous votes, and feature curated profiles of founders, operators, and change-makers ("Voices"). The Tribunal is not a news outlet, financial advisor, or research institution. Content on this platform represents the opinions of voters and contributors, not the views of The Tribunal or its founders.`,
+    content: `The Tribunal is a private voting platform focused on the Middle East and North Africa.\n\nWe publish questions, collect private votes, show aggregate results, and track predictions.\n\nUsers may create accounts to save activity, view previous votes or predictions, and continue from another device.\n\nThe Tribunal is not a news outlet, financial adviser, research institution, polling company, or scientific survey provider.\n\nResults represent the opinions of platform users. They should not be treated as statistically representative unless clearly stated otherwise.`,
   },
   {
     id: "eligibility",
     title: "3. Age and Eligibility",
-    content: `You must be at least 16 years old to use The Tribunal. By using the platform, you represent that you meet this age requirement. We do not knowingly collect personal information from users under 16. If you believe a minor has submitted personal information to us, please contact us immediately.`,
+    content: `You must be at least 16 years old to use The Tribunal.\n\nBy using the platform, you confirm that you meet this requirement.\n\nWe do not knowingly collect personal information from users under 16.`,
   },
   {
     id: "data",
     title: "4. Data Collection",
-    content: `When you vote on a poll, we collect: your anonymised vote selection, the poll ID and timestamp, your approximate country of origin (derived from your IP address via a third-party geolocation service — your full IP address is never stored). When you submit your email address (via the share gate or newsletter signup), we collect your email and the source of capture. We do not sell your data to third parties. We may use aggregate, anonymised vote data for editorial purposes — for example, publishing "42% of UAE respondents voted X." We retain email addresses for newsletter distribution only and honour all unsubscribe requests immediately.`,
+    content: `When you vote, we may collect:\n• your vote selection\n• the poll or prediction ID\n• timestamp\n• approximate country location, if enabled\n• basic device or browser signals used to protect against duplicate or automated voting\n• account-related activity if you create an account or sign in\n\nWe do not publicly show your name or email with your vote.\n\nIf you provide your email address, we may use it to send updates, create or access your account, unlock results, or help you save your activity. You can unsubscribe from marketing emails at any time.\n\nWe do not sell your personal data.`,
   },
   {
     id: "cookies",
     title: "5. Cookies and Local Storage",
-    content: `The Tribunal uses browser localStorage (not third-party cookies) to remember your voting history, theme preference (dark/light), and whether you have unlocked poll results. We do not use tracking pixels, retargeting cookies, or cross-site analytics. If you clear your browser data, your voting history and preferences will reset. We may use first-party analytics (Plausible or similar privacy-preserving tools) to understand aggregate traffic patterns — no personally identifiable information is captured in this process.`,
+    content: `The Tribunal may use browser local storage and similar technologies to remember your voting activity, theme preference, and whether you have unlocked results.\n\nIf you create an account, some activity may also be stored server-side so you can access it later.\n\nIf you clear your browser data, some preferences or local voting history may reset.\n\nWe do not use advertising cookies or tracking pixels unless this is clearly disclosed before use.`,
   },
   {
     id: "ugc",
-    title: "6. User-Generated Content",
-    content: `Voice profiles, submitted poll questions, and application materials constitute user-generated content ("UGC"). By submitting content to The Tribunal, you grant us a non-exclusive, worldwide, royalty-free licence to display, reproduce, and distribute that content on the platform. You retain ownership of your content. You represent that your content is accurate, does not infringe any third-party rights, and does not violate any applicable law. The Tribunal reserves the right to remove, edit, or decline any content at our sole discretion.`,
+    title: "6. User Submitted Content",
+    content: `If you submit a question, profile, application, comment, or other content to The Tribunal, you confirm that you have the right to submit it.\n\nYou retain ownership of your content.\n\nBy submitting it, you give The Tribunal permission to review, edit, display, reproduce, and distribute that content on the platform and related channels.\n\nWe may remove, edit, or decline any submitted content at our discretion.`,
   },
   {
     id: "ip",
     title: "7. Intellectual Property",
-    content: `All branding, editorial content, design assets, and platform code are the intellectual property of The Middle East Hustle and its owners. The Tribunal name, logo, and "The Voice of 541 Million" tagline are proprietary marks. You may not reproduce, distribute, or create derivative works from our content without prior written permission. Poll results and Voice profiles displayed on the platform remain the property of The Tribunal and their respective contributors.`,
+    content: `The Tribunal name, logo, design, editorial content, questions, platform structure, and related assets are owned by the platform operator or its licensors.\n\nYou may not copy, reproduce, scrape, redistribute, or create derivative works from the platform without written permission.\n\nPoll and prediction results may be referenced with clear attribution to The Tribunal, provided they are not presented as scientific or representative survey results unless we explicitly say so.`,
   },
   {
     id: "sharing",
-    title: "8. The Share Gate Mechanic",
-    content: `The Tribunal's Share Gate requires users to share a poll to a social network or provide an email address before accessing full results. By engaging with the Share Gate, you agree that: (a) you will not use automated tools, bots, or scripts to bypass the gate, (b) social shares you initiate are your own voluntary act and The Tribunal is not responsible for the content of your posts, (c) emails submitted to unlock results may be added to our newsletter list — you may unsubscribe at any time.`,
+    title: "8. Sharing, Email Capture and Accounts",
+    content: `Some results may require sharing, signing up, or providing an email address to access.\n\nIf you provide your email, we may send you updates from The Tribunal if you opted in. You can unsubscribe at any time.\n\nIf you create an account, we may save your activity so you can view previous votes, predictions, and saved activity.\n\nYou may not use bots, scripts, fake accounts, or automated tools to bypass result gates or manipulate voting.`,
   },
   {
     id: "disclaimers",
-    title: "9. Disclaimers and Limitation of Liability",
-    content: `THE PLATFORM IS PROVIDED "AS IS" WITHOUT WARRANTIES OF ANY KIND. THE TRIBUNAL DOES NOT WARRANT THAT THE PLATFORM WILL BE UNINTERRUPTED, ERROR-FREE, OR FREE OF VIRUSES. TO THE MAXIMUM EXTENT PERMITTED BY LAW, THE TRIBUNAL AND ITS FOUNDERS, EMPLOYEES, AND AFFILIATES SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES ARISING FROM YOUR USE OF THE PLATFORM. Poll results are non-scientific and represent only the self-selected opinions of platform visitors. They should not be cited as representative surveys or used for academic, commercial, or policy purposes without appropriate caveats.`,
+    title: "9. Disclaimers and Liability",
+    content: `The platform is provided "as is."\n\nWe do not guarantee that the platform will always be available, error free, or free from interruptions.\n\nPolls, debates, predictions, and results are opinion signals from self-selected users. They are not scientific surveys, investment advice, legal advice, policy advice, or professional advice.\n\nUse the platform at your own discretion.`,
   },
   {
     id: "prohibited",
     title: "10. Prohibited Conduct",
-    content: `You agree not to: vote multiple times on a single poll using VPNs, proxies, or multiple accounts; submit false or misleading information in a Voice application; impersonate any individual or organisation; use the platform to distribute spam or malware; attempt to reverse-engineer, scrape, or data-mine The Tribunal's content at scale without prior written consent; or engage in any conduct that disrupts or damages the platform.`,
+    content: `You agree not to:\n• submit fake, misleading, or unlawful content\n• impersonate another person or organisation\n• manipulate votes\n• use bots, scripts, VPN abuse, proxies, or multiple accounts to distort results\n• scrape, reverse engineer, or data mine the platform at scale\n• interfere with the security or operation of the platform\n• use the platform to harass, threaten, defame, or target others`,
   },
   {
     id: "governing",
     title: "11. Governing Law",
-    content: `These Terms are governed by the laws of the United Arab Emirates. Any disputes arising from or relating to these Terms shall first be attempted to be resolved through good-faith negotiation. If unresolved, disputes shall be submitted to the exclusive jurisdiction of the courts of Dubai, UAE. If you access the platform from outside the UAE, you do so at your own initiative and are responsible for compliance with applicable local laws.`,
+    content: `This section requires legal review.\n\nUntil the formal operating entity is established, governing law and jurisdiction will be updated later.\n\nUsers are responsible for complying with the laws applicable in their own location.`,
   },
   {
     id: "changes",
     title: "12. Changes to These Terms",
-    content: `We reserve the right to modify these Terms at any time. We will notify users of material changes by updating the "Last Updated" date below and, where appropriate, by posting a notice on the platform. Your continued use of The Tribunal after any changes constitutes your acceptance of the new Terms.`,
+    content: `We may update these Terms from time to time.\n\nWhen we do, we will update the "Last updated" date on this page.\n\nContinued use of The Tribunal after changes are posted means you accept the updated Terms.`,
   },
   {
     id: "contact",
     title: "13. Contact",
-    content: `For questions, data requests, or legal correspondence, contact us at: legal@themiddleeasthustle.com. For content removal requests or profile corrections, contact: editorial@themiddleeasthustle.com.`,
+    content: `For legal, data, or platform questions, contact:\nlegal@themiddleeasthustle.com\n\nFor editorial corrections or content removal requests, contact:\neditorial@themiddleeasthustle.com`,
   },
 ]
 
@@ -84,18 +84,22 @@ export default function Terms() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">Legal</p>
           <h1 className="font-display font-black text-4xl md:text-6xl uppercase tracking-tight">
-            {pageConfig?.titleLine1 || "Terms &"}<br />
-            {pageConfig?.titleLine2 || "Conditions"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
+            {pageConfig?.titleLine1 || "Terms"}<br />
+            {pageConfig?.titleLine2 || "of Use"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
           <p className="text-background/75 font-sans text-sm mt-4">
-            Last updated: March 2026 · Governed by UAE Law
+            Last updated: May 2026
           </p>
         </div>
       </div>
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 py-16">
-        <div className="bg-secondary/30 border border-border p-6 mb-12 font-sans text-sm text-foreground/80 leading-relaxed">
-          <strong className="text-foreground font-bold">Plain English Summary:</strong> Vote anonymously. We capture your country (not your IP). If you give us your email, we'll send you the Weekly Pulse — you can unsubscribe any time. Don't fake votes or impersonate people. Everything on this platform is opinion, not science. We're based in Dubai and UAE law applies.
+        <div className="bg-secondary/30 border border-border p-6 mb-8 font-sans text-sm text-foreground/80 leading-relaxed">
+          <strong className="text-foreground font-bold">Plain English Summary:</strong> Use the platform honestly. Vote privately. Do not fake votes, impersonate people, scrape the site, or misuse the platform. Results are opinion signals from self-selected users, not scientific polling. If you create an account, we may save your activity so you can view it later. We do not sell your personal data. Formal operator details will be updated once incorporation is complete.
+        </div>
+
+        <div className="bg-background border border-primary/40 p-6 mb-12 font-sans text-sm text-foreground/80 leading-relaxed">
+          <strong className="text-foreground font-bold">About the operator:</strong> &ldquo;The Tribunal&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo; and &ldquo;our&rdquo; refer to the operator of this platform. The Tribunal is operated by its founder under The Middle East Hustle brand. Formal operating entity details will be updated once incorporation is complete.
         </div>
 
         <div className="space-y-12">
@@ -104,7 +108,7 @@ export default function Terms() {
               <h2 className="font-serif font-black text-xl uppercase tracking-wide text-foreground mb-4 pb-2 border-b-2 border-primary inline-block">
                 {s.title}
               </h2>
-              <p className="font-sans text-foreground/80 leading-relaxed text-[15px]">{s.content}</p>
+              <p className="font-sans text-foreground/80 leading-relaxed text-[15px] whitespace-pre-line">{s.content}</p>
             </section>
           ))}
         </div>

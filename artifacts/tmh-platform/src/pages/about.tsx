@@ -10,69 +10,69 @@ const FALLBACK_PILLARS = [
   {
     num: "01",
     title: "Debates",
-    body: "What people believe. Anonymous votes on the questions usually left to private conversations: identity, money, religion, gender, power, work, media, and the future. Every vote is private. The result is public.",
+    body: "What people believe. Questions about work, money, identity, media, culture, power and the future. Vote privately. See where you stand against everyone else.",
     link: "/debates",
     cta: "Enter the Debates",
   },
   {
     num: "02",
     title: "Predictions",
-    body: "What people think will happen. Predictions track where the region believes things are heading. Not what should happen. What people expect will happen. The value is not the answer today. It is how confidence changes over time.",
+    body: "What people think will happen. Not what should happen. What people expect will happen. Predictions track how confidence changes over time. Sign up if you want to save your calls and come back to them later.",
     link: "/predictions",
     cta: "Make a Prediction",
   },
   {
     num: "03",
-    title: "The Pulse",
-    body: "What is actually happening. The Pulse tracks public data signals across the region: politics, money, society, technology, migration, survival, culture, and health. Every card points back to a source. No source, no signal.",
+    title: "Pulse",
+    body: "What is actually happening. A public data layer that gives context to the questions people are voting on, using sourced data points across politics, money, society, technology and culture.",
     link: "/pulse",
     cta: "Read The Pulse",
   },
   {
     num: "04",
-    title: "The Voices",
-    body: "The people behind the region's decisions. Voices are selected profiles of founders, operators, investors, artists, builders, and thinkers across MENA. Not just their stories. Their beliefs, choices, and positions.",
+    title: "Voices",
+    body: "The people behind the region's decisions. Curated profiles of people with a clear connection to the region and a body of work we can verify. Not just what they do. What they believe, what they have built, and where they stand.",
     link: "/voices",
     cta: "Meet the Voices",
   },
   {
     num: "05",
     title: "The Majlis",
-    body: "A private room for serious conversation. The Majlis is a members-only space for verified Voices and selected participants. No open comments. No algorithmic noise. No public performance.",
+    body: "A private room for serious conversation. A members-only space for selected participants. No open comments. No algorithmic noise. No public performance.",
     link: "/majlis/login",
-    cta: "Enter the Majlis",
+    cta: "Enter The Majlis",
   },
 ]
 
 const FALLBACK_BELIEFS = [
   {
     num: "01",
-    title: "We ask what people actually believe",
-    body: "Not what they say publicly. Not what they are expected to say.",
+    title: "Ask directly",
+    body: "Soft questions produce soft answers.",
   },
   {
     num: "02",
-    title: "We ask. We do not answer",
-    body: "The Tribunal does not publish positions. It records them.",
+    title: "Do not answer for people",
+    body: "The Tribunal asks the question. People decide the result.",
   },
   {
     num: "03",
-    title: "Private votes. Public data",
-    body: "Your vote is anonymous. The aggregate is not.",
+    title: "Keep votes private",
+    body: "Your name is not shown with your vote.",
   },
   {
     num: "04",
-    title: "Hard questions belong in public",
-    body: "Avoiding them does not make them disappear. It only makes the data weaker.",
+    title: "Show the result publicly",
+    body: "The value is in the aggregate.",
   },
   {
     num: "05",
-    title: "The region deserves a record",
-    body: "Private opinion should not disappear into WhatsApp groups, dinner tables, and closed rooms.",
+    title: "Let people save their own record",
+    body: "If someone signs up, they can view their previous activity and return to it later.",
   },
   {
     num: "06",
-    title: "If it is not human, it does not count",
+    title: "Count people, not noise",
     body: "No bots. No sponsored sentiment. No manufactured consensus.",
   },
 ]
@@ -111,7 +111,7 @@ interface AboutConfig {
 export default function About() {
   usePageTitle({
     title: "About",
-    description: "The Tribunal is an anonymous opinion platform for the Middle East and North Africa. Anonymous votes. Human opinions. Public data.",
+    description: "The Tribunal is a private voting platform for the Middle East and North Africa. People vote privately. Results are shown publicly.",
   });
   const { t, isAr } = useI18n()
   const { data: pageConfig } = usePageConfig<AboutConfig & {
@@ -119,12 +119,14 @@ export default function About() {
   }>("about")
 
   const { data: siteSettings } = useSiteSettings()
-  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false
+  const pulseEnabled = siteSettings?.featureToggles?.pulse?.enabled ?? false
   const pillars = (pageConfig?.pillars?.length ? pageConfig.pillars : FALLBACK_PILLARS)
     .filter(p =>
       (voicesEnabled || !p.link?.startsWith("/voices"))
       && (majlisEnabled || !p.link?.startsWith("/majlis"))
+      && (pulseEnabled || !p.link?.startsWith("/pulse"))
     )
   const beliefs = pageConfig?.beliefs?.length ? pageConfig.beliefs : FALLBACK_BELIEFS
   const hero = pageConfig?.hero
@@ -134,19 +136,19 @@ export default function About() {
     : COUNTRIES_DEFAULT
   const { data: liveCounts } = useLiveCounts()
   const stats = (pageConfig?.stats?.length ? pageConfig.stats : [
-    { num: String(liveCounts?.voices ?? 94), label: "Founding Voices" },
-    { num: `${liveCounts?.debates ?? 135}+`, label: "Active Debates" },
-    { num: "19", label: "MENA Countries" },
-    { num: "541M", label: "People in MENA" },
+    { num: `${liveCounts?.debates ?? 100}+`, label: "Live Questions" },
+    { num: "19", label: "Countries Covered" },
+    { num: "Debates", label: "+ Predictions" },
+    { num: "Private", label: "Voting" },
   ]).filter(s => voicesEnabled || !/voices?/i.test(s.label))
 
   const pageSections = [
     { id: "what-is-the-tribunal", label: t("What Is It") },
+    { id: "how-it-works", label: t("How It Works") },
     { id: "the-platform", label: t("The Platform") },
-    { id: "from-the-founder", label: t("From the Founder") },
     { id: "what-we-stand-for", label: t("What We Stand For") },
     { id: "the-region", label: t("The Region") },
-    { id: "our-ethos", label: t("Our Ethos") },
+    { id: "from-the-founder", label: t("From the Founder") },
   ]
 
   return (
@@ -157,17 +159,17 @@ export default function About() {
       <div className="bg-foreground text-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
           <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
-            {t(hero?.tagline || "Est. 2026 · Founded by Kareem Kaddoura")}
+            {t(hero?.tagline || "Est. 2026 · The Tribunal")}
           </p>
           <h1 style={{ fontFamily: isAr ? "'IBM Plex Sans Arabic', sans-serif" : "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
-            {t(hero?.titleLine1 || "The Region's")}<br />
-            {t(hero?.titleLine2 || "Collective Mirror")}<TitlePunctuation punctuations={pageConfig?.punctuations} />
+            {t(hero?.titleLine1 || "A place to say what people")}<br />
+            {t(hero?.titleLine2 || "usually keep private")}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
           <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.90rem", textTransform: "uppercase", letterSpacing: "0.18em" }}>
-            {t(hero?.subtitle || "Anonymous votes. Human opinions. Public data.")}
+            {t(hero?.subtitle || "The Tribunal asks direct questions about the region and shows how people answer privately.")}
           </p>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.83rem", letterSpacing: "0.04em", opacity: 0.6, marginTop: "0.85rem" }}>
-            {t("Your vote is anonymous. The data is real.")}
+            {t("No names attached. No public performance. Just the result.")}
           </p>
         </div>
       </div>
@@ -175,35 +177,67 @@ export default function About() {
       {/* What TMH Is */}
       <div id="what-is-the-tribunal" className="max-w-3xl mx-auto px-4 py-20 border-b border-border scroll-mt-24">
         <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-8 border-l-4 border-primary pl-4">
-          {t("What Is The Tribunal?")}
+          {t("What is The Tribunal?")}
         </h2>
         <p className="text-xl font-sans leading-relaxed text-foreground mb-8">
-          {t("The Tribunal is an anonymous opinion platform for the Middle East and North Africa.")}
+          {t("The Tribunal is a private voting platform for the Middle East and North Africa.")}
         </p>
         <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
-          {t("We ask the questions people avoid in public. We collect votes, predictions, and data signals across the region. Then we show the results without turning them into a narrative.")}
+          {t("We ask the questions people usually avoid in public. People vote privately. The results are shown publicly.")}
+        </p>
+        <p className="text-base text-muted-foreground font-sans leading-relaxed mb-2">
+          {t("It is not a news site.")}
+        </p>
+        <p className="text-base text-muted-foreground font-sans leading-relaxed mb-2">
+          {t("It is not a think tank.")}
         </p>
         <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
-          {t("This is not media. It is not a think tank. It is not a comment section.")}
-        </p>
-        <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
-          {t("It is a record of what people actually think when their names are not attached.")}
+          {t("It is not a comment section.")}
         </p>
         <p className="text-base text-muted-foreground font-sans leading-relaxed mb-8">
-          {voicesEnabled
-            ? t("Every debate, prediction, trend, and Voice adds to a growing picture of the region from the inside.")
-            : t("Every debate, prediction, and trend adds to a growing picture of the region from the inside.")}
+          {t("It is a record of what people actually think when their names are not attached.")}
         </p>
-        <p className="text-sm font-serif italic text-foreground/70 leading-relaxed border-l-2 border-primary/60 pl-4">
-          {t("Anonymous does not mean artificial. If it is not human, it is not counted.")}
+        <p className="text-sm font-serif italic text-foreground/70 leading-relaxed border-l-2 border-primary/60 pl-4 mb-6">
+          {t("Private does not mean fake. If it is not human, it does not count.")}
+        </p>
+        <p className="text-sm font-sans text-muted-foreground leading-relaxed">
+          {t("You can vote without creating an account. If you sign up, you can save your activity, view previous votes and predictions, and continue from another device.")}
         </p>
       </div>
 
-      {/* The Four Pillars */}
+      {/* How It Works */}
+      <div id="how-it-works" className="bg-secondary/10 border-b border-border scroll-mt-24">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <h2 className="font-serif font-black uppercase text-3xl border-b-2 border-foreground pb-4 mb-12 text-foreground">
+            {t("How It Works")}
+          </h2>
+          <div className="grid md:grid-cols-2 gap-10">
+            {[
+              { num: "01", title: "Choose a question.", body: "Pick a debate or prediction from the live questions on the platform." },
+              { num: "02", title: "Vote privately.", body: "Your name and email are not shown with your vote." },
+              { num: "03", title: "See the result.", body: "Once you vote, you can see how others answered." },
+              { num: "04", title: "Save your activity.", body: "Create an account if you want to keep your voting history, track your predictions, and continue from another device." },
+              { num: "05", title: "Come back as views shift.", body: "Debates show what people believe now. Predictions show what people expect next." },
+            ].map(s => (
+              <div key={s.num} className="relative">
+                <span className="text-6xl font-display font-black text-gray-900/20 dark:text-gray-100/20 leading-none select-none block">{s.num}</span>
+                <div className="-mt-3">
+                  <h3 className="font-serif font-black uppercase text-lg border-b border-border pb-2 mb-3 text-foreground tracking-wide">
+                    {t(s.title)}
+                  </h3>
+                  <p className="text-sm text-muted-foreground font-sans leading-relaxed">{t(s.body)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* What You'll Find Here */}
       <div id="the-platform" className="py-20 bg-secondary/20 border-b border-border scroll-mt-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-serif font-black uppercase text-3xl border-b-2 border-foreground pb-4 mb-12 text-foreground">
-            {t("The Platform")}
+            {t("What You'll Find Here")}
           </h2>
           <div className="grid md:grid-cols-2 gap-10">
             {pillars.map(p => (
@@ -255,25 +289,28 @@ export default function About() {
         ) : (
           <>
             <p className="text-xl font-sans leading-relaxed text-foreground mb-6">
-              {t("This started with a simple question I kept asking in private rooms:")}
+              {t("This started with a question I kept asking in private rooms:")}
             </p>
             <p className="text-xl font-sans leading-relaxed text-foreground italic mb-8">
-              {t("What does the Middle East actually think?")}
+              {t("What does the region actually think?")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-2">
+              {t("Not what people say in public.")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-2">
+              {t("Not what people post for approval.")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-2">
+              {t("Not what leaders claim.")}
             </p>
             <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
-              {t("Not what we say publicly. Not what leaders say. Not what foreign media assumes. Not what people perform online.")}
+              {t("Not what outsiders assume.")}
             </p>
             <p className="text-base text-foreground font-sans leading-relaxed font-bold mb-6">
               {t("What people actually think.")}
             </p>
             <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
-              {t("There was no single place to see that. So I built one.")}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
-              {t("The Tribunal is not here to answer for the region. It is here to record the region's answers.")}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
-              {t("Every vote is anonymous. Every result is public. Over time, that creates something we have never had before: a living record of private opinion at regional scale.")}
+              {t("The Tribunal does not speak for the region. It records what people say when they can answer honestly.")}
             </p>
           </>
         )}
@@ -330,48 +367,16 @@ export default function About() {
         </div>
       </div>
 
-      {/* Ethos */}
-      <div id="our-ethos" className="py-16 border-b border-border bg-secondary/10 scroll-mt-24">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-8 border-l-4 border-primary pl-4">
-            {t("Our Ethos")}
-          </h2>
-          <div className="space-y-6 text-base text-foreground/80 font-sans leading-relaxed">
-            <p>
-              {t("The Middle East and North Africa is one of the most opinionated and least transparently measured regions in the world.")}
-            </p>
-            <p>
-              {t("People talk. Constantly. At home. At work. In taxis. In group chats. Behind closed doors.")}
-            </p>
-            <p>
-              {t("But those opinions rarely become data.")}
-            </p>
-            <p>
-              {t("The Tribunal exists to close that gap.")}
-            </p>
-            <p>
-              {t("We are not here to tell the region what to think. We are here to make private opinion visible in aggregate.")}
-            </p>
-            <p>
-              {t("The questions are direct because soft questions produce soft answers. The data matters because the region deserves to see itself clearly.")}
-            </p>
-            <p className="text-foreground font-bold">
-              {t("This is MENA's living record of opinion. It grows with every vote.")}
-            </p>
-          </div>
-        </div>
-      </div>
-
-      {/* Closing */}
+      {/* Final CTA */}
       <div className="py-20 border-t border-border">
         <div className="max-w-2xl mx-auto px-4 text-center">
-          <p className="font-display text-3xl text-foreground mb-2 leading-snug italic">
-            {t("\"People do not lack opinions. They lack a place to say them honestly.\"")}
+          <h2 className="font-serif font-black uppercase text-3xl text-foreground mb-4">
+            {t("See where you stand.")}
+          </h2>
+          <p className="text-base text-muted-foreground font-sans mb-12">
+            {t("Vote privately. See the result publicly.")}
           </p>
-          <p className="text-sm text-muted-foreground font-sans mb-12">
-            {t("— Kareem Kaddoura, Founder · The Tribunal · 2026")}
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <div className="flex flex-col sm:flex-row gap-4 justify-center flex-wrap">
             <Link
               href="/debates"
               className="bg-foreground text-background px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary transition-colors font-serif"
@@ -379,17 +384,33 @@ export default function About() {
               {t("Cast Your Vote")}
             </Link>
             <Link
-              href="/pulse"
+              href="/predictions"
               className="border border-foreground text-foreground px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-foreground hover:text-background transition-colors font-serif"
             >
-              {t("Read The Pulse")}
+              {t("Make a Prediction")}
             </Link>
+            {pulseEnabled && (
+              <Link
+                href="/pulse"
+                className="border border-foreground text-foreground px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-foreground hover:text-background transition-colors font-serif"
+              >
+                {t("Read The Pulse")}
+              </Link>
+            )}
             {voicesEnabled && (
               <Link
                 href="/voices"
                 className="border border-primary text-primary px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white transition-colors font-serif"
               >
                 {t("Meet The Voices")}
+              </Link>
+            )}
+            {majlisEnabled && (
+              <Link
+                href="/majlis"
+                className="border border-primary text-primary px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white transition-colors font-serif"
+              >
+                {t("Enter The Majlis")}
               </Link>
             )}
           </div>

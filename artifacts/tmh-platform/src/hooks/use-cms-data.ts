@@ -86,6 +86,7 @@ export interface SiteSettings {
   featureToggles?: {
     majlis?: { enabled: boolean }
     voices?: { enabled: boolean }
+    pulse?: { enabled: boolean }
     shareGate?: { enabled: boolean }
     emailCapture?: { enabled: boolean }
     ipConsent?: { enabled: boolean }

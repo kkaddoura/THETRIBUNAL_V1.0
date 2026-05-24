@@ -40,7 +40,7 @@ export default function PageAbout() {
   useEffect(() => {
     api.getPage("about").then((data: any) => {
       setConfig({
-        hero: { tagline: "Est. 2026 · Founded by Kareem Kaddoura", titleLine1: "The Region's First", titleLine2: "Collective Mirror", subtitle: "541 million people. Zero platforms asking what they think. Until now.", ...data?.hero },
+        hero: { tagline: "Est. 2026 · The Tribunal", titleLine1: "A place to say what people", titleLine2: "usually keep private", subtitle: "The Tribunal asks direct questions about the region and shows how people answer privately.", ...data?.hero },
         pillars: data?.pillars ?? [],
         beliefs: data?.beliefs ?? [],
         founderStatement: data?.founderStatement ?? { text: "", author: "" },

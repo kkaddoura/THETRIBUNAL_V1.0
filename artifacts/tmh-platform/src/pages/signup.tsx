@@ -10,7 +10,7 @@ export default function Signup() {
   usePageTitle({
     title: "Sign Up — The Tribunal",
     description:
-      "Create your account on The Tribunal. Build a journey of polls, predictions, and your voice in MENA's data-driven debate platform.",
+      "Create a simple account on The Tribunal to keep your voting history, track your predictions, and continue from any device.",
   })
   const [, navigate] = useLocation()
   const signup = useSignup()
@@ -83,17 +83,17 @@ export default function Signup() {
 
           <div className="relative">
             <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-5 font-serif">
-              By the Middle East Hustle
+              The Tribunal
             </p>
             <h1
               className="font-display font-black uppercase tracking-tight leading-[0.95] text-5xl xl:text-6xl mb-6"
               style={{ color: "#F2EDE4" }}
             >
-              Where the region<br />
-              actually speaks<span className="text-primary">.</span>
+              Save your<br />
+              activity<span className="text-primary">.</span>
             </h1>
             <p className="text-base xl:text-lg leading-relaxed max-w-md" style={{ color: "rgba(242,237,228,0.7)" }}>
-              Anonymous votes, weekly predictions, and the founders, operators, and voices shaping MENA. Your account makes it yours.
+              Create a simple account to keep your voting history, track your predictions, and continue from any device.
             </p>
           </div>
 
@@ -108,10 +108,10 @@ export default function Signup() {
               </div>
               <div>
                 <p className="font-bold uppercase text-sm tracking-tight" style={{ color: "#F2EDE4" }}>
-                  A journey, not a session.
+                  Save your votes.
                 </p>
                 <p className="text-xs leading-relaxed mt-0.5" style={{ color: "rgba(242,237,228,0.6)" }}>
-                  Every vote, prediction, and streak follows you across devices.
+                  View your previous votes and predictions across devices.
                 </p>
               </div>
             </li>
@@ -124,10 +124,10 @@ export default function Signup() {
               </div>
               <div>
                 <p className="font-bold uppercase text-sm tracking-tight" style={{ color: "#F2EDE4" }}>
-                  Hybrid privacy.
+                  Your vote is private.
                 </p>
                 <p className="text-xs leading-relaxed mt-0.5" style={{ color: "rgba(242,237,228,0.6)" }}>
-                  Public sees your totals and badges. Your individual votes stay private.
+                  Your name and email are not shown with your vote. Your account helps you save your activity.
                 </p>
               </div>
             </li>
@@ -140,10 +140,10 @@ export default function Signup() {
               </div>
               <div>
                 <p className="font-bold uppercase text-sm tracking-tight" style={{ color: "#F2EDE4" }}>
-                  Friday digest, on the house.
+                  Updates, if you want them.
                 </p>
                 <p className="text-xs leading-relaxed mt-0.5" style={{ color: "rgba(242,237,228,0.6)" }}>
-                  Top debates, predictions resolving, and the voice of the week. Auto-included, unsubscribe anytime.
+                  Get the sharpest questions, results and prediction shifts from The Tribunal. Unsubscribe anytime.
                 </p>
               </div>
             </li>
@@ -156,10 +156,10 @@ export default function Signup() {
               </div>
               <div>
                 <p className="font-bold uppercase text-sm tracking-tight" style={{ color: "#F2EDE4" }}>
-                  First-come, first-served.
+                  Pick a username.
                 </p>
                 <p className="text-xs leading-relaxed mt-0.5" style={{ color: "rgba(242,237,228,0.6)" }}>
-                  Pick your handle before someone else does. There's only one @khalid_92.
+                  A handle for your account. It is not shown with your individual votes.
                 </p>
               </div>
             </li>
@@ -171,13 +171,13 @@ export default function Signup() {
               className="text-base xl:text-lg leading-relaxed font-serif italic"
               style={{ color: "rgba(242,237,228,0.92)" }}
             >
-              "The questions you can't ask out loud — collected anonymously, at scale."
+              "Your vote is private. The result is public."
             </blockquote>
             <figcaption
               className="text-[12px] uppercase tracking-[0.25em] font-bold mt-3 font-serif"
               style={{ color: "rgba(242,237,228,0.5)" }}
             >
-              — The Tribunal, on the record
+              — The Tribunal
             </figcaption>
           </figure>
         </aside>
@@ -188,20 +188,20 @@ export default function Signup() {
             {/* Mobile-only headline (the left aside is desktop-only) */}
             <div className="lg:hidden text-center mb-8">
               <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
-                Join The Tribunal
+                The Tribunal
               </p>
               <h1 className="font-display font-black uppercase tracking-tight text-4xl leading-[0.95]">
-                Where the region<br />
-                actually speaks<span className="text-primary">.</span>
+                Save your<br />
+                activity<span className="text-primary">.</span>
               </h1>
             </div>
 
             <div className="bg-card border border-border p-6 md:p-8">
               <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
-                Create account · 60 seconds
+                Create account
               </p>
               <h2 className="font-display font-black uppercase tracking-tight text-2xl md:text-3xl mb-6">
-                Vote with a name<span className="text-primary">.</span>
+                Save your votes<span className="text-primary">.</span>
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-5">
@@ -281,7 +281,7 @@ export default function Signup() {
                     className="mt-0.5 accent-primary"
                   />
                   <span>
-                    Send me the Friday digest with top debates and the voice of the week. <span className="text-muted-foreground/60">Unsubscribe anytime.</span>
+                    Send me updates from The Tribunal — top debates and prediction shifts. <span className="text-muted-foreground/60">Unsubscribe anytime.</span>
                   </span>
                 </label>
 
@@ -312,9 +312,9 @@ export default function Signup() {
 
             {/* Trust strip */}
             <div className="mt-6 flex items-center justify-center gap-5 text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground/70 font-serif">
-              <span>Anonymous votes</span>
+              <span>Private votes</span>
               <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-              <span>Free forever</span>
+              <span>Free</span>
               <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
               <span>No spam</span>
             </div>

@@ -230,7 +230,7 @@ export default function MajlisLogin() {
           </div>
 
           <p className="text-center text-[10px] text-muted-foreground mt-4 font-serif uppercase tracking-wider">
-            A private space for MENA's founders, operators & change-makers
+            A private room for serious conversation
           </p>
         </div>
       </div>

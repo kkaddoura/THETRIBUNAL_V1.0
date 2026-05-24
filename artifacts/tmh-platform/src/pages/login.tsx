@@ -9,7 +9,7 @@ export default function Login() {
   usePageTitle({
     title: "Sign In — The Tribunal",
     description:
-      "Sign in to The Tribunal — your votes, predictions, and the journey you've built across MENA's debates.",
+      "Sign in to The Tribunal to view your saved votes, predictions, and continue from any device.",
   })
   const [, navigate] = useLocation()
   const login = useLogin()
@@ -61,14 +61,14 @@ export default function Login() {
               className="font-display font-black uppercase tracking-tight leading-[0.95] text-5xl xl:text-6xl mb-6"
               style={{ color: "#F2EDE4" }}
             >
-              Pick up where<br />
-              you left off<span className="text-primary">.</span>
+              Welcome<br />
+              back<span className="text-primary">.</span>
             </h1>
             <p
               className="text-base xl:text-lg leading-relaxed max-w-md"
               style={{ color: "rgba(242,237,228,0.7)" }}
             >
-              Your votes, predictions, streak, and the voices you follow are right where you left them. Across every device.
+              Sign in to view your previous votes and predictions, and continue from any device.
             </p>
           </div>
 
@@ -83,7 +83,7 @@ export default function Login() {
             >
               <Vote className="w-4 h-4 text-primary flex-shrink-0" />
               <p className="text-xs leading-relaxed" style={{ color: "rgba(242,237,228,0.85)" }}>
-                Sign in on a new device — votes you cast there merge into your account automatically.
+                Your vote is private. Your account helps you save your activity.
               </p>
             </div>
 
@@ -91,7 +91,7 @@ export default function Login() {
               className="text-[12px] uppercase tracking-[0.25em] font-bold font-serif"
               style={{ color: "rgba(242,237,228,0.45)" }}
             >
-              The Tribunal · By the Middle East Hustle
+              The Tribunal
             </p>
           </div>
         </aside>
@@ -104,8 +104,8 @@ export default function Login() {
                 Welcome back
               </p>
               <h1 className="font-display font-black uppercase tracking-tight text-4xl leading-[0.95]">
-                Pick up where<br />
-                you left off<span className="text-primary">.</span>
+                Welcome<br />
+                back<span className="text-primary">.</span>
               </h1>
             </div>
 
@@ -114,7 +114,7 @@ export default function Login() {
                 Sign in
               </p>
               <h2 className="font-display font-black uppercase tracking-tight text-2xl md:text-3xl mb-6">
-                Your tribunal awaits<span className="text-primary">.</span>
+                Save your votes<span className="text-primary">.</span>
               </h2>
 
               <form onSubmit={handleSubmit} className="space-y-5">

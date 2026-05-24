@@ -1494,7 +1494,7 @@ function SidebarPredictionItem({
 
 export default function Home() {
   usePageTitle({
-    description: "The voice of 541 million. Real debates, predictions, and voices from across MENA.",
+    description: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
   });
   // Fetch homepage CMS config first (needed for content selection)
   const { data: homepageConfig } = useHomepageConfig<{
@@ -1536,7 +1536,8 @@ export default function Home() {
   const { data: liveCounts } = useLiveCounts();
   const { data: siteSettings } = useSiteSettings();
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false;
-  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true;
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false;
+  const pulseEnabled = siteSettings?.featureToggles?.pulse?.enabled ?? false;
   const [ctaEmail, setCtaEmail] = useState("");
   const [ctaJoined, setCtaJoined] = useState(
     () => !!localStorage.getItem("tmh_cta_joined"),
@@ -1611,6 +1612,7 @@ export default function Home() {
     }));
   }, [apiPredictions]);
   const pulseItems = useMemo(() => {
+    if (!pulseEnabled) return [];
     if (!apiPulseTopics?.items?.length) return [];
     return apiPulseTopics.items.slice(0, 8).map((t) => ({
       topic: t.title.length > 35 ? t.title.substring(0, 33) + "…" : t.title,
@@ -1618,7 +1620,7 @@ export default function Home() {
       stat: `${t.deltaUp ? "↑" : "↓"} ${t.delta}`,
       href: `/pulse?shared=${encodeURIComponent(t.topicId)}`,
     }));
-  }, [apiPulseTopics]);
+  }, [apiPulseTopics, pulseEnabled]);
   const maxLen = Math.max(
     debateItems.length,
     predictionItems.length,
@@ -1701,7 +1703,7 @@ export default function Home() {
                     <span className="relative inline-flex w-2 h-2 rounded-full bg-[#10B981]" />
                   </span>
                   <span className="font-serif font-bold text-[12px] tracking-[0.32em] uppercase text-[#10B981]">
-                    {t("Live Globally · 541M Voices")}
+                    {t("The Region, On Record")}
                   </span>
                 </motion.div>
 
@@ -1713,7 +1715,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.1 }}
                 >
-                  {t("MENA's first opinion ")}
+                  {t("The questions people ")}
                   <span
                     className="relative inline-block"
                     style={{
@@ -1725,9 +1727,9 @@ export default function Home() {
                       paddingBottom: "0.16em",
                     }}
                   >
-                    {t("intelligence")}
+                    {t("avoid")}
                   </span>
-                  {t(" platform")}
+                  {t(" in public")}
                   <span className="text-primary">.</span>
                 </motion.h1>
 
@@ -1738,21 +1740,17 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.4 }}
                 >
-                  {t("Anonymous votes from across the globe on")}{" "}
-                  <strong className="text-foreground font-bold">{t("19 MENA countries")}</strong>
-                  {t(". No op-eds, no think tanks, no narrative. Just what")}{" "}
-                  <strong
-                    className="text-foreground font-bold"
-                    style={{
-                      backgroundImage:
-                        "linear-gradient(180deg, transparent 0%, transparent 64%, rgba(220,20,60,0.28) 64%, rgba(220,20,60,0.28) 94%, transparent 94%)",
-                      padding: "0 0.18em",
-                      borderRadius: "1px",
-                    }}
-                  >
-                    {t("541 million people")}
-                  </strong>{" "}
-                  {t("actually think.")}
+                  {t("Private voting on what the region really thinks about power, money, culture, work, media and the future.")}
+                </motion.p>
+
+                {/* Trust line */}
+                <motion.p
+                  className="text-[13px] sm:text-[14px] text-foreground/65 font-sans mt-3 italic"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.5 }}
+                >
+                  {t("Your vote is private. The result is public.")}
                 </motion.p>
 
                 {/* CTAs */}
@@ -1764,81 +1762,57 @@ export default function Home() {
                 >
                   <Link
                     href="/debates"
-                    onClick={() => track("cta_clicked", { label: "join_the_debate", surface: "home_hero" })}
+                    onClick={() => track("cta_clicked", { label: "cast_your_vote", surface: "home_hero" })}
                     className="inline-flex items-center gap-2 bg-primary text-white font-bold uppercase tracking-widest text-xs px-7 py-3 hover:bg-primary/90 transition-colors font-serif"
                   >
-                    {t("Join the Debate")} <ArrowRight className="w-3 h-3" />
+                    {t("Cast Your Vote")} <ArrowRight className="w-3 h-3" />
                   </Link>
                   <Link
-                    href="/predictions"
-                    onClick={() => track("cta_clicked", { label: "call_the_future", surface: "home_hero" })}
+                    href="/about#how-it-works"
+                    onClick={() => track("cta_clicked", { label: "how_it_works", surface: "home_hero" })}
                     className="inline-flex items-center gap-2 text-foreground/70 hover:text-foreground font-bold uppercase tracking-widest text-xs px-2 py-3 transition-colors font-serif underline underline-offset-4 decoration-primary/40"
                   >
-                    {t("Call The Future")}
+                    {t("How It Works")}
                   </Link>
                 </motion.div>
 
                 {/* Stats row */}
                 <motion.div
-                  className="mt-9 pt-7 border-t border-border/60 grid grid-cols-3 gap-5 w-full max-w-[480px]"
+                  className="mt-9 pt-7 border-t border-border/60 grid grid-cols-2 sm:grid-cols-4 gap-5 w-full max-w-[560px]"
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.8 }}
                 >
                   <div>
                     <div className="font-display font-black text-[26px] sm:text-[28px] text-foreground tabular-nums leading-none">
-                      <LiveTicker
-                        start={847947}
-                        mode="increment"
-                        minDelta={1}
-                        maxDelta={3}
-                        intervalMs={1800}
-                        jitterMs={1400}
-                        lastDigitAccent
-                      />
+                      100+
                     </div>
                     <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                      {t("Votes Today")}
-                    </div>
-                    <div className="text-[9px] font-serif font-bold uppercase tracking-[0.18em] text-primary mt-1 flex items-center gap-1.5">
-                      <span className="relative flex w-1.5 h-1.5">
-                        <span className="absolute inline-flex w-full h-full rounded-full bg-primary opacity-60 animate-ping" />
-                        <span className="relative inline-flex w-1.5 h-1.5 rounded-full bg-primary" />
-                      </span>
-                      {t("Live")}
+                      {t("Live Questions")}
                     </div>
                   </div>
                   <div>
                     <div className="font-display font-black text-[26px] sm:text-[28px] text-foreground tabular-nums leading-none">
-                      94
+                      19
                     </div>
                     <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                      {t("Nations Active")}
-                    </div>
-                    <div className="text-[9px] font-serif font-bold uppercase tracking-[0.18em] text-foreground/45 mt-1">
-                      ↑ {t("3 Last hr")}
+                      {t("Countries Covered")}
                     </div>
                   </div>
                   <div>
-                    <div className="font-display font-black text-[26px] sm:text-[28px] text-foreground tabular-nums leading-none">
-                      <LiveTicker
-                        start={13060}
-                        mode="drift"
-                        minDelta={5}
-                        maxDelta={28}
-                        intervalMs={5000}
-                        jitterMs={0}
-                        upBias={0.6}
-                        min={12780}
-                        max={13420}
-                        animation="fade"
-                      />
+                    <div className="font-display font-black text-[18px] sm:text-[20px] text-foreground leading-none pt-1.5">
+                      {t("Debates")}
                     </div>
                     <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                      {t("People Online")}
+                      {t("+ Predictions")}
                     </div>
-                    <div className="text-[9px] font-serif font-bold uppercase tracking-[0.18em] text-foreground/45 mt-1">
-                      ↗ {t("Rising")}
+                  </div>
+                  <div>
+                    <div className="font-display font-black text-[18px] sm:text-[20px] text-foreground leading-none pt-1.5">
+                      {t("Private")}
+                    </div>
+                    <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
+                      {t("Voting")}
                     </div>
                   </div>
                 </motion.div>
@@ -2139,7 +2113,8 @@ export default function Home() {
         </FadeUp>
       </section>
 
-      {/* ── THE PULSE ── */}
+      {/* ── THE PULSE ── (hidden until Pulse toggle is ON) */}
+      {pulseEnabled && (
       <section
         id="pulse"
         className="py-8 bg-background border-b border-border relative"
@@ -2623,6 +2598,7 @@ export default function Home() {
         </div>
         </FadeUp>
       </section>
+      )}
 
       {/* ── THE VOICES ── */}
       {voicesEnabled && (
@@ -2646,7 +2622,7 @@ export default function Home() {
           <FadeIn delay={0.15}>
           <p className="text-background/75 font-sans text-base mt-4 mb-10 max-w-xl">
             {t(
-              "The founders, operators, and change-makers shaping the Middle East. Real people. Real stories.",
+              "Curated profiles of people with a clear connection to the region and a body of work we can verify.",
             )}
           </p>
           </FadeIn>

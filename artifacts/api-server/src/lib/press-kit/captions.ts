@@ -295,18 +295,18 @@ function fallbackBelief(input: CaptionInput, link: string): CaptionVariants {
 function fallbackRegion(input: CaptionInput, link: string): CaptionVariants {
   const n = input.regionCount ?? 19
   return {
-    x: rep(`${n} countries. 541 million people. One conversation. The Tribunal. ${link}`),
-    ig: rep(`${n} countries.\n541 million people.\nOne conversation.\n\n#MENA #Tribunal\n${link}`),
-    linkedin: rep(`The Tribunal covers ${n} MENA countries — 541 million people whose voices have rarely been asked. Until now.\n\n${link}`),
+    x: rep(`${n} countries. One regional lens. The Tribunal. ${link}`),
+    ig: rep(`${n} countries.\nOne regional lens.\n\n#Tribunal\n${link}`),
+    linkedin: rep(`The Tribunal covers ${n} countries across the Middle East and North Africa.\n\n${link}`),
   }
 }
 
 function fallbackManifesto(input: CaptionInput, link: string): CaptionVariants {
-  const t = input.manifestoTitle ?? "The Region's First Collective Mirror"
-  const s = input.manifestoSubtitle ?? "541 million people. Zero platforms asking what they think. Until now."
+  const t = input.manifestoTitle ?? "The region, on record"
+  const s = input.manifestoSubtitle ?? "Private voting on what the region really thinks."
   return {
     x: rep(`${t}. ${s} ${link}`),
-    ig: rep(`${t}\n\n${s}\n\n#MENA #Tribunal\n${link}`),
+    ig: rep(`${t}\n\n${s}\n\n#Tribunal\n${link}`),
     linkedin: rep(`${t}.\n\n${s}\n\nLearn more: ${link}`),
   }
 }

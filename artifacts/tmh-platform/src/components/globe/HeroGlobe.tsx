@@ -193,8 +193,11 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
 
   // Reactive state for overlay UI
   const [currentCity, setCurrentCity] = useState<string>("Cairo");
-  const [cards, setCards]             = useState<ActivityCard[]>([]);
-  const [exitingCardIds, setExitingCardIds] = useState<Set<number>>(new Set());
+  // Activity card state retained so the spawner timers keep their existing shape,
+  // but cards are no longer rendered. Restore the card layer when real-time
+  // activity is wired up. See render block below.
+  const [, setCards]             = useState<ActivityCard[]>([]);
+  const [, setExitingCardIds] = useState<Set<number>>(new Set());
 
   // Dark mode — ref drives the cobe render loop (no globe recreation on flip);
   // state drives the React/CSS-rendered overlays (cards, headlines, brackets).
@@ -628,8 +631,10 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
     };
   }, []);
 
-  // Slot positioning is handled in CSS so it can vary by breakpoint.
-  const slotClass = (slot: CardSlot) =>
+  // Slot positioning helper (currently unused while cards are hidden).
+  // Kept here so re-enabling the activity layer doesn't require restoring it.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _slotClass = (slot: CardSlot) =>
     slot === "tr" ? "hg-card-tr" : "hg-card-bl";
 
   return (
@@ -656,7 +661,7 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
       {/* Live status (bottom-right) */}
       <div className="hg-br">
         <span className="hg-br-dot" aria-hidden />
-        <span>Live Activity Stream</span>
+        <span>Live activity map</span>
       </div>
 
       {/* Globe wrap (oversized + shifted so MENA fills the panel) */}
@@ -683,29 +688,8 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
         />
       </div>
 
-      {/* Activity cards layer (2 fixed slots: top-right, bottom-left) */}
-      <div className="hg-cards">
-        {cards.map((c) => {
-          const exiting = exitingCardIds.has(c.id);
-          return (
-            <div
-              key={c.id}
-              className={`hg-card ${slotClass(c.slot)} ${exiting ? "" : "hg-card-show"}`}
-            >
-              <div className="hg-card-row1">
-                <span className="hg-card-flag">{c.flag}</span>
-                <span className="hg-card-city">{c.city}, {c.country}</span>
-                <span className="hg-card-time">Just now</span>
-              </div>
-              <div
-                className="hg-card-msg"
-                /* trusted: action templates are static strings in this file */
-                dangerouslySetInnerHTML={{ __html: `Someone in ${c.city} ${c.message}` }}
-              />
-            </div>
-          );
-        })}
-      </div>
+      {/* Activity cards intentionally hidden at launch — no fake live activity. */}
+      {/* When real-time activity is wired up, restore the card layer here.    */}
 
       <style>{`
         /* ── Theme variables ──────────────────────────────────── */

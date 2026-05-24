@@ -22,6 +22,7 @@ interface SocialLink {
 interface FeatureToggles {
   majlis: { enabled: boolean };
   voices: { enabled: boolean };
+  pulse: { enabled: boolean };
   shareGate: { enabled: boolean };
   emailCapture: { enabled: boolean };
   ipConsent: { enabled: boolean };
@@ -80,7 +81,8 @@ export default function PageSiteSettings() {
         shareGate: { enabled: false, heading: "", body: "", shareButtonText: "", skipText: "", emailPlaceholder: "", ...data?.shareGate },
         featureToggles: {
           majlis: { enabled: data?.featureToggles?.majlis?.enabled ?? false },
-          voices: { enabled: data?.featureToggles?.voices?.enabled ?? true },
+          voices: { enabled: data?.featureToggles?.voices?.enabled ?? false },
+          pulse: { enabled: data?.featureToggles?.pulse?.enabled ?? false },
           shareGate: { enabled: data?.featureToggles?.shareGate?.enabled ?? true },
           emailCapture: { enabled: data?.featureToggles?.emailCapture?.enabled ?? true },
           ipConsent: { enabled: data?.featureToggles?.ipConsent?.enabled ?? false },
@@ -150,7 +152,20 @@ export default function PageSiteSettings() {
                 />
                 <div className="flex-1">
                   <p className="font-bold text-sm">Voices</p>
-                  <p className="text-xs text-muted-foreground">Public profiles of founders, operators, and change-makers. When off: hidden from nav, footer, homepage section + stat grid, and /voices routes redirect to home.</p>
+                  <p className="text-xs text-muted-foreground">Curated profiles of people with a clear connection to the region. When off: hidden from nav, footer, homepage section + stat grid, and /voices routes redirect to home.</p>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 border border-border rounded-sm hover:border-primary/50 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={config.featureToggles.pulse.enabled}
+                  onChange={e => setConfig({ ...config, featureToggles: { ...config.featureToggles, pulse: { enabled: e.target.checked } } })}
+                  className="mt-1 accent-primary"
+                />
+                <div className="flex-1">
+                  <p className="font-bold text-sm">Pulse</p>
+                  <p className="text-xs text-muted-foreground">Public data layer with sourced trend cards. When off: hidden from nav, footer, homepage section, About cards, and FAQ section.</p>
                 </div>
               </label>
 

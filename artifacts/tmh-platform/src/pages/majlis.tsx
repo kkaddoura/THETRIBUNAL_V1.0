@@ -747,11 +747,11 @@ export default function Majlis() {
             <Lock className="w-6 h-6 text-primary" />
           </div>
           <h2 className="font-display font-black text-2xl uppercase tracking-tight text-foreground mb-2">
-            The Majlis is Invite-Only
+            A private room for serious conversation
           </h2>
           {hasApplied ? (
             <p className="text-sm text-muted-foreground">
-              Your application is being reviewed. You'll hear back within 48 hours.{" "}
+              Your access request is being reviewed.{" "}
               Need help?{" "}
               <a href="mailto:hello@themiddleeasthustle.com" className="text-primary underline">
                 Contact support
@@ -759,8 +759,8 @@ export default function Majlis() {
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              A private space for verified voices across MENA.{" "}
-              <a href="/apply?ref=majlis" className="text-primary underline">Apply to join</a>.
+              A members-only space for selected participants to discuss the questions behind The Tribunal.{" "}
+              <a href="/apply?ref=majlis" className="text-primary underline">Request access</a>.
             </p>
           )}
 

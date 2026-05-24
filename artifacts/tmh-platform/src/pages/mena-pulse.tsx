@@ -1776,7 +1776,7 @@ export default function MenaPulse() {
               marginBottom: "0.5rem",
             }}
           >
-            {t(pulseConfig?.hero?.tagline || "Pulse")}
+            {t(pulseConfig?.hero?.tagline || "The Pulse")}
           </p>
           <h1
             style={{
@@ -1792,8 +1792,8 @@ export default function MenaPulse() {
               marginBottom: "0.5rem",
             }}
           >
-            {t(pulseConfig?.hero?.titleLine1 || "What's Actually")}<br />
-            {t(pulseConfig?.hero?.titleLine2 || "Happening in MENA")}<TitlePunctuation punctuations={pulseConfig?.punctuations} />
+            {t(pulseConfig?.hero?.titleLine1 || "What is actually")}<br />
+            {t(pulseConfig?.hero?.titleLine2 || "happening")}<TitlePunctuation punctuations={pulseConfig?.punctuations} />
           </h1>
           <p
             style={{
@@ -1804,8 +1804,7 @@ export default function MenaPulse() {
               letterSpacing: "0.18em",
             }}
           >
-            {allTopics.length}{" "}
-            {t("trends the region needs to confront. Updated quarterly.")}
+            {t("Sourced data points that give context to the questions people are voting on.")}
           </p>
         </div>
 
@@ -2006,7 +2005,7 @@ export default function MenaPulse() {
                     color: "rgba(255,255,255,0.75)",
                   }}
                 >
-                  {t("Exploding Trends")}
+                  {t("Pulse Signals")}
                 </span>
                 <span
                   style={{

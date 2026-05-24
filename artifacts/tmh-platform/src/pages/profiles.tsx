@@ -258,8 +258,8 @@ export default function Profiles() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
           >
-            {pageConfig?.hero?.titleLine1 || "Meet the People"}<br />
-            {pageConfig?.hero?.titleLine2 || "Moving This Region."}<TitlePunctuation punctuations={pageConfig?.punctuations} />
+            {pageConfig?.hero?.titleLine1 || "People with"}<br />
+            {pageConfig?.hero?.titleLine2 || "something to say."}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </motion.h1>
           <p
             style={{
@@ -270,7 +270,18 @@ export default function Profiles() {
               letterSpacing: "0.18em",
             }}
           >
-            {pageConfig?.hero?.subtitle || "Founders. Operators. Changemakers. Finally counted."}
+            {pageConfig?.hero?.subtitle || "Curated profiles of people connected to the region through their work, choices and positions."}
+          </p>
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.85rem",
+              opacity: 0.65,
+              marginTop: "0.85rem",
+              letterSpacing: "0.02em",
+            }}
+          >
+            Selected, not submitted at scale.
           </p>
           {majlisEnabled && (
             <motion.div
