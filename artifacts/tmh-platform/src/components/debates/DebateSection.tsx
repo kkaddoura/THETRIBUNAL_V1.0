@@ -161,6 +161,12 @@ export function DebateSection({ section }: Props) {
             gracedRef.current.delete(id);
             exitingRef.current.delete(id);
             timersRef.current.delete(id);
+            // Promote into initiallyVotedRef so the detection block below
+            // doesn't re-grace this poll on the bump-triggered re-render
+            // (cleared graced + cleared timer + still hasVoted would
+            // otherwise re-enter the hold/exit cycle every ~3.45s, making
+            // the just-voted card reappear indefinitely).
+            initiallyVotedRef.current.add(id);
             bump((n) => n + 1);
           }, VOTE_EXIT_MS);
           timersRef.current.set(id, exitTimer);
