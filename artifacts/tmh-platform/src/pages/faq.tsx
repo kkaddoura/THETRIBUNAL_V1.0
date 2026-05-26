@@ -56,7 +56,7 @@ const FAQ_SECTIONS_DEFAULT: FaqSection[] = [
         a: "No. We use technical checks to limit duplicate and automated voting.",
       },
       {
-        q: "Are my debate votes anonymous?",
+        q: "Are my debate votes private?",
         a: "Your name and email are not shown with your vote. Results are shown in aggregate. If you sign in, your account may show your previous activity back to you.",
       },
       {
@@ -64,8 +64,8 @@ const FAQ_SECTIONS_DEFAULT: FaqSection[] = [
         a: "Questions are selected by the editorial team. The goal is to ask direct questions people usually avoid in public.\n\nEvery question is reviewed by a human before it goes live.",
       },
       {
-        q: "What is the Share Gate?",
-        a: "Some results may require you to share the debate or enter an email to unlock full results.\n\nThis helps the platform reach more voters while keeping core voting free.",
+        q: "Why do some results ask me to share or enter an email?",
+        a: "Some full result breakdowns may require sharing or email unlock. This helps more people find the question while keeping voting free.\n\nIf you enter your email, it may also help you save activity or receive updates if you opt in.",
       },
       {
         q: "What is the country breakdown?",
@@ -147,8 +147,8 @@ const FAQ_SECTIONS_DEFAULT: FaqSection[] = [
         a: "Selected participants with a serious connection to the region.",
       },
       {
-        q: "Is The Majlis anonymous?",
-        a: "No. The Majlis is separate from private voting. Voting remains private. Majlis access may require identity review or approval.",
+        q: "Is The Majlis private?",
+        a: "The Majlis is separate from private voting. Voting remains private. Majlis access may require identity review or approval.",
       },
       {
         q: "Can anyone post?",
@@ -192,8 +192,8 @@ const FAQ_SECTIONS_DEFAULT: FaqSection[] = [
         a: "We do not use advertising pixels or retargeting pixels.\n\nIf privacy-conscious analytics are used later, this answer will be updated.",
       },
       {
-        q: "What third-party services do you use?",
-        a: "We work with infrastructure and service providers to operate the platform. The current list may include Railway for hosting, Supabase for storage, Beehiiv for newsletter signups, Anthropic for chatbot functionality, and an IP geolocation service for country detection.\n\nWe only list providers that are actually being used.",
+        q: "What third party services do you use?",
+        a: "We work with infrastructure and service providers to operate the platform.",
       },
       {
         q: "Where is my data stored?",
@@ -292,13 +292,11 @@ export default function FAQ() {
             <Link href="/about" className="text-[12px] uppercase tracking-widest font-bold font-serif text-primary hover:text-foreground transition-colors">
               {t("About The Tribunal →")}
             </Link>
-            {voicesEnabled && (
-              <Link href="/apply" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
-                {t("Apply to be a Voice →")}
-              </Link>
-            )}
             <Link href="/terms" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
               {t("Terms & Conditions →")}
+            </Link>
+            <Link href="/contact" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
+              {t("Contact →")}
             </Link>
           </div>
         </div>

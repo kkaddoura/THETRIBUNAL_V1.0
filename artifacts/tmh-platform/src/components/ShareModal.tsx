@@ -73,12 +73,12 @@ export function ShareModal({
 
   const displayHeading =
     showEmailGate && !hasEmail
-      ? "Share to Unlock Full Results"
+      ? "Unlock full results"
       : "Share This"
 
   const displayBody =
     showEmailGate && !hasEmail
-      ? "We keep The Tribunal free by making opinion data shareable. Share this to see the full breakdown."
+      ? "Share the question or enter your email to see the full breakdown."
       : getShareBody()
 
   const isMobile =
@@ -116,8 +116,8 @@ export function ShareModal({
 
     if (o === "shared") {
       toast({
-        title: "Shared!",
-        description: "Thanks for spreading the word.",
+        title: "Thanks for sharing.",
+        description: "Full results unlocked.",
       })
       return
     }

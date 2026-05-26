@@ -64,11 +64,10 @@ export function IpConsentBanner() {
               <X className="w-4 h-4" />
             </button>
             <p className="font-serif font-black uppercase text-sm text-foreground tracking-tight mb-2">
-              Location-Aware Results<span className="text-primary">.</span>
+              Country based results<span className="text-primary">.</span>
             </p>
             <p className="text-[14px] text-muted-foreground font-sans leading-relaxed mb-4">
-              We use your IP address to determine your country so you can see how voters from your region compare.
-              Your vote is still anonymous — we don't store personal data.
+              We can use your IP address once to estimate your country and show regional breakdowns. Your name and email are not shown with your vote.
             </p>
             <div className="flex gap-2">
               <button

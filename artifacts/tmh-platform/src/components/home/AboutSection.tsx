@@ -2,12 +2,12 @@ import { useState } from "react"
 import { useI18n } from "@/lib/i18n"
 
 const PRINCIPLES = [
-  { title: "Ask directly", body: "Soft questions produce soft answers." },
-  { title: "Do not answer for people", body: "The Tribunal asks the question. People decide the result." },
-  { title: "Keep votes private", body: "Your name is not shown with your vote." },
-  { title: "Show the result publicly", body: "The value is in the aggregate." },
-  { title: "Let people save their own record", body: "If someone signs up, they can view their previous activity and return to it later." },
-  { title: "Count people, not noise", body: "No bots. No sponsored sentiment. No manufactured consensus." },
+  { title: "Private votes. Public results", body: "Your name and email are not shown with your vote." },
+  { title: "Human reviewed questions", body: "Questions are curated before they go live." },
+  { title: "No manufactured consensus", body: "No bots. No sponsored sentiment. No fake activity." },
+  { title: "Not scientific polling", body: "Results are opinion signals from people who choose to participate." },
+  { title: "Save your own record", body: "If you sign up, you can view your previous activity and return to it later." },
+  { title: "The sharper the question, the clearer the signal", body: "Soft questions produce soft answers." },
 ]
 
 const CREAM = "#F5F0EB"
@@ -96,75 +96,6 @@ export default function AboutSection() {
           padding: "clamp(3rem, 7vw, 5.5rem) clamp(1.25rem, 5vw, 3rem)",
         }}
       >
-        {/* ── Founder banner ─────────────────────────────────────────── */}
-        <div
-          style={{
-            borderBottom: "1px solid rgba(245,240,235,0.12)",
-            paddingBottom: "clamp(2.25rem, 5vw, 3.5rem)",
-            marginBottom: "clamp(2.5rem, 5vw, 4rem)",
-          }}
-        >
-          <p
-            style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 800,
-              fontSize: "0.85rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.34em",
-              color: CRIMSON,
-              marginBottom: "1.25rem",
-            }}
-          >
-            {t("Founder's Note")}
-          </p>
-
-          <div style={{ position: "relative", paddingLeft: "clamp(1.25rem, 4vw, 2.75rem)" }}>
-            <span
-              aria-hidden="true"
-              style={{
-                position: "absolute",
-                left: "-0.35rem",
-                top: "-1.5rem",
-                fontFamily: "'Playfair Display', serif",
-                fontSize: "clamp(4rem, 11vw, 7rem)",
-                lineHeight: 1,
-                color: "rgba(220,20,60,0.28)",
-                pointerEvents: "none",
-                userSelect: "none",
-              }}
-            >
-              &ldquo;
-            </span>
-            <blockquote
-              style={{
-                margin: 0,
-                fontFamily: "'Playfair Display', serif",
-                fontStyle: "italic",
-                fontWeight: 600,
-                fontSize: "clamp(1.6rem, 4.2vw, 2.7rem)",
-                lineHeight: 1.2,
-                color: CREAM,
-                letterSpacing: "-0.01em",
-              }}
-            >
-              {t("People do not lack opinions. They lack a place to say them honestly.")}
-            </blockquote>
-            <p
-              style={{
-                fontFamily: "'Barlow Condensed', sans-serif",
-                fontWeight: 700,
-                fontSize: "0.95rem",
-                textTransform: "uppercase",
-                letterSpacing: "0.18em",
-                color: "rgba(245,240,235,0.55)",
-                marginTop: "1.5rem",
-              }}
-            >
-              {t("— Kareem Kaddoura, Founder")}
-            </p>
-          </div>
-        </div>
-
         {/* ── Section header with rules ──────────────────────────────── */}
         <div
           style={{
@@ -187,7 +118,7 @@ export default function AboutSection() {
               whiteSpace: "nowrap",
             }}
           >
-            {t("What We Stand For")}
+            {t("How We Keep It Honest")}
           </p>
           <span style={{ flex: 1, height: 1, background: "rgba(245,240,235,0.18)" }} />
         </div>

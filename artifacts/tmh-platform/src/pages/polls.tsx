@@ -183,9 +183,9 @@ export default function Polls() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
           >
-            {hero?.titleLine1 || "What Does the Region"}
+            {hero?.titleLine1 || "What do people"}
             <br />
-            {hero?.titleLine2 || "Actually Think?"}
+            {hero?.titleLine2 || "really believe?"}
             <TitlePunctuation punctuations={config?.punctuations} />
           </motion.h1>
           <p
@@ -198,7 +198,17 @@ export default function Polls() {
             }}
           >
             {hero?.subtitle ||
-              "Not what they say at dinner. What they vote for here."}
+              "Private votes on the questions people usually avoid in public."}
+          </p>
+          <p
+            className="text-text2/60 pl-2 mt-2 italic"
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.85rem",
+              opacity: 0.7,
+            }}
+          >
+            Your vote is private. The result is public.
           </p>
         </motion.div>
 

@@ -746,8 +746,11 @@ export default function Majlis() {
           <div className="inline-flex items-center justify-center w-14 h-14 border-2 border-primary/30 mb-6">
             <Lock className="w-6 h-6 text-primary" />
           </div>
+          <p className="text-[10px] font-serif uppercase tracking-[0.3em] text-muted-foreground mb-3">
+            THE MAJLIS
+          </p>
           <h2 className="font-display font-black text-2xl uppercase tracking-tight text-foreground mb-2">
-            A private room for serious conversation
+            A private room for serious conversation.
           </h2>
           {hasApplied ? (
             <p className="text-sm text-muted-foreground">
@@ -759,10 +762,13 @@ export default function Majlis() {
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              A members-only space for selected participants to discuss the questions behind The Tribunal.{" "}
-              <a href="/apply?ref=majlis" className="text-primary underline">Request access</a>.
+              A members only space for selected participants to discuss the questions behind The Tribunal.{" "}
+              <a href="/apply?ref=majlis" className="text-primary underline">Request Access</a>.
             </p>
           )}
+          <p className="mt-3 text-xs italic text-muted-foreground/80">
+            No open comments. No algorithmic feed. No public performance.
+          </p>
 
           <div className="mt-8 pt-6 border-t border-border">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-serif mb-3">Already a member?</p>

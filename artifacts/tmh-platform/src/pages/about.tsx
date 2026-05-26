@@ -1,112 +1,25 @@
 import { Link } from "wouter"
 import { Layout } from "@/components/layout/Layout"
 import { useI18n } from "@/lib/i18n"
-import { usePageConfig, useLiveCounts, useSiteSettings } from "@/hooks/use-cms-data"
+import { usePageConfig, useSiteSettings } from "@/hooks/use-cms-data"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { TitlePunctuation } from "@/components/TitlePunctuation"
 import { PageIndex } from "@/components/layout/PageIndex"
 
-const FALLBACK_PILLARS = [
-  {
-    num: "01",
-    title: "Debates",
-    body: "What people believe. Questions about work, money, identity, media, culture, power and the future. Vote privately. See where you stand against everyone else.",
-    link: "/debates",
-    cta: "Enter the Debates",
-  },
-  {
-    num: "02",
-    title: "Predictions",
-    body: "What people think will happen. Not what should happen. What people expect will happen. Predictions track how confidence changes over time. Sign up if you want to save your calls and come back to them later.",
-    link: "/predictions",
-    cta: "Make a Prediction",
-  },
-  {
-    num: "03",
-    title: "Pulse",
-    body: "What is actually happening. A public data layer that gives context to the questions people are voting on, using sourced data points across politics, money, society, technology and culture.",
-    link: "/pulse",
-    cta: "Read The Pulse",
-  },
-  {
-    num: "04",
-    title: "Voices",
-    body: "The people behind the region's decisions. Curated profiles of people with a clear connection to the region and a body of work we can verify. Not just what they do. What they believe, what they have built, and where they stand.",
-    link: "/voices",
-    cta: "Meet the Voices",
-  },
-  {
-    num: "05",
-    title: "The Majlis",
-    body: "A private room for serious conversation. A members-only space for selected participants. No open comments. No algorithmic noise. No public performance.",
-    link: "/majlis/login",
-    cta: "Enter The Majlis",
-  },
-]
-
-const FALLBACK_BELIEFS = [
-  {
-    num: "01",
-    title: "Ask directly",
-    body: "Soft questions produce soft answers.",
-  },
-  {
-    num: "02",
-    title: "Do not answer for people",
-    body: "The Tribunal asks the question. People decide the result.",
-  },
-  {
-    num: "03",
-    title: "Keep votes private",
-    body: "Your name is not shown with your vote.",
-  },
-  {
-    num: "04",
-    title: "Show the result publicly",
-    body: "The value is in the aggregate.",
-  },
-  {
-    num: "05",
-    title: "Let people save their own record",
-    body: "If someone signs up, they can view their previous activity and return to it later.",
-  },
-  {
-    num: "06",
-    title: "Count people, not noise",
-    body: "No bots. No sponsored sentiment. No manufactured consensus.",
-  },
-]
-
-const COUNTRIES_DEFAULT = [
-  { name: "Egypt", flag: "🇪🇬", pop: "112M" },
-  { name: "Iran", flag: "🇮🇷", pop: "89M" },
-  { name: "Iraq", flag: "🇮🇶", pop: "44M" },
-  { name: "Saudi Arabia", flag: "🇸🇦", pop: "37M" },
-  { name: "Morocco", flag: "🇲🇦", pop: "37M" },
-  { name: "Algeria", flag: "🇩🇿", pop: "46M" },
-  { name: "Sudan", flag: "🇸🇩", pop: "48M" },
-  { name: "Yemen", flag: "🇾🇪", pop: "34M" },
-  { name: "Syria", flag: "🇸🇾", pop: "23M" },
-  { name: "UAE", flag: "🇦🇪", pop: "10M" },
-  { name: "Jordan", flag: "🇯🇴", pop: "11M" },
-  { name: "Tunisia", flag: "🇹🇳", pop: "12M" },
-  { name: "Libya", flag: "🇱🇾", pop: "7M" },
-  { name: "Lebanon", flag: "🇱🇧", pop: "5.5M" },
-  { name: "Palestine", flag: "🇵🇸", pop: "5.5M" },
-  { name: "Oman", flag: "🇴🇲", pop: "4.6M" },
-  { name: "Kuwait", flag: "🇰🇼", pop: "4.3M" },
-  { name: "Qatar", flag: "🇶🇦", pop: "2.7M" },
-  { name: "Bahrain", flag: "🇧🇭", pop: "1.5M" },
-]
-
 interface AboutConfig {
   hero?: { titleLine1?: string; titleLine2?: string; tagline?: string; subtitle?: string }
-  pillars?: Array<{ num: string; title: string; body: string; link: string; cta: string }>
-  beliefs?: Array<{ num: string; title: string; body: string }>
   founderStatement?: { text?: string; author?: string; quote?: string }
-  regionCoverage?: Array<{ name: string; flag: string; population: string }>
   punctuations?: string[]
 }
+
+const HOW_IT_WORKS_STEPS = [
+  { num: "01", title: "Choose a question.", body: "Debates ask what people believe. Predictions ask what people think will happen." },
+  { num: "02", title: "Vote privately.", body: "Your name and email are not shown with your vote." },
+  { num: "03", title: "See the result.", body: "Results are shown publicly in aggregate, with country and topic breakdowns where enough data exists." },
+  { num: "04", title: "Save your activity.", body: "You can vote without an account. If you sign up, you can view previous votes, track predictions and continue from another device." },
+  { num: "05", title: "Go deeper.", body: "Pulse adds sourced public signals. Voices profiles people with a view worth recording. The Majlis creates a private room for serious conversation." },
+  { num: "06", title: "Trust the process.", body: "Questions are human reviewed. Results are opinion signals, not scientific polling. No bots. No sponsored sentiment. No fake activity." },
+]
 
 export default function About() {
   usePageTitle({
@@ -114,40 +27,19 @@ export default function About() {
     description: "The Tribunal is a private voting platform for the Middle East and North Africa. People vote privately. Results are shown publicly.",
   });
   const { t, isAr } = useI18n()
-  const { data: pageConfig } = usePageConfig<AboutConfig & {
-    stats?: Array<{ num: string; label: string }>;
-  }>("about")
-
+  const { data: pageConfig } = usePageConfig<AboutConfig>("about")
   const { data: siteSettings } = useSiteSettings()
   const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false
   const pulseEnabled = siteSettings?.featureToggles?.pulse?.enabled ?? false
-  const pillars = (pageConfig?.pillars?.length ? pageConfig.pillars : FALLBACK_PILLARS)
-    .filter(p =>
-      (voicesEnabled || !p.link?.startsWith("/voices"))
-      && (majlisEnabled || !p.link?.startsWith("/majlis"))
-      && (pulseEnabled || !p.link?.startsWith("/pulse"))
-    )
-  const beliefs = pageConfig?.beliefs?.length ? pageConfig.beliefs : FALLBACK_BELIEFS
+
   const hero = pageConfig?.hero
   const founder = pageConfig?.founderStatement
-  const countries = pageConfig?.regionCoverage?.length
-    ? pageConfig.regionCoverage.map(c => ({ name: c.name, flag: c.flag, pop: c.population }))
-    : COUNTRIES_DEFAULT
-  const { data: liveCounts } = useLiveCounts()
-  const stats = (pageConfig?.stats?.length ? pageConfig.stats : [
-    { num: `${liveCounts?.debates ?? 100}+`, label: "Live Questions" },
-    { num: "19", label: "Countries Covered" },
-    { num: "Debates", label: "+ Predictions" },
-    { num: "Private", label: "Voting" },
-  ]).filter(s => voicesEnabled || !/voices?/i.test(s.label))
 
   const pageSections = [
     { id: "what-is-the-tribunal", label: t("What Is It") },
+    { id: "the-sharpest-read", label: t("The Sharpest Read") },
     { id: "how-it-works", label: t("How It Works") },
-    { id: "the-platform", label: t("The Platform") },
-    { id: "what-we-stand-for", label: t("What We Stand For") },
-    { id: "the-region", label: t("The Region") },
     { id: "from-the-founder", label: t("From the Founder") },
   ]
 
@@ -166,7 +58,7 @@ export default function About() {
             {t(hero?.titleLine2 || "usually keep private")}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
           <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.90rem", textTransform: "uppercase", letterSpacing: "0.18em" }}>
-            {t(hero?.subtitle || "The Tribunal asks direct questions about the region and shows how people answer privately.")}
+            {t(hero?.subtitle || "The sharpest read on what the region really thinks.")}
           </p>
           <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: "0.83rem", letterSpacing: "0.04em", opacity: 0.6, marginTop: "0.85rem" }}>
             {t("No names attached. No public performance. Just the result.")}
@@ -174,7 +66,7 @@ export default function About() {
         </div>
       </div>
 
-      {/* What TMH Is */}
+      {/* What is The Tribunal? */}
       <div id="what-is-the-tribunal" className="max-w-3xl mx-auto px-4 py-20 border-b border-border scroll-mt-24">
         <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-8 border-l-4 border-primary pl-4">
           {t("What is The Tribunal?")}
@@ -195,7 +87,7 @@ export default function About() {
           {t("It is not a comment section.")}
         </p>
         <p className="text-base text-muted-foreground font-sans leading-relaxed mb-8">
-          {t("It is a record of what people actually think when their names are not attached.")}
+          {t("It is a sharper way to see what people actually think when their names are not attached.")}
         </p>
         <p className="text-sm font-serif italic text-foreground/70 leading-relaxed border-l-2 border-primary/60 pl-4 mb-6">
           {t("Private does not mean fake. If it is not human, it does not count.")}
@@ -205,20 +97,58 @@ export default function About() {
         </p>
       </div>
 
-      {/* How It Works */}
-      <div id="how-it-works" className="bg-secondary/10 border-b border-border scroll-mt-24">
+      {/* The Sharpest Read */}
+      <div id="the-sharpest-read" className="bg-secondary/10 border-b border-border scroll-mt-24">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-20">
+          <h2 className="font-serif font-black uppercase text-3xl border-b-2 border-foreground pb-4 mb-8 text-foreground">
+            {t("The sharpest read on the region.")}
+          </h2>
+          <div className="max-w-3xl space-y-6 mb-12">
+            <p className="text-lg text-foreground font-sans leading-relaxed">
+              {t("Public conversations are usually polished.")}
+            </p>
+            <p className="text-lg text-foreground font-sans leading-relaxed">
+              {t("Private conversations are usually honest.")}
+            </p>
+            <p className="text-lg text-foreground font-sans leading-relaxed font-bold">
+              {t("The Tribunal exists to close that gap.")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed">
+              {t("Every question is designed to surface a clearer signal: what people believe, what they expect, and where the region is shifting.")}
+            </p>
+            <p className="text-sm font-serif italic text-foreground/70 mt-6">
+              {t("19 countries. One regional lens.")}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center bg-foreground text-background py-12 px-4">
+            <div>
+              <div className="font-display font-black text-4xl md:text-5xl leading-none mb-2">100+</div>
+              <div className="text-[12px] uppercase tracking-[0.2em] font-serif text-primary">{t("Live Questions")}</div>
+            </div>
+            <div>
+              <div className="font-display font-black text-4xl md:text-5xl leading-none mb-2">19</div>
+              <div className="text-[12px] uppercase tracking-[0.2em] font-serif text-primary">{t("Countries Covered")}</div>
+            </div>
+            <div>
+              <div className="font-display font-black text-2xl md:text-3xl leading-none mb-2 pt-2">{t("Private")}</div>
+              <div className="text-[12px] uppercase tracking-[0.2em] font-serif text-primary">{t("Votes")}</div>
+            </div>
+            <div>
+              <div className="font-display font-black text-2xl md:text-3xl leading-none mb-2 pt-2">{t("Public")}</div>
+              <div className="text-[12px] uppercase tracking-[0.2em] font-serif text-primary">{t("Results")}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* How The Tribunal Works */}
+      <div id="how-it-works" className="py-20 bg-secondary/20 border-b border-border scroll-mt-24">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <h2 className="font-serif font-black uppercase text-3xl border-b-2 border-foreground pb-4 mb-12 text-foreground">
-            {t("How It Works")}
+            {t("How The Tribunal Works")}
           </h2>
           <div className="grid md:grid-cols-2 gap-10">
-            {[
-              { num: "01", title: "Choose a question.", body: "Pick a debate or prediction from the live questions on the platform." },
-              { num: "02", title: "Vote privately.", body: "Your name and email are not shown with your vote." },
-              { num: "03", title: "See the result.", body: "Once you vote, you can see how others answered." },
-              { num: "04", title: "Save your activity.", body: "Create an account if you want to keep your voting history, track your predictions, and continue from another device." },
-              { num: "05", title: "Come back as views shift.", body: "Debates show what people believe now. Predictions show what people expect next." },
-            ].map(s => (
+            {HOW_IT_WORKS_STEPS.map(s => (
               <div key={s.num} className="relative">
                 <span className="text-6xl font-display font-black text-gray-900/20 dark:text-gray-100/20 leading-none select-none block">{s.num}</span>
                 <div className="-mt-3">
@@ -233,49 +163,7 @@ export default function About() {
         </div>
       </div>
 
-      {/* What You'll Find Here */}
-      <div id="the-platform" className="py-20 bg-secondary/20 border-b border-border scroll-mt-24">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif font-black uppercase text-3xl border-b-2 border-foreground pb-4 mb-12 text-foreground">
-            {t("What You'll Find Here")}
-          </h2>
-          <div className="grid md:grid-cols-2 gap-10">
-            {pillars.map(p => (
-              <div key={p.num} className="relative">
-                <span className="text-6xl font-display font-black text-gray-900/20 dark:text-gray-100/20 leading-none select-none block">{p.num}</span>
-                <div className="-mt-3">
-                  <h3 className="font-serif font-black uppercase text-lg border-b border-border pb-2 mb-3 text-foreground tracking-wide">
-                    {t(p.title)}
-                  </h3>
-                  <p className="text-sm text-muted-foreground font-sans leading-relaxed mb-4">{t(p.body)}</p>
-                  <Link
-                    href={p.link}
-                    className="inline-block text-xs font-serif font-bold uppercase tracking-widest text-primary hover:text-foreground transition-colors border-b border-primary pb-0.5"
-                  >
-                    {t(p.cta)} {isAr ? "←" : "→"}
-                  </Link>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Numbers */}
-      <div className="bg-foreground text-background py-16 border-b border-border">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-            {stats.map(stat => (
-              <div key={stat.label}>
-                <div className="font-display text-4xl md:text-5xl leading-none mb-2">{stat.num}</div>
-                <div className="text-[12px] uppercase tracking-[0.2em] font-serif text-primary">{t(stat.label)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* Founder Statement */}
+      {/* From the Founder */}
       <div id="from-the-founder" className="max-w-3xl mx-auto px-4 py-20 border-b border-border scroll-mt-24">
         <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-8 border-l-4 border-primary pl-4">
           {t("From the Founder")}
@@ -324,49 +212,6 @@ export default function About() {
         </p>
       </div>
 
-      {/* Beliefs */}
-      <div id="what-we-stand-for" className="py-20 bg-secondary/20 border-t border-border border-b scroll-mt-24">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif font-black uppercase text-3xl border-b-2 border-foreground pb-4 mb-12 text-foreground">
-            {t("What We Stand For")}
-          </h2>
-          <div className="grid md:grid-cols-2 gap-8">
-            {beliefs.map(b => (
-              <div key={b.num} className="relative">
-                <span className="text-6xl font-display font-black text-gray-900/20 dark:text-gray-100/20 leading-none select-none block">{b.num}</span>
-                <div className="-mt-3">
-                  <h3 className="font-serif font-black uppercase text-lg border-b border-border pb-2 mb-3 text-foreground tracking-wide">
-                    {t(b.title)}
-                  </h3>
-                  <p className="text-sm text-muted-foreground font-sans leading-relaxed">{t(b.body)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      {/* MENA Countries */}
-      <div id="the-region" className="py-16 border-b border-border scroll-mt-24">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-2 border-l-4 border-primary pl-4">
-            {t("The Region We Cover")}
-          </h2>
-          <p className="text-sm text-foreground/75 font-sans mb-8 pl-5">
-            {t(`${countries.length} countries. One regional lens.`)}
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
-            {countries.map(c => (
-              <div key={c.name} className="border border-border px-3 py-2.5 text-xs font-serif uppercase tracking-widest text-foreground/80 text-center flex flex-col items-center gap-1">
-                <span className="text-xl not-italic" style={{ fontFamily: "system-ui" }}>{c.flag}</span>
-                <span>{t(c.name)}</span>
-                <span className="text-[10px] tracking-normal normal-case text-muted-foreground font-sans">{c.pop}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Final CTA */}
       <div className="py-20 border-t border-border">
         <div className="max-w-2xl mx-auto px-4 text-center">
@@ -402,7 +247,7 @@ export default function About() {
                 href="/voices"
                 className="border border-primary text-primary px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white transition-colors font-serif"
               >
-                {t("Meet The Voices")}
+                {t("Explore Voices")}
               </Link>
             )}
             {majlisEnabled && (

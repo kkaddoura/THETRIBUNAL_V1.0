@@ -10,7 +10,6 @@ import { Layout } from "@/components/layout/Layout";
 import { PollCard } from "@/components/poll/PollCard";
 import { ProfileCard } from "@/components/profile/ProfileCard";
 import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
-import { HeroGlobe } from "@/components/globe/HeroGlobe";
 const AboutSection = lazy(() => import("@/components/home/AboutSection"));
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -1688,9 +1687,9 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
           >
-            <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-12">
-              {/* Left: hero copy */}
-              <div className="flex flex-col items-center lg:items-start justify-center flex-1 text-center lg:text-left">
+            <div className="flex flex-col items-center gap-8">
+              {/* Hero copy */}
+              <div className="flex flex-col items-center justify-center w-full text-center">
                 {/* Eyebrow */}
                 <motion.div
                   className="flex items-center gap-2.5 mb-5"
@@ -1715,21 +1714,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.1 }}
                 >
-                  {t("The questions people ")}
-                  <span
-                    className="relative inline-block"
-                    style={{
-                      backgroundImage:
-                        "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 12' preserveAspectRatio='none'><path d='M2 8 Q 40 1 80 6 T 198 6' fill='none' stroke='%23DC143C' stroke-width='3' stroke-linecap='round'/></svg>\")",
-                      backgroundRepeat: "no-repeat",
-                      backgroundPosition: "left 100%",
-                      backgroundSize: "100% 0.32em",
-                      paddingBottom: "0.16em",
-                    }}
-                  >
-                    {t("avoid")}
-                  </span>
-                  {t(" in public")}
+                  {t("The questions people avoid in public")}
                   <span className="text-primary">.</span>
                 </motion.h1>
 
@@ -1751,6 +1736,16 @@ export default function Home() {
                   transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.5 }}
                 >
                   {t("Your vote is private. The result is public.")}
+                </motion.p>
+
+                {/* Account microcopy */}
+                <motion.p
+                  className="text-[12px] sm:text-[13px] text-foreground/55 font-sans mt-2"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.55 }}
+                >
+                  {t("Sign up only if you want to save your activity and continue later.")}
                 </motion.p>
 
                 {/* CTAs */}
@@ -1801,32 +1796,23 @@ export default function Home() {
                   </div>
                   <div>
                     <div className="font-display font-black text-[18px] sm:text-[20px] text-foreground leading-none pt-1.5">
-                      {t("Debates")}
+                      {t("Private")}
                     </div>
                     <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                      {t("+ Predictions")}
+                      {t("Votes")}
                     </div>
                   </div>
                   <div>
                     <div className="font-display font-black text-[18px] sm:text-[20px] text-foreground leading-none pt-1.5">
-                      {t("Private")}
+                      {t("Public")}
                     </div>
                     <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                      {t("Voting")}
+                      {t("Results")}
                     </div>
                   </div>
                 </motion.div>
               </div>
 
-              {/* Right: MENA-focused globe */}
-              <motion.div
-                className="flex-shrink-0 w-full max-w-[380px] sm:max-w-[460px] lg:max-w-[540px] mx-auto lg:mx-0 lg:self-center"
-                initial={{ opacity: 0, scale: 0.94 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.9, ease: EASE_OUT_EXPO, delay: 0.2 }}
-              >
-                <HeroGlobe />
-              </motion.div>
             </div>
           </motion.div>
         </div>
@@ -1915,6 +1901,82 @@ export default function Home() {
         </div>
       </div>
       ) : null}
+
+      {/* ── WHAT IS THE TRIBUNAL? — Intro ── */}
+      <section className="py-20 bg-background border-b border-border">
+        <FadeUp>
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+            <h2 className="font-serif font-black uppercase text-3xl text-foreground mb-3 border-l-4 border-primary pl-4">
+              {t("What is The Tribunal?")}
+            </h2>
+            <p className="text-xl font-sans text-foreground/80 mb-8 pl-5">
+              {t("The sharpest read on what the region really thinks.")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-4">
+              {t("The Tribunal asks direct questions about the Middle East and North Africa, then shows how people answer.")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-4">
+              {t("People vote privately. The result is public.")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-2">
+              {t("It is not a news site.")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-2">
+              {t("It is not a think tank.")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
+              {t("It is not a comment section.")}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-8">
+              {t("It is a cleaner way to see what people are willing to say when their names are not attached.")}
+            </p>
+            <p className="text-sm font-serif italic text-foreground/70 leading-relaxed border-l-2 border-primary/60 pl-4 mb-10">
+              {t("Private does not mean fake. If it is not human, it does not count.")}
+            </p>
+            <blockquote className="font-display text-2xl md:text-3xl border-l-4 border-primary pl-6 py-4 text-foreground leading-snug">
+              {t("People do not lack opinions. They lack a place to say them honestly.")}
+            </blockquote>
+            <p className="text-sm font-sans text-foreground/70 mt-4 pl-6">
+              {t("— Kareem Kaddoura, Founder")}
+            </p>
+          </div>
+        </FadeUp>
+      </section>
+
+      {/* ── PRODUCT CARDS ── */}
+      <section className="py-20 bg-secondary/20 border-b border-border">
+        <FadeUp>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-12 border-l-4 border-primary pl-4">
+              {t("What you'll find here")}
+            </h2>
+            <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { num: "01", title: "Debates", subtitle: "What people believe.", body: "Direct questions about work, money, identity, media, culture, power and the future. Vote privately. See where you stand.", cta: "Enter the Debates", href: "/debates", enabled: true },
+                { num: "02", title: "Predictions", subtitle: "What people think will happen.", body: "Not what should happen. What people expect will happen. Track how confidence shifts over time. Sign up if you want to save your calls and come back to them later.", cta: "Make a Prediction", href: "/predictions", enabled: true },
+                { num: "03", title: "Pulse", subtitle: "What is actually happening.", body: "Sourced public signals that give context to the questions people are voting on.", cta: "Read The Pulse", href: "/pulse", enabled: pulseEnabled },
+                { num: "04", title: "Voices", subtitle: "People with something to say.", body: "Curated profiles of people connected to the region through their work, choices and positions.", cta: "Explore Voices", href: "/voices", enabled: voicesEnabled },
+                { num: "05", title: "The Majlis", subtitle: "A private room for serious conversation.", body: "A members only space for selected participants. No open comments. No algorithmic noise. No public performance.", cta: "Enter The Majlis", href: "/majlis", enabled: majlisEnabled },
+              ].filter(c => c.enabled).map(card => (
+                <motion.div key={card.num} variants={staggerItem}>
+                  <div className="bg-card border border-border p-6 h-full flex flex-col">
+                    <span className="font-display font-black text-5xl text-foreground/20 leading-none">{card.num}</span>
+                    <h3 className="font-serif font-black uppercase text-lg text-foreground mt-3 tracking-wide">{t(card.title)}</h3>
+                    <p className="text-sm font-serif font-bold uppercase tracking-[0.15em] text-primary mt-2">{t(card.subtitle)}</p>
+                    <p className="text-sm text-muted-foreground font-sans leading-relaxed mt-3 flex-1">{t(card.body)}</p>
+                    <Link
+                      href={card.href}
+                      className="inline-block text-[12px] font-serif font-bold uppercase tracking-widest text-primary hover:text-foreground transition-colors border-b border-primary pb-0.5 mt-4 self-start"
+                    >
+                      {t(card.cta)} {isAr ? "←" : "→"}
+                    </Link>
+                  </div>
+                </motion.div>
+              ))}
+            </StaggerGrid>
+          </div>
+        </FadeUp>
+      </section>
 
       {/* ── FRONT PAGE: Lead Debate + Sidebar ── */}
       <section className="py-8 bg-background border-b border-border relative">
@@ -2724,35 +2786,23 @@ export default function Home() {
           <div className="flex flex-col md:flex-row gap-12 md:gap-16 items-center">
             <FadeUp className="flex-1 md:basis-2/3">
               <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
-                {t("The Weekly Newsletter")}
+                {t("The Weekly Brief")}
               </p>
               <h2 className="font-display font-black text-4xl md:text-5xl uppercase leading-none tracking-tight text-background mb-4">
-                {t("The Region's Opinion.")}
-                <br />
-                {t("Unfiltered.")}
+                {t("The sharpest questions and shifts from the week.")}
               </h2>
               <p className="text-background/75 font-sans text-base leading-relaxed max-w-xl mb-3">
-                Every week: the sharpest debates, the most controversial
-                predictions, and the data MENA doesn't want you to see. No
-                fluff. No PR. Just the raw pulse of{" "}
-                <LiveNumber
-                  value={menaPop}
-                  className="tabular-nums relative top-1.5"
-                />{" "}
-                people.
+                {t("A short weekly note from The Tribunal. New questions, live results, prediction shifts and the signals behind them.")}
               </p>
               <ul className="text-background/60 font-sans text-sm space-y-1.5 max-w-xl">
                 <li className="flex items-center gap-2">
-                  <span className="text-primary font-bold">→</span> Unlimited
-                  voting on all debates & predictions
+                  <span className="text-primary font-bold">→</span> {t("New questions from the week")}
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-primary font-bold">→</span> Weekly
-                  results breakdown — who voted what, and why it matters
+                  <span className="text-primary font-bold">→</span> {t("Results worth paying attention to")}
                 </li>
                 <li className="flex items-center gap-2">
-                  <span className="text-primary font-bold">→</span> Early access
-                  to new Voices and Pulse data drops
+                  <span className="text-primary font-bold">→</span> {t("Prediction shifts as views change")}
                 </li>
               </ul>
             </FadeUp>
@@ -2767,11 +2817,11 @@ export default function Home() {
                   className="border-2 border-primary p-8 text-center"
                 >
                   <p className="font-display font-black text-3xl uppercase text-background tracking-tight">
-                    {t("You're In")}
+                    {t("You're in")}
                     <span className="text-primary">.</span>
                   </p>
                   <p className="text-[12px] uppercase tracking-widest text-background/70 mt-2 font-serif">
-                    {t("Welcome to the conversation.")}
+                    {t("Welcome to The Tribunal.")}
                   </p>
                 </motion.div>
               ) : (
@@ -2795,7 +2845,7 @@ export default function Home() {
                     transition={{ duration: 0.15 }}
                     className="bg-primary text-white font-bold uppercase tracking-widest px-6 py-3 text-xs hover:bg-primary/90 font-serif"
                   >
-                    {t("Join The Hustle")}
+                    {t("Get Updates")}
                   </motion.button>
                   <p className="text-[10px] text-background/60 font-sans">
                     {t("No spam. Unsubscribe anytime.")}

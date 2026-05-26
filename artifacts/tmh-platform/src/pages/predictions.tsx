@@ -1676,8 +1676,8 @@ export default function Predictions() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
           >
-            {pageConfig?.hero?.titleLine1 || "What Do You Think"}<br />
-            {pageConfig?.hero?.titleLine2 || "Actually Happens?"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
+            {pageConfig?.hero?.titleLine1 || "What do people"}<br />
+            {pageConfig?.hero?.titleLine2 || "think happens next?"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </motion.h1>
           <p
             className="text-text2"
@@ -1689,7 +1689,16 @@ export default function Predictions() {
               letterSpacing: "0.18em",
             }}
           >
-            {pageConfig?.hero?.subtitle || `${PREDICTIONS.length} predictions across ${PREDICTION_CATEGORIES.length} categories. Not what should happen. What will.`}
+            {pageConfig?.hero?.subtitle || "Future facing questions on where the region is heading."}
+          </p>
+          <p
+            className="text-text2/70 mt-2 italic"
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.85rem",
+            }}
+          >
+            Predictions are opinion forecasts, not financial bets.
           </p>
         </motion.div>
       </div>

@@ -91,13 +91,8 @@ export function Navbar() {
   }))
 
   const rawCtaButton = settings?.navigation?.ctaButton
-  // Hide the CTA when it points at a disabled feature (e.g. the default
-  // "Join The Voices" → /apply when Voices is off). The hero already carries
-  // the primary debates CTA, so we don't fall back to a generic label here.
   const ctaCandidate = rawCtaButton?.enabled !== false
-    ? (rawCtaButton || (voicesEnabled
-      ? { label: t("Join The Voices"), href: "/apply" }
-      : { label: t("Sign In"), href: "/login" }))
+    ? (rawCtaButton || { label: t("Sign In"), href: "/login" })
     : null
   const ctaButton = (() => {
     if (!ctaCandidate) return null

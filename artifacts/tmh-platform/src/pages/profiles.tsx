@@ -36,10 +36,10 @@ const FALLBACK_IMPACT_STATEMENTS: Record<string, string> = {
   Sarwa:
     "AED 10B+ in trading volume — making investing accessible to every Arab",
   CoinMENA:
-    "Opened crypto access for Arabs — building financial freedom across MENA",
+    "Opened crypto access for Arabs — building financial freedom across the region",
   Washmen:
     "Disrupted laundry in the Gulf — and cancelled a sponsorship over Gaza",
-  Deliveroo: "Built Deliveroo MENA from zero to millions of orders",
+  Deliveroo: "Built Deliveroo across the region from zero to millions of orders",
   "Binance FZE (Dubai)":
     "Leading Binance Dubai — reshaping how money moves in the Middle East",
   "MUNCH:ON (acquired by Careem)":
@@ -53,15 +53,15 @@ const FALLBACK_IMPACT_STATEMENTS: Record<string, string> = {
   "Sharjah Entrepreneurship Center (Sheraa)":
     "Turned Sharjah into a startup powerhouse — empowering the next generation",
   "MSA Capital / MSA Novo":
-    "One of MENA's most active emerging market VC funds — transforming obstacles into opportunity",
+    "One of the region's most active emerging market VC funds — transforming obstacles into opportunity",
   "Arzan Venture Capital":
     "Dentist turned VC — 9 exits and counting, now building again in stealth",
   "Saudi Exchange":
     "Helping build one of the world's fastest-growing capital markets",
   "The Tribunal":
-    "Building the region's opinion layer — where MENA's voice gets counted",
+    "Building the region's opinion layer — where the region's voice gets counted",
   "Tuhoon / Wamda Capital":
-    "Tackling the mental health crisis no one talks about in MENA",
+    "Tackling the mental health crisis no one talks about in the region",
   "Revolut UAE":
     "Founded Souqalmal, now leading Revolut UAE — making finance transparent for Arabs",
 };
@@ -168,7 +168,7 @@ function VoicesTicker({
 export default function Profiles() {
   usePageTitle({
     title: "Voices",
-    description: "Profiles and perspectives from founders, operators, and leaders shaping MENA's future.",
+    description: "Profiles and perspectives from founders, operators, and leaders shaping the region's future.",
   });
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<
@@ -241,7 +241,7 @@ export default function Profiles() {
               marginBottom: "0.5rem",
             }}
           >
-            Voices
+            THE VOICES
           </p>
           <motion.h1
             style={{

@@ -1635,7 +1635,7 @@ function BigNumber() {
           marginBottom: 6,
         }}
       >
-        {t("MENA Population Right Now")}
+        {t("The Region's Population Right Now")}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <span
@@ -1776,7 +1776,7 @@ export default function MenaPulse() {
               marginBottom: "0.5rem",
             }}
           >
-            {t(pulseConfig?.hero?.tagline || "The Pulse")}
+            {t(pulseConfig?.hero?.tagline || "THE PULSE")}
           </p>
           <h1
             style={{
@@ -1793,7 +1793,7 @@ export default function MenaPulse() {
             }}
           >
             {t(pulseConfig?.hero?.titleLine1 || "What is actually")}<br />
-            {t(pulseConfig?.hero?.titleLine2 || "happening")}<TitlePunctuation punctuations={pulseConfig?.punctuations} />
+            {t(pulseConfig?.hero?.titleLine2 || "happening.")}<TitlePunctuation punctuations={pulseConfig?.punctuations} />
           </h1>
           <p
             style={{
@@ -1805,6 +1805,17 @@ export default function MenaPulse() {
             }}
           >
             {t("Sourced data points that give context to the questions people are voting on.")}
+          </p>
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontStyle: "italic",
+              fontSize: "0.78rem",
+              color: "rgba(255,255,255,0.65)",
+              marginTop: "0.5rem",
+            }}
+          >
+            {t("Every card should cite its source.")}
           </p>
         </div>
 

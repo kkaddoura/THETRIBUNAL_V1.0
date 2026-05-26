@@ -9,7 +9,7 @@ const FALLBACK_SOCIALS = [
 ]
 
 const FALLBACK_TAGLINE = "The region, on record."
-const FALLBACK_COPYRIGHT = "© 2026 The Middle East Hustle. All rights reserved."
+const FALLBACK_COPYRIGHT = "© 2026 The Middle East Hustle. The Tribunal is operated under The Middle East Hustle brand. All rights reserved."
 
 export function Footer() {
   const { t } = useI18n()
@@ -38,10 +38,13 @@ export function Footer() {
     : [
         { label: t("Debates"), href: "/debates" },
         { label: t("Predictions"), href: "/predictions" },
+        { label: t("Pulse"), href: "/pulse" },
+        { label: t("Voices"), href: "/voices" },
+        { label: t("The Majlis"), href: "/majlis" },
         { label: t("About"), href: "/about" },
-        ...(pulseEnabled ? [{ label: t("Pulse"), href: "/pulse" }] : []),
-        ...(voicesEnabled ? [{ label: t("Voices"), href: "/voices" }] : []),
-        ...(voicesEnabled ? [{ label: t("Join The Voices"), href: "/apply" }] : []),
+        { label: t("FAQ"), href: "/faq" },
+        { label: t("Terms"), href: "/terms" },
+        { label: t("Contact"), href: "/contact" },
       ]
   ).filter(link =>
     (voicesEnabled || (!link.href?.startsWith("/voices") && !link.href?.startsWith("/apply")))
