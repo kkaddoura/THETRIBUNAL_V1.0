@@ -1903,42 +1903,121 @@ export default function Home() {
       ) : null}
 
       {/* ── WHAT IS THE TRIBUNAL? — Intro ── */}
-      <section className="py-20 bg-background border-b border-border">
+      <section className="relative isolate overflow-hidden py-24 sm:py-28 bg-background border-b border-border">
+        {/* Atmosphere: dot-grid texture */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 opacity-70"
+          style={{
+            backgroundImage: "radial-gradient(circle, rgba(130,130,130,0.16) 1px, transparent 1.4px)",
+            backgroundSize: "24px 24px",
+            maskImage: "radial-gradient(125% 90% at 50% 0%, #000 28%, transparent 72%)",
+            WebkitMaskImage: "radial-gradient(125% 90% at 50% 0%, #000 28%, transparent 72%)",
+          }}
+        />
+        {/* Atmosphere: crimson glows */}
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(55% 55% at 88% 4%, rgba(220,20,60,0.16), transparent 70%), radial-gradient(45% 50% at 6% 100%, rgba(220,20,60,0.10), transparent 72%)",
+          }}
+        />
+        {/* Atmosphere: geometric rings */}
+        <div aria-hidden className="pointer-events-none absolute -top-44 -right-36 h-[34rem] w-[34rem] rounded-full border border-primary/15" />
+        <div aria-hidden className="pointer-events-none absolute -top-28 -right-20 h-[22rem] w-[22rem] rounded-full border border-primary/10" />
+
         <FadeUp>
-          <div className="max-w-3xl mx-auto px-4 sm:px-6">
-            <h2 className="font-serif font-black uppercase text-3xl text-foreground mb-3 border-l-4 border-primary pl-4">
-              {t("What is The Tribunal?")}
-            </h2>
-            <p className="text-xl font-sans text-foreground/80 mb-8 pl-5">
-              {t("The sharpest read on what the region really thinks.")}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-4">
-              {t("The Tribunal asks direct questions about the Middle East and North Africa, then shows how people answer.")}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-4">
-              {t("People vote privately. The result is public.")}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-2">
-              {t("It is not a news site.")}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-2">
-              {t("It is not a think tank.")}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-6">
-              {t("It is not a comment section.")}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-8">
-              {t("It is a cleaner way to see what people are willing to say when their names are not attached.")}
-            </p>
-            <p className="text-sm font-serif italic text-foreground/70 leading-relaxed border-l-2 border-primary/60 pl-4 mb-10">
-              {t("Private does not mean fake. If it is not human, it does not count.")}
-            </p>
-            <blockquote className="font-display text-2xl md:text-3xl border-l-4 border-primary pl-6 py-4 text-foreground leading-snug">
-              {t("People do not lack opinions. They lack a place to say them honestly.")}
-            </blockquote>
-            <p className="text-sm font-sans text-foreground/70 mt-4 pl-6">
-              {t("— Kareem Kaddoura, Founder")}
-            </p>
+          <div className="relative max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="grid lg:grid-cols-12 gap-y-12 lg:gap-x-16">
+              {/* Left rail — title + lead */}
+              <div className="lg:col-span-4">
+                <div className="lg:sticky lg:top-28">
+                  <span aria-hidden className="mb-5 flex items-center gap-2">
+                    <span className="h-2 w-2 rotate-45 bg-primary" />
+                    <span className="h-px w-12 bg-gradient-to-r from-primary to-transparent" />
+                  </span>
+                  <h2 className="font-display font-black uppercase leading-[0.95] tracking-tight text-foreground text-3xl sm:text-[2rem]">
+                    {t("What is The Tribunal?")}
+                  </h2>
+                  <div className="mt-6 flex gap-4">
+                    <span aria-hidden className="mt-2 h-12 w-1 bg-primary shrink-0" />
+                    <p className="font-serif text-xl italic text-foreground/75 leading-snug">
+                      {t("The sharpest read on what the region really thinks.")}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right column — body */}
+              <div className="lg:col-span-8 lg:border-l lg:border-border lg:pl-16">
+                <p className="font-sans text-lg sm:text-xl text-foreground/90 leading-relaxed">
+                  {t("The Tribunal asks direct questions about the Middle East and North Africa, then shows how people answer.")}
+                </p>
+
+                <div className="mt-7 inline-block">
+                  <span className="font-display font-bold uppercase tracking-tight leading-tight text-xl sm:text-2xl text-foreground">
+                    {t("People vote privately. The result is public.")}
+                  </span>
+                  <span aria-hidden className="mt-1.5 block h-[3px] w-full bg-gradient-to-r from-primary via-primary/60 to-transparent" />
+                </div>
+
+                {/* What it is NOT — interactive ledger */}
+                <ul className="mt-10">
+                  {[
+                    "It is not a news site.",
+                    "It is not a think tank.",
+                    "It is not a comment section.",
+                  ].map((line, i) => (
+                    <li
+                      key={line}
+                      className={`group flex items-center gap-4 py-4 border-border ${i === 0 ? "border-t border-b" : "border-b"}`}
+                    >
+                      <span
+                        aria-hidden
+                        className="grid h-7 w-7 shrink-0 place-items-center border border-primary/40 text-primary text-xs transition-all duration-300 group-hover:rotate-90 group-hover:bg-primary group-hover:text-background"
+                      >
+                        ✕
+                      </span>
+                      <span className="font-serif text-lg sm:text-xl text-foreground/55 transition-colors duration-300 group-hover:text-foreground/85">
+                        {t(line)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+
+                <p className="mt-9 font-sans text-lg sm:text-xl text-foreground leading-relaxed">
+                  {t("It is a cleaner way to see what people are willing to say when their names are not attached.")}
+                </p>
+
+                <p className="mt-8 inline-flex items-center gap-2.5 font-display font-bold uppercase tracking-[0.18em] text-[11px] sm:text-xs text-muted-foreground">
+                  <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-primary shrink-0 animate-pulse" />
+                  {t("Private does not mean fake. If it is not human, it does not count.")}
+                </p>
+              </div>
+            </div>
+
+            {/* Founder pull quote — case-file frame */}
+            <figure className="relative mt-16 lg:mt-24 lg:ml-[33.333%] max-w-3xl">
+              <div
+                aria-hidden
+                className="pointer-events-none absolute -inset-x-6 -inset-y-10 -z-10"
+                style={{ background: "radial-gradient(60% 80% at 22% 34%, rgba(220,20,60,0.13), transparent 75%)" }}
+              />
+              <span aria-hidden className="absolute -left-4 -top-6 h-7 w-7 border-l-2 border-t-2 border-primary/70" />
+              <span aria-hidden className="absolute -right-4 -bottom-5 h-7 w-7 border-r-2 border-b-2 border-primary/70" />
+              <span aria-hidden className="absolute -top-10 left-0 font-serif text-primary text-7xl leading-none select-none">
+                &ldquo;
+              </span>
+              <blockquote className="relative font-display font-black uppercase tracking-tight leading-[1.08] text-foreground text-2xl sm:text-3xl lg:text-[2rem]">
+                {t("People do not lack opinions. They lack a place to say them honestly.")}
+              </blockquote>
+              <figcaption className="mt-6 font-sans text-sm text-muted-foreground flex items-center gap-3">
+                <span aria-hidden className="h-px w-8 bg-primary shrink-0" />
+                {t("— Kareem Kaddoura, Founder")}
+              </figcaption>
+            </figure>
           </div>
         </FadeUp>
       </section>
