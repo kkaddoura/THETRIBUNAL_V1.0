@@ -238,7 +238,7 @@
 
 @layer base {
   html {
-    font-size: 17px; /* ← bump from default 16px; all rem values scale up */
+    font-size: 18px; /* ← bump from 17px (one size up per client req 27/5); all rem values scale up */
   }
 
   * {

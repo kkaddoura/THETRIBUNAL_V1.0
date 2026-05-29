@@ -66,8 +66,10 @@ function buildHtml(meta: {
   <meta property="og:description" content="${safeDescription}" />
   <meta property="og:url" content="${safeUrl}" />
   <meta property="og:image" content="${safeImage}" />
+  <meta property="og:image:secure_url" content="${safeImage}" />
   <meta property="og:image:width" content="1200" />
   <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="${safeTitle}" />
 
   <!-- Twitter Card -->
   <meta name="twitter:card" content="summary_large_image" />
@@ -112,8 +114,8 @@ export function ogTagsMiddleware(req: Request, res: Response, next: NextFunction
           null,
         )
         const leadText = topOption
-          ? `${topOption.percentage}% say "${topOption.text}". ${totalVotes.toLocaleString()} MENA voices weighed in.`
-          : `${totalVotes.toLocaleString()} voices from across MENA. Where do you stand?`
+          ? `${topOption.percentage}% say "${topOption.text}". ${totalVotes.toLocaleString()} voices weighed in.`
+          : `${totalVotes.toLocaleString()} voices from across the region. Where do you stand?`
         const description = `${leadText} Vote on The Tribunal — the region's most honest opinion platform.`
         const siteBase = `${protocol}://${host}`
         const image = poll.ogImage ?? `${siteBase}/api/og-image/debate/${pollId}`

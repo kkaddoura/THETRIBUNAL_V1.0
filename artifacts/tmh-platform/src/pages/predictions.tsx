@@ -422,8 +422,8 @@ function PredShareBtn({ card }: { card: PredictionCard }) {
   const [showModal, setShowModal] = useState(false);
   const url =
     typeof window !== "undefined"
-      ? `${window.location.origin}/predictions?shared=${card.id}`
-      : `/predictions?shared=${card.id}`;
+      ? `${window.location.origin}/predictions/${card.id}`
+      : `/predictions/${card.id}`;
 
   const totalVotes = parseInt(card.count.replace(/,/g, ""), 10) || 0;
 
@@ -477,8 +477,8 @@ function PredMajlisShareBtn({ card }: { card: PredictionCard }) {
 
   const url =
     typeof window !== "undefined"
-      ? `${window.location.origin}/predictions?shared=${card.id}`
-      : `/predictions?shared=${card.id}`;
+      ? `${window.location.origin}/predictions/${card.id}`
+      : `/predictions/${card.id}`;
   const totalVotes = parseInt(card.count.replace(/,/g, ""), 10) || 0;
 
   const shareContext: PredictionShareContext = {

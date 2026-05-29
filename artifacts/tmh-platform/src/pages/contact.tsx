@@ -4,7 +4,7 @@ import { Layout } from "@/components/layout/Layout"
 import { useI18n } from "@/lib/i18n"
 import { Mail, MapPin, MessageSquare } from "lucide-react"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { usePageConfig } from "@/hooks/use-cms-data"
+import { usePageConfig, useSiteSettings } from "@/hooks/use-cms-data"
 import { TitlePunctuation } from "@/components/TitlePunctuation"
 
 export default function Contact() {
@@ -14,6 +14,8 @@ export default function Contact() {
   });
   const { t, isAr } = useI18n()
   const { data: pageConfig } = usePageConfig<{ titleLine1?: string; titleLine2?: string; punctuations?: string[] }>("contact")
+  const { data: siteSettings } = useSiteSettings()
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" })
   const [submitted, setSubmitted] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -43,7 +45,7 @@ export default function Contact() {
     // Open mailto with pre-filled fields as fallback
     const mailtoBody = `Name: ${form.name}%0D%0A%0D%0A${form.message}`
     const mailtoSubject = form.subject || "General Inquiry"
-    window.location.href = `mailto:hello@themiddleeasthustle.com?subject=${encodeURIComponent(mailtoSubject)}&body=${mailtoBody}`
+    window.location.href = `mailto:support@tribunal.me?subject=${encodeURIComponent(mailtoSubject)}&body=${mailtoBody}`
     setSubmitted(true)
   }
 
@@ -81,10 +83,10 @@ export default function Contact() {
                       {t("Email")}
                     </p>
                     <a
-                      href="mailto:hello@themiddleeasthustle.com"
+                      href="mailto:support@tribunal.me"
                       className="text-sm font-sans text-foreground hover:text-primary transition-colors"
                     >
-                      hello@themiddleeasthustle.com
+                      support@tribunal.me
                     </a>
                   </div>
                 </div>
@@ -150,8 +152,8 @@ export default function Contact() {
                 </p>
                 <p className="text-sm text-muted-foreground font-sans">
                   {t("If it doesn't, send your message directly to")}{" "}
-                  <a href="mailto:hello@themiddleeasthustle.com" className="text-primary hover:underline">
-                    hello@themiddleeasthustle.com
+                  <a href="mailto:support@tribunal.me" className="text-primary hover:underline">
+                    support@tribunal.me
                   </a>
                 </p>
                 <button
@@ -258,12 +260,21 @@ export default function Contact() {
             >
               {t("Enter The Debates")}
             </Link>
-            <Link
-              href="/apply"
-              className="border border-foreground text-foreground px-6 py-2.5 font-bold uppercase tracking-widest text-[12px] hover:bg-foreground hover:text-background transition-colors font-serif"
-            >
-              {t("Join The Voices")}
-            </Link>
+            {voicesEnabled ? (
+              <Link
+                href="/apply"
+                className="border border-foreground text-foreground px-6 py-2.5 font-bold uppercase tracking-widest text-[12px] hover:bg-foreground hover:text-background transition-colors font-serif"
+              >
+                {t("Join The Voices")}
+              </Link>
+            ) : (
+              <Link
+                href="/predictions"
+                className="border border-foreground text-foreground px-6 py-2.5 font-bold uppercase tracking-widest text-[12px] hover:bg-foreground hover:text-background transition-colors font-serif"
+              >
+                {t("Make a Prediction")}
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -82,7 +82,7 @@ export default function Terms() {
     <Layout>
       <div className="bg-foreground text-background py-16 border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">Legal</p>
+          <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">Terms</p>
           <h1 className="font-display font-black text-4xl md:text-6xl uppercase tracking-tight">
             {pageConfig?.titleLine1 || "Terms"}<br />
             {pageConfig?.titleLine2 || "of Use"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
