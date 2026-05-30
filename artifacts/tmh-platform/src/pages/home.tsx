@@ -558,6 +558,93 @@ const MENA_POP_BASE_DEFAULT = 541_000_000;
 const MENA_POP_BASE_DATE = new Date("2026-01-01T00:00:00Z").getTime();
 const MENA_GROWTH_RATE_DEFAULT = 0.0156;
 
+// ── Editable home-page copy (CMS-overridable via homepageConfig.content) ──────
+// Every visible copy block below can be overridden from the CMS Homepage Manager.
+// These objects are the source of truth for fallbacks; the CMS seeds matching keys.
+export interface HomeContent {
+  hero: {
+    eyebrow: string; headline: string; subcopy: string; trustLine: string; accountMicrocopy: string;
+    primaryCtaLabel: string; primaryCtaHref: string; secondaryCtaLabel: string; secondaryCtaHref: string;
+    stats: Array<{ value: string; label: string }>;
+  };
+  intro: {
+    heading: string; lead: string; body: string; statement: string; negations: string[];
+    closing: string; trust: string; quote: string; quoteAuthor: string;
+  };
+  cards: { heading: string; items: Array<{ key: string; title: string; subtitle: string; body: string; cta: string }> };
+  voices: { heading: string; subcopy: string };
+  exploreTopics: { heading: string };
+  newsletter: { eyebrow: string; heading: string; body: string; bullets: string[]; ctaLabel: string; disclaimer: string };
+}
+
+const HOME_CONTENT_DEFAULTS: HomeContent = {
+  hero: {
+    eyebrow: "The Region, On Record",
+    headline: "The questions people avoid in public",
+    subcopy: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
+    trustLine: "Your vote is private. The result is public.",
+    accountMicrocopy: "Sign up only if you want to save your activity and continue later.",
+    primaryCtaLabel: "Cast Your Vote",
+    primaryCtaHref: "/debates",
+    secondaryCtaLabel: "How It Works",
+    secondaryCtaHref: "/about#how-it-works",
+    stats: [
+      { value: "100+", label: "Live Questions" },
+      { value: "19", label: "Countries Covered" },
+      { value: "Private", label: "Votes" },
+      { value: "Public", label: "Results" },
+    ],
+  },
+  intro: {
+    heading: "What is The Tribunal?",
+    lead: "The sharpest read on what the region really thinks.",
+    body: "The Tribunal asks direct questions about the Middle East and North Africa, then shows how people answer.",
+    statement: "People vote privately. The result is public.",
+    negations: ["It is not a news site.", "It is not a think tank.", "It is not a comment section."],
+    closing: "It is a cleaner way to see what people are willing to say when their names are not attached.",
+    trust: "Private does not mean fake. If it is not human, it does not count.",
+    quote: "People do not lack opinions. They lack a place to say them honestly.",
+    quoteAuthor: "— Kareem Kaddoura, Founder",
+  },
+  cards: {
+    heading: "What you'll find here",
+    items: [
+      { key: "debates", title: "Debates", subtitle: "What people believe.", body: "Direct questions about work, money, identity, media, culture, power and the future. Vote privately. See where you stand.", cta: "Enter the Debates" },
+      { key: "predictions", title: "Predictions", subtitle: "What people think will happen.", body: "Not what should happen. What people expect will happen. Track how confidence shifts over time. Sign up if you want to save your calls and come back to them later.", cta: "Make a Prediction" },
+      { key: "pulse", title: "Pulse", subtitle: "What is actually happening.", body: "Sourced public signals that give context to the questions people are voting on.", cta: "Read The Pulse" },
+      { key: "voices", title: "Voices", subtitle: "People with something to say.", body: "Curated profiles of people connected to the region through their work, choices and positions.", cta: "Explore Voices" },
+      { key: "majlis", title: "The Majlis", subtitle: "A private room for serious conversation.", body: "A members only space for selected participants. No open comments. No algorithmic noise. No public performance.", cta: "Enter The Majlis" },
+    ],
+  },
+  voices: {
+    heading: "The Voices",
+    subcopy: "Curated profiles of people with a clear connection to the region and a body of work we can verify.",
+  },
+  exploreTopics: { heading: "Explore Topics" },
+  newsletter: {
+    eyebrow: "The Weekly Brief",
+    heading: "The sharpest questions and shifts from the week.",
+    body: "A short weekly note from The Tribunal. New questions, live results, prediction shifts and the signals behind them.",
+    bullets: ["New questions from the week", "Results worth paying attention to", "Prediction shifts as views change"],
+    ctaLabel: "Get Updates",
+    disclaimer: "No spam. Unsubscribe anytime.",
+  },
+};
+
+// Shallow-merge each group; arrays are replaced wholesale when the CMS provides them.
+function resolveHomeContent(cfg?: Partial<HomeContent>): HomeContent {
+  const d = HOME_CONTENT_DEFAULTS;
+  const c = (cfg ?? {}) as any;
+  return {
+    hero: { ...d.hero, ...c.hero, stats: c.hero?.stats?.length ? c.hero.stats : d.hero.stats },
+    intro: { ...d.intro, ...c.intro, negations: c.intro?.negations?.length ? c.intro.negations : d.intro.negations },
+    cards: { ...d.cards, ...c.cards, items: c.cards?.items?.length ? c.cards.items : d.cards.items },
+    voices: { ...d.voices, ...c.voices },
+    exploreTopics: { ...d.exploreTopics, ...c.exploreTopics },
+    newsletter: { ...d.newsletter, ...c.newsletter, bullets: c.newsletter?.bullets?.length ? c.newsletter.bullets : d.newsletter.bullets },
+  };
+}
+
 function usePopulationCounter(
   basePopulation?: number,
   growthRatePercent?: number,
@@ -1508,7 +1595,11 @@ export default function Home() {
       voices?: string;
     };
     sections?: Array<{ id: string; type: string; config: Record<string, unknown> }>;
+    content?: Partial<HomeContent>;
   }>();
+
+  // Resolved, CMS-overridable home-page copy (falls back to HOME_CONTENT_DEFAULTS)
+  const C = resolveHomeContent(homepageConfig?.content);
 
   // Extract CMS-selected content IDs
   const cmsSelectedDebateId = homepageConfig?.sections?.find(s => s.type === "lead_debate")?.config?.selectedDebateId as number | undefined;
@@ -1702,7 +1793,7 @@ export default function Home() {
                     <span className="relative inline-flex w-2 h-2 rounded-full bg-[#10B981]" />
                   </span>
                   <span className="font-serif font-bold text-[12px] tracking-[0.32em] uppercase text-[#10B981]">
-                    {t("The Region, On Record")}
+                    {t(C.hero.eyebrow)}
                   </span>
                 </motion.div>
 
@@ -1714,7 +1805,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.1 }}
                 >
-                  {t("The questions people avoid in public")}
+                  {t(C.hero.headline)}
                   <span className="text-primary">.</span>
                 </motion.h1>
 
@@ -1725,7 +1816,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.4 }}
                 >
-                  {t("Private voting on what the region really thinks about power, money, culture, work, media and the future.")}
+                  {t(C.hero.subcopy)}
                 </motion.p>
 
                 {/* Trust line */}
@@ -1735,7 +1826,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.5 }}
                 >
-                  {t("Your vote is private. The result is public.")}
+                  {t(C.hero.trustLine)}
                 </motion.p>
 
                 {/* Account microcopy */}
@@ -1745,7 +1836,7 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.55 }}
                 >
-                  {t("Sign up only if you want to save your activity and continue later.")}
+                  {t(C.hero.accountMicrocopy)}
                 </motion.p>
 
                 {/* CTAs */}
@@ -1756,18 +1847,18 @@ export default function Home() {
                   transition={{ duration: 0.5, delay: 0.6 }}
                 >
                   <Link
-                    href="/debates"
+                    href={C.hero.primaryCtaHref}
                     onClick={() => track("cta_clicked", { label: "cast_your_vote", surface: "home_hero" })}
                     className="inline-flex items-center gap-2 bg-primary text-white font-bold uppercase tracking-widest text-xs px-7 py-3 hover:bg-primary/90 transition-colors font-serif"
                   >
-                    {t("Cast Your Vote")} <ArrowRight className="w-3 h-3" />
+                    {t(C.hero.primaryCtaLabel)} <ArrowRight className="w-3 h-3" />
                   </Link>
                   <Link
-                    href="/about#how-it-works"
+                    href={C.hero.secondaryCtaHref}
                     onClick={() => track("cta_clicked", { label: "how_it_works", surface: "home_hero" })}
                     className="inline-flex items-center gap-2 text-foreground/70 hover:text-foreground font-bold uppercase tracking-widest text-xs px-2 py-3 transition-colors font-serif underline underline-offset-4 decoration-primary/40"
                   >
-                    {t("How It Works")}
+                    {t(C.hero.secondaryCtaLabel)}
                   </Link>
                 </motion.div>
 
@@ -1778,38 +1869,25 @@ export default function Home() {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.8 }}
                 >
-                  <div>
-                    <div className="font-display font-black text-[26px] sm:text-[28px] text-foreground tabular-nums leading-none">
-                      100+
-                    </div>
-                    <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                      {t("Live Questions")}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-display font-black text-[26px] sm:text-[28px] text-foreground tabular-nums leading-none">
-                      19
-                    </div>
-                    <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                      {t("Countries Covered")}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-display font-black text-[18px] sm:text-[20px] text-foreground leading-none pt-1.5">
-                      {t("Private")}
-                    </div>
-                    <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                      {t("Votes")}
-                    </div>
-                  </div>
-                  <div>
-                    <div className="font-display font-black text-[18px] sm:text-[20px] text-foreground leading-none pt-1.5">
-                      {t("Public")}
-                    </div>
-                    <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                      {t("Results")}
-                    </div>
-                  </div>
+                  {C.hero.stats.map((stat, i) => {
+                    const isNumeric = /[0-9]/.test(stat.value);
+                    return (
+                      <div key={i}>
+                        <div
+                          className={
+                            isNumeric
+                              ? "font-display font-black text-[26px] sm:text-[28px] text-foreground tabular-nums leading-none"
+                              : "font-display font-black text-[18px] sm:text-[20px] text-foreground leading-none pt-1.5"
+                          }
+                        >
+                          {isNumeric ? stat.value : t(stat.value)}
+                        </div>
+                        <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
+                          {t(stat.label)}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </motion.div>
               </div>
 
@@ -1939,12 +2017,12 @@ export default function Home() {
                     <span className="h-px w-12 bg-gradient-to-r from-primary to-transparent" />
                   </span>
                   <h2 className="font-display font-black uppercase leading-[0.95] tracking-tight text-foreground text-3xl sm:text-[2rem]">
-                    {t("What is The Tribunal?")}
+                    {t(C.intro.heading)}
                   </h2>
                   <div className="mt-6 flex gap-4">
                     <span aria-hidden className="mt-2 h-12 w-1 bg-primary shrink-0" />
                     <p className="font-serif text-xl italic text-foreground/75 leading-snug">
-                      {t("The sharpest read on what the region really thinks.")}
+                      {t(C.intro.lead)}
                     </p>
                   </div>
                 </div>
@@ -1953,23 +2031,19 @@ export default function Home() {
               {/* Right column — body */}
               <div className="lg:col-span-8 lg:border-l lg:border-border lg:pl-16">
                 <p className="font-sans text-lg sm:text-xl text-foreground/90 leading-relaxed">
-                  {t("The Tribunal asks direct questions about the Middle East and North Africa, then shows how people answer.")}
+                  {t(C.intro.body)}
                 </p>
 
                 <div className="mt-7 inline-block">
                   <span className="font-display font-bold uppercase tracking-tight leading-tight text-xl sm:text-2xl text-foreground">
-                    {t("People vote privately. The result is public.")}
+                    {t(C.intro.statement)}
                   </span>
                   <span aria-hidden className="mt-1.5 block h-[3px] w-full bg-gradient-to-r from-primary via-primary/60 to-transparent" />
                 </div>
 
                 {/* What it is NOT — interactive ledger */}
                 <ul className="mt-10">
-                  {[
-                    "It is not a news site.",
-                    "It is not a think tank.",
-                    "It is not a comment section.",
-                  ].map((line, i) => (
+                  {C.intro.negations.map((line, i) => (
                     <li
                       key={line}
                       className={`group flex items-center gap-4 py-4 border-border ${i === 0 ? "border-t border-b" : "border-b"}`}
@@ -1988,12 +2062,12 @@ export default function Home() {
                 </ul>
 
                 <p className="mt-9 font-sans text-lg sm:text-xl text-foreground leading-relaxed">
-                  {t("It is a cleaner way to see what people are willing to say when their names are not attached.")}
+                  {t(C.intro.closing)}
                 </p>
 
                 <p className="mt-8 inline-flex items-center gap-2.5 font-display font-bold uppercase tracking-[0.18em] text-[11px] sm:text-xs text-muted-foreground">
                   <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-primary shrink-0 animate-pulse" />
-                  {t("Private does not mean fake. If it is not human, it does not count.")}
+                  {t(C.intro.trust)}
                 </p>
               </div>
             </div>
@@ -2011,11 +2085,11 @@ export default function Home() {
                 &ldquo;
               </span>
               <blockquote className="relative font-display font-black uppercase tracking-tight leading-[1.08] text-foreground text-2xl sm:text-3xl lg:text-[2rem]">
-                {t("People do not lack opinions. They lack a place to say them honestly.")}
+                {t(C.intro.quote)}
               </blockquote>
               <figcaption className="mt-6 font-sans text-sm text-muted-foreground flex items-center gap-3">
                 <span aria-hidden className="h-px w-8 bg-primary shrink-0" />
-                {t("— Kareem Kaddoura, Founder")}
+                {t(C.intro.quoteAuthor)}
               </figcaption>
             </figure>
           </div>
@@ -2027,31 +2101,35 @@ export default function Home() {
         <FadeUp>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-12 border-l-4 border-primary pl-4">
-              {t("What you'll find here")}
+              {t(C.cards.heading)}
             </h2>
             <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {[
-                { num: "01", title: "Debates", subtitle: "What people believe.", body: "Direct questions about work, money, identity, media, culture, power and the future. Vote privately. See where you stand.", cta: "Enter the Debates", href: "/debates", enabled: true },
-                { num: "02", title: "Predictions", subtitle: "What people think will happen.", body: "Not what should happen. What people expect will happen. Track how confidence shifts over time. Sign up if you want to save your calls and come back to them later.", cta: "Make a Prediction", href: "/predictions", enabled: true },
-                { num: "03", title: "Pulse", subtitle: "What is actually happening.", body: "Sourced public signals that give context to the questions people are voting on.", cta: "Read The Pulse", href: "/pulse", enabled: pulseEnabled },
-                { num: "04", title: "Voices", subtitle: "People with something to say.", body: "Curated profiles of people connected to the region through their work, choices and positions.", cta: "Explore Voices", href: "/voices", enabled: voicesEnabled },
-                { num: "05", title: "The Majlis", subtitle: "A private room for serious conversation.", body: "A members only space for selected participants. No open comments. No algorithmic noise. No public performance.", cta: "Enter The Majlis", href: "/majlis", enabled: majlisEnabled },
-              ].filter(c => c.enabled).map(card => (
-                <motion.div key={card.num} variants={staggerItem}>
+                { key: "debates", num: "01", href: "/debates", enabled: true },
+                { key: "predictions", num: "02", href: "/predictions", enabled: true },
+                { key: "pulse", num: "03", href: "/pulse", enabled: pulseEnabled },
+                { key: "voices", num: "04", href: "/voices", enabled: voicesEnabled },
+                { key: "majlis", num: "05", href: "/majlis", enabled: majlisEnabled },
+              ].filter(c => c.enabled).map(card => {
+                const copy = C.cards.items.find(i => i.key === card.key);
+                if (!copy) return null;
+                return (
+                <motion.div key={card.key} variants={staggerItem}>
                   <div className="bg-card border border-border p-6 h-full flex flex-col">
                     <span className="font-display font-black text-5xl text-foreground/20 leading-none">{card.num}</span>
-                    <h3 className="font-serif font-black uppercase text-lg text-foreground mt-3 tracking-wide">{t(card.title)}</h3>
-                    <p className="text-sm font-serif font-bold uppercase tracking-[0.15em] text-primary mt-2">{t(card.subtitle)}</p>
-                    <p className="text-sm text-muted-foreground font-sans leading-relaxed mt-3 flex-1">{t(card.body)}</p>
+                    <h3 className="font-serif font-black uppercase text-lg text-foreground mt-3 tracking-wide">{t(copy.title)}</h3>
+                    <p className="text-sm font-serif font-bold uppercase tracking-[0.15em] text-primary mt-2">{t(copy.subtitle)}</p>
+                    <p className="text-sm text-muted-foreground font-sans leading-relaxed mt-3 flex-1">{t(copy.body)}</p>
                     <Link
                       href={card.href}
                       className="inline-block text-[12px] font-serif font-bold uppercase tracking-widest text-primary hover:text-foreground transition-colors border-b border-primary pb-0.5 mt-4 self-start"
                     >
-                      {t(card.cta)} {isAr ? "←" : "→"}
+                      {t(copy.cta)} {isAr ? "←" : "→"}
                     </Link>
                   </div>
                 </motion.div>
-              ))}
+                );
+              })}
             </StaggerGrid>
           </div>
         </FadeUp>
@@ -2749,7 +2827,7 @@ export default function Home() {
           <div className="flex items-end justify-between mb-4">
             <div>
               <h2 className="font-display font-black text-4xl md:text-5xl uppercase tracking-tight text-background leading-none">
-                {t("The Voices")}
+                {t(C.voices.heading)}
               </h2>
               <SlideReveal color="#DC143C" height={4} className="mt-3" delay={0.3} />
             </div>
@@ -2762,9 +2840,7 @@ export default function Home() {
           </div>
           <FadeIn delay={0.15}>
           <p className="text-background/75 font-sans text-base mt-4 mb-10 max-w-xl">
-            {t(
-              "Curated profiles of people with a clear connection to the region and a body of work we can verify.",
-            )}
+            {t(C.voices.subcopy)}
           </p>
           </FadeIn>
 
@@ -2832,7 +2908,7 @@ export default function Home() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-12 border-l-4 border-primary pl-4">
               <h2 className="font-serif font-black uppercase text-2xl text-foreground">
-                {t("Explore Topics")}
+                {t(C.exploreTopics.heading)}
               </h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -2865,24 +2941,20 @@ export default function Home() {
           <div className="flex flex-col md:flex-row gap-12 md:gap-16 items-center">
             <FadeUp className="flex-1 md:basis-2/3">
               <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
-                {t("The Weekly Brief")}
+                {t(C.newsletter.eyebrow)}
               </p>
               <h2 className="font-display font-black text-4xl md:text-5xl uppercase leading-none tracking-tight text-background mb-4">
-                {t("The sharpest questions and shifts from the week.")}
+                {t(C.newsletter.heading)}
               </h2>
               <p className="text-background/75 font-sans text-base leading-relaxed max-w-xl mb-3">
-                {t("A short weekly note from The Tribunal. New questions, live results, prediction shifts and the signals behind them.")}
+                {t(C.newsletter.body)}
               </p>
               <ul className="text-background/60 font-sans text-sm space-y-1.5 max-w-xl">
-                <li className="flex items-center gap-2">
-                  <span className="text-primary font-bold">→</span> {t("New questions from the week")}
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-primary font-bold">→</span> {t("Results worth paying attention to")}
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-primary font-bold">→</span> {t("Prediction shifts as views change")}
-                </li>
+                {C.newsletter.bullets.map((b, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span className="text-primary font-bold">→</span> {t(b)}
+                  </li>
+                ))}
               </ul>
             </FadeUp>
             <FadeIn direction="right" delay={0.15} className="w-full md:basis-1/3">
@@ -2924,10 +2996,10 @@ export default function Home() {
                     transition={{ duration: 0.15 }}
                     className="bg-primary text-white font-bold uppercase tracking-widest px-6 py-3 text-xs hover:bg-primary/90 font-serif"
                   >
-                    {t("Get Updates")}
+                    {t(C.newsletter.ctaLabel)}
                   </motion.button>
                   <p className="text-[10px] text-background/60 font-sans">
-                    {t("No spam. Unsubscribe anytime.")}
+                    {t(C.newsletter.disclaimer)}
                   </p>
                 </form>
                 </motion.div>

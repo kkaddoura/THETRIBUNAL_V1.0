@@ -31,6 +31,86 @@ interface CountryBreakdown {
   population: string;
 }
 
+// ── Editable home-page copy (mirrors tmh-platform HomeContent) ──────────────
+interface HomeContent {
+  hero: {
+    eyebrow: string; headline: string; subcopy: string; trustLine: string; accountMicrocopy: string;
+    primaryCtaLabel: string; primaryCtaHref: string; secondaryCtaLabel: string; secondaryCtaHref: string;
+    stats: Array<{ value: string; label: string }>;
+  };
+  intro: {
+    heading: string; lead: string; body: string; statement: string; negations: string[];
+    closing: string; trust: string; quote: string; quoteAuthor: string;
+  };
+  cards: { heading: string; items: Array<{ key: string; title: string; subtitle: string; body: string; cta: string }> };
+  voices: { heading: string; subcopy: string };
+  exploreTopics: { heading: string };
+  newsletter: { eyebrow: string; heading: string; body: string; bullets: string[]; ctaLabel: string; disclaimer: string };
+}
+
+const HOME_CONTENT_DEFAULTS: HomeContent = {
+  hero: {
+    eyebrow: "The Region, On Record",
+    headline: "The questions people avoid in public",
+    subcopy: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
+    trustLine: "Your vote is private. The result is public.",
+    accountMicrocopy: "Sign up only if you want to save your activity and continue later.",
+    primaryCtaLabel: "Cast Your Vote",
+    primaryCtaHref: "/debates",
+    secondaryCtaLabel: "How It Works",
+    secondaryCtaHref: "/about#how-it-works",
+    stats: [
+      { value: "100+", label: "Live Questions" },
+      { value: "19", label: "Countries Covered" },
+      { value: "Private", label: "Votes" },
+      { value: "Public", label: "Results" },
+    ],
+  },
+  intro: {
+    heading: "What is The Tribunal?",
+    lead: "The sharpest read on what the region really thinks.",
+    body: "The Tribunal asks direct questions about the Middle East and North Africa, then shows how people answer.",
+    statement: "People vote privately. The result is public.",
+    negations: ["It is not a news site.", "It is not a think tank.", "It is not a comment section."],
+    closing: "It is a cleaner way to see what people are willing to say when their names are not attached.",
+    trust: "Private does not mean fake. If it is not human, it does not count.",
+    quote: "People do not lack opinions. They lack a place to say them honestly.",
+    quoteAuthor: "— Kareem Kaddoura, Founder",
+  },
+  cards: {
+    heading: "What you'll find here",
+    items: [
+      { key: "debates", title: "Debates", subtitle: "What people believe.", body: "Direct questions about work, money, identity, media, culture, power and the future. Vote privately. See where you stand.", cta: "Enter the Debates" },
+      { key: "predictions", title: "Predictions", subtitle: "What people think will happen.", body: "Not what should happen. What people expect will happen. Track how confidence shifts over time. Sign up if you want to save your calls and come back to them later.", cta: "Make a Prediction" },
+      { key: "pulse", title: "Pulse", subtitle: "What is actually happening.", body: "Sourced public signals that give context to the questions people are voting on.", cta: "Read The Pulse" },
+      { key: "voices", title: "Voices", subtitle: "People with something to say.", body: "Curated profiles of people connected to the region through their work, choices and positions.", cta: "Explore Voices" },
+      { key: "majlis", title: "The Majlis", subtitle: "A private room for serious conversation.", body: "A members only space for selected participants. No open comments. No algorithmic noise. No public performance.", cta: "Enter The Majlis" },
+    ],
+  },
+  voices: { heading: "The Voices", subcopy: "Curated profiles of people with a clear connection to the region and a body of work we can verify." },
+  exploreTopics: { heading: "Explore Topics" },
+  newsletter: {
+    eyebrow: "The Weekly Brief",
+    heading: "The sharpest questions and shifts from the week.",
+    body: "A short weekly note from The Tribunal. New questions, live results, prediction shifts and the signals behind them.",
+    bullets: ["New questions from the week", "Results worth paying attention to", "Prediction shifts as views change"],
+    ctaLabel: "Get Updates",
+    disclaimer: "No spam. Unsubscribe anytime.",
+  },
+};
+
+function resolveContent(cfg?: Partial<HomeContent>): HomeContent {
+  const d = HOME_CONTENT_DEFAULTS; const c = (cfg ?? {}) as any;
+  return {
+    hero: { ...d.hero, ...c.hero, stats: c.hero?.stats?.length ? c.hero.stats : d.hero.stats },
+    intro: { ...d.intro, ...c.intro, negations: c.intro?.negations?.length ? c.intro.negations : d.intro.negations },
+    cards: { ...d.cards, ...c.cards, items: c.cards?.items?.length ? c.cards.items : d.cards.items },
+    voices: { ...d.voices, ...c.voices },
+    exploreTopics: { ...d.exploreTopics, ...c.exploreTopics },
+    newsletter: { ...d.newsletter, ...c.newsletter, bullets: c.newsletter?.bullets?.length ? c.newsletter.bullets : d.newsletter.bullets },
+  };
+}
+
 interface HomepageData {
   masthead: { title: string; subtitle: string; showPopulationCounter: boolean; issueLabel: string; basePopulation?: number; growthRate?: number; countryBreakdown?: CountryBreakdown[] };
   sectionStats?: { useOverrides: boolean; overrides: { debates: number | null; predictions: number | null; pulseTopics: number | null; voices: number | null; totalVotes: number | null } };
@@ -38,6 +118,7 @@ interface HomepageData {
   sections: Section[];
   banners: Banner[];
   newsletter: { heading: string; subheading: string; buttonText: string; enabled: boolean };
+  content?: Partial<HomeContent>;
 }
 
 const SECTION_TYPE_LABELS: Record<string, string> = {
@@ -53,7 +134,7 @@ const SECTION_TYPE_LABELS: Record<string, string> = {
 export default function HomepagePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<"sections" | "banners" | "newsletter" | "stats">("sections");
+  const [activeTab, setActiveTab] = useState<"content" | "sections" | "banners" | "newsletter" | "stats">("content");
   const [data, setData] = useState<HomepageData | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [expandedBanner, setExpandedBanner] = useState<string | null>(null);
@@ -132,6 +213,10 @@ export default function HomepagePage() {
   const previewBanner = previewBannerId ? data?.banners.find(b => b.id === previewBannerId) ?? null : null;
 
   if (loading || !data) return <div className="text-center py-12 text-muted-foreground">Loading...</div>;
+
+  // Resolved editable copy (falls back to defaults) + setter that writes back to data.content
+  const content = resolveContent(data.content);
+  const setContent = (next: HomeContent) => setData({ ...data, content: next });
 
   return (
     <div className="max-w-3xl space-y-6">
@@ -233,7 +318,7 @@ export default function HomepagePage() {
       )}
 
       <div className="flex gap-1 border-b border-border">
-        {(["sections", "banners", "newsletter", "stats"] as const).map(tab => (
+        {(["content", "sections", "banners", "newsletter", "stats"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -487,6 +572,80 @@ export default function HomepagePage() {
           </div>
         </div>
       )}
+
+      {activeTab === "content" && (
+        <div className="space-y-5">
+          <p className="text-sm text-muted-foreground">Every visible copy block on the homepage — including the hero — is editable here. Blank fields fall back to the site defaults.</p>
+
+          <Grp title="Hero">
+            <Field label="Eyebrow"><TI value={content.hero.eyebrow} onChange={v => setContent({ ...content, hero: { ...content.hero, eyebrow: v } })} /></Field>
+            <Field label="Headline"><TI value={content.hero.headline} onChange={v => setContent({ ...content, hero: { ...content.hero, headline: v } })} /></Field>
+            <Field label="Subcopy"><TA value={content.hero.subcopy} onChange={v => setContent({ ...content, hero: { ...content.hero, subcopy: v } })} /></Field>
+            <Field label="Trust line"><TI value={content.hero.trustLine} onChange={v => setContent({ ...content, hero: { ...content.hero, trustLine: v } })} /></Field>
+            <Field label="Account microcopy"><TI value={content.hero.accountMicrocopy} onChange={v => setContent({ ...content, hero: { ...content.hero, accountMicrocopy: v } })} /></Field>
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Primary CTA label"><TI value={content.hero.primaryCtaLabel} onChange={v => setContent({ ...content, hero: { ...content.hero, primaryCtaLabel: v } })} /></Field>
+              <Field label="Primary CTA link"><TI value={content.hero.primaryCtaHref} onChange={v => setContent({ ...content, hero: { ...content.hero, primaryCtaHref: v } })} /></Field>
+              <Field label="Secondary CTA label"><TI value={content.hero.secondaryCtaLabel} onChange={v => setContent({ ...content, hero: { ...content.hero, secondaryCtaLabel: v } })} /></Field>
+              <Field label="Secondary CTA link"><TI value={content.hero.secondaryCtaHref} onChange={v => setContent({ ...content, hero: { ...content.hero, secondaryCtaHref: v } })} /></Field>
+            </div>
+            <Field label="Stats (value · label)">
+              <div className="space-y-2">
+                {content.hero.stats.map((s, i) => (
+                  <div key={i} className="grid grid-cols-2 gap-2">
+                    <TI value={s.value} onChange={v => setContent({ ...content, hero: { ...content.hero, stats: content.hero.stats.map((x, j) => j === i ? { ...x, value: v } : x) } })} />
+                    <TI value={s.label} onChange={v => setContent({ ...content, hero: { ...content.hero, stats: content.hero.stats.map((x, j) => j === i ? { ...x, label: v } : x) } })} />
+                  </div>
+                ))}
+              </div>
+            </Field>
+          </Grp>
+
+          <Grp title="Intro — What is The Tribunal?">
+            <Field label="Heading"><TI value={content.intro.heading} onChange={v => setContent({ ...content, intro: { ...content.intro, heading: v } })} /></Field>
+            <Field label="Lead"><TI value={content.intro.lead} onChange={v => setContent({ ...content, intro: { ...content.intro, lead: v } })} /></Field>
+            <Field label="Body"><TA value={content.intro.body} onChange={v => setContent({ ...content, intro: { ...content.intro, body: v } })} /></Field>
+            <Field label="Statement"><TI value={content.intro.statement} onChange={v => setContent({ ...content, intro: { ...content.intro, statement: v } })} /></Field>
+            <Field label="Negations (one per line)">
+              <TA rows={3} value={content.intro.negations.join("\n")} onChange={v => setContent({ ...content, intro: { ...content.intro, negations: v.split("\n").map(s => s.trim()).filter(Boolean) } })} />
+            </Field>
+            <Field label="Closing"><TA value={content.intro.closing} onChange={v => setContent({ ...content, intro: { ...content.intro, closing: v } })} /></Field>
+            <Field label="Trust note"><TI value={content.intro.trust} onChange={v => setContent({ ...content, intro: { ...content.intro, trust: v } })} /></Field>
+            <Field label="Founder quote"><TA value={content.intro.quote} onChange={v => setContent({ ...content, intro: { ...content.intro, quote: v } })} /></Field>
+            <Field label="Quote attribution"><TI value={content.intro.quoteAuthor} onChange={v => setContent({ ...content, intro: { ...content.intro, quoteAuthor: v } })} /></Field>
+          </Grp>
+
+          <Grp title="Product cards — What you'll find here">
+            <Field label="Section heading"><TI value={content.cards.heading} onChange={v => setContent({ ...content, cards: { ...content.cards, heading: v } })} /></Field>
+            {content.cards.items.map((card, i) => (
+              <div key={card.key} className="border border-border rounded p-3 space-y-2">
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">{card.key}</p>
+                <Field label="Title"><TI value={card.title} onChange={v => setContent({ ...content, cards: { ...content.cards, items: content.cards.items.map((x, j) => j === i ? { ...x, title: v } : x) } })} /></Field>
+                <Field label="Subtitle"><TI value={card.subtitle} onChange={v => setContent({ ...content, cards: { ...content.cards, items: content.cards.items.map((x, j) => j === i ? { ...x, subtitle: v } : x) } })} /></Field>
+                <Field label="Body"><TA value={card.body} onChange={v => setContent({ ...content, cards: { ...content.cards, items: content.cards.items.map((x, j) => j === i ? { ...x, body: v } : x) } })} /></Field>
+                <Field label="CTA"><TI value={card.cta} onChange={v => setContent({ ...content, cards: { ...content.cards, items: content.cards.items.map((x, j) => j === i ? { ...x, cta: v } : x) } })} /></Field>
+              </div>
+            ))}
+          </Grp>
+
+          <Grp title="Section headings">
+            <Field label="Voices heading"><TI value={content.voices.heading} onChange={v => setContent({ ...content, voices: { ...content.voices, heading: v } })} /></Field>
+            <Field label="Voices subcopy"><TA value={content.voices.subcopy} onChange={v => setContent({ ...content, voices: { ...content.voices, subcopy: v } })} /></Field>
+            <Field label="Explore Topics heading"><TI value={content.exploreTopics.heading} onChange={v => setContent({ ...content, exploreTopics: { ...content.exploreTopics, heading: v } })} /></Field>
+          </Grp>
+
+          <Grp title="Newsletter CTA">
+            <Field label="Eyebrow"><TI value={content.newsletter.eyebrow} onChange={v => setContent({ ...content, newsletter: { ...content.newsletter, eyebrow: v } })} /></Field>
+            <Field label="Heading"><TA value={content.newsletter.heading} onChange={v => setContent({ ...content, newsletter: { ...content.newsletter, heading: v } })} /></Field>
+            <Field label="Body"><TA value={content.newsletter.body} onChange={v => setContent({ ...content, newsletter: { ...content.newsletter, body: v } })} /></Field>
+            <Field label="Bullets (one per line)">
+              <TA rows={3} value={content.newsletter.bullets.join("\n")} onChange={v => setContent({ ...content, newsletter: { ...content.newsletter, bullets: v.split("\n").map(s => s.trim()).filter(Boolean) } })} />
+            </Field>
+            <Field label="Button label"><TI value={content.newsletter.ctaLabel} onChange={v => setContent({ ...content, newsletter: { ...content.newsletter, ctaLabel: v } })} /></Field>
+            <Field label="Disclaimer"><TI value={content.newsletter.disclaimer} onChange={v => setContent({ ...content, newsletter: { ...content.newsletter, disclaimer: v } })} /></Field>
+          </Grp>
+        </div>
+      )}
     </div>
   );
 }
@@ -697,4 +856,19 @@ function SectionPreview({ section }: { section: Section }) {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return <div><label className="block text-sm font-medium mb-1.5">{label}</label>{children}</div>;
+}
+
+function TI({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return <input type="text" value={value} onChange={e => onChange(e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary" />;
+}
+function TA({ value, onChange, rows = 2 }: { value: string; onChange: (v: string) => void; rows?: number }) {
+  return <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary" />;
+}
+function Grp({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="border border-border rounded-md bg-card p-4 space-y-3">
+      <h3 className="text-xs font-bold uppercase tracking-wider text-primary">{title}</h3>
+      {children}
+    </div>
+  );
 }
