@@ -84,6 +84,8 @@ export interface CaptionInput {
 }
 
 export interface CaptionVariants {
+  /** Single platform-agnostic caption set (Studio 2026-05-31). Primary source. */
+  neutral?: string[]
   x: string[]
   ig: string[]
   linkedin: string[]
@@ -162,6 +164,57 @@ export async function generateCaptionVariants(
       : fallback.linkedin,
   }
   return result
+}
+
+// ── Neutral single-caption API (Studio 2026-05-31) ────────────────────────
+// Studio dropped the per-platform tabs in favour of one platform-agnostic
+// caption with three distinct variants. This always returns three non-empty,
+// distinct variants — even with no API key — so the captions pane is never
+// blank (the old per-platform fallback could repeat the same string 3×).
+
+function neutralSystemPrompt(tone: ToneHint): string {
+  const toneLine = tone ? TONE_LINES[tone] : "Voice: sharp, regional, intelligent. No fluff, no clichés."
+  return `You write social media captions for The Tribunal — a MENA-focused debate, prediction, and voices platform. ${toneLine}
+
+Return JSON with exactly three distinct caption variants that read well on ANY platform (Instagram, X, LinkedIn):
+{
+  "variants": ["<v1>", "<v2>", "<v3>"]
+}
+
+Each variant: a strong hook, 2-4 short lines, medium length (roughly 200-500 characters), ending with one or two relevant hashtags (always include #MENA). The three variants must take meaningfully different angles — not paraphrases. Never invent percentages or quotes that weren't supplied. End each variant with the canonical link — use {{LINK}} as a placeholder; the caller substitutes it.`
+}
+
+/** Reuse the per-platform fallback phrasings (already three distinct angles)
+ * but with a {{LINK}} placeholder so the link is substituted exactly once. */
+function buildNeutralFallback(input: CaptionInput): string[] {
+  const fb = buildFallbackVariants(input, "{{LINK}}")
+  return [fb.x[0], fb.ig[0], fb.linkedin[0]]
+}
+
+export async function generateNeutralCaptions(
+  input: CaptionInput,
+  baseUrl: string,
+  opts: { toneHint?: ToneHint } = {},
+): Promise<string[]> {
+  const utmBase = `?utm_source=press_kit&utm_medium=social&utm_content=${input.contentType}_${input.contentId}`
+  const link = `${baseUrl}${pathFor(input.contentType, input.contentId)}${utmBase}`
+
+  let parsed: string[] | null = null
+  try {
+    const raw = await chatCompletion(neutralSystemPrompt(opts.toneHint), JSON.stringify(input, null, 2))
+    if (raw) {
+      const obj = JSON.parse(raw) as { variants?: string[] }
+      if (Array.isArray(obj.variants) && obj.variants.filter(Boolean).length) parsed = obj.variants
+    }
+  } catch (err) {
+    console.warn("[press-kit/captions] neutral AI generation failed, using fallback:", err)
+  }
+
+  // Guarantee three distinct, non-empty variants regardless of AI availability.
+  const fallback = buildNeutralFallback(input)
+  const ai = parsed ?? []
+  const base = [0, 1, 2].map((i) => ai[i] || fallback[i] || fallback[0])
+  return sanitizeVariants(base, link, 600)
 }
 
 function pathFor(contentType: CaptionInput["contentType"], contentId: number): string {

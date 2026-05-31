@@ -29,7 +29,6 @@ import {
   Search,
   X,
   Square,
-  RectangleVertical,
   CalendarRange,
 } from "lucide-react";
 
@@ -43,7 +42,7 @@ type AtomType =
   | "about-belief"
   | "about-region"
   | "manifesto";
-type Layout = "single" | "carousel-3" | "carousel-5" | "story-only" | "recap-weekly";
+type Layout = "single" | "carousel-3" | "carousel-5" | "recap-weekly";
 type Style = "minimal-serif" | "bold-crimson" | "magazine";
 type Platform = "x" | "ig" | "linkedin";
 type Tone = "punchy" | "analytical" | "warm" | null;
@@ -63,7 +62,6 @@ const LAYOUTS: LayoutMeta[] = [
   { id: "single", label: "Single", hint: "1 card", icon: Square, slotCount: 1 },
   { id: "carousel-3", label: "Carousel·3", hint: "3 slides", icon: LayoutGrid, slotCount: 3 },
   { id: "carousel-5", label: "Carousel·5", hint: "5 slides", icon: Images, slotCount: 5 },
-  { id: "story-only", label: "Story", hint: "Vertical", icon: RectangleVertical, slotCount: 1 },
   { id: "recap-weekly", label: "Weekly recap", hint: "Auto", icon: CalendarRange, slotCount: 0 },
 ];
 
@@ -91,15 +89,6 @@ const ATOM_TO_POSTTYPE: Record<AtomType, string> = {
   "about-region": "about-region",
   manifesto: "manifesto",
 };
-
-const AI_ELIGIBLE_ATOMS = new Set<AtomType>([
-  "debate",
-  "prediction",
-  "voice",
-  "pulse",
-  "about-pillar",
-  "about-founder",
-]);
 
 const LIBRARY_TABS: { id: LibraryTab; label: string }[] = [
   { id: "all", label: "All" },
@@ -192,12 +181,6 @@ const STYLES: { id: Style; label: string; description: string }[] = [
   { id: "magazine", label: "Magazine", description: "Cream paper, accent rules." },
 ];
 
-const SIZE_LABELS: Record<string, string> = {
-  x_landscape: "X / Twitter",
-  ig_square: "Instagram square",
-  ig_story: "Instagram story",
-  linkedin: "LinkedIn",
-};
 const SIZE_ASPECT: Record<string, string> = {
   x_landscape: "16/9",
   ig_square: "1/1",
@@ -217,7 +200,7 @@ interface StudioAsset {
   slideIndex: number;
   slideCount: number;
   publicUrl: string;
-  captionVariants: { x?: string[]; ig?: string[]; linkedin?: string[] } | null;
+  captionVariants: { neutral?: string[]; x?: string[]; ig?: string[]; linkedin?: string[] } | null;
   chosenCaptionX: string | null;
   chosenCaptionIg: string | null;
   chosenCaptionLi: string | null;
@@ -232,14 +215,13 @@ interface ComposeResponse {
   slots: Array<{ atomType: AtomType; atomId: number }>;
   generated: Array<{ assetId: number; atomType: AtomType; size: string; slideIndex: number; slideCount: number; publicUrl: string }>;
   failures: Array<{ size: string; slideIndex: number; error: string }>;
-  captionVariants: { x?: string[]; ig?: string[]; linkedin?: string[] };
+  captionVariants: { neutral?: string[]; x?: string[]; ig?: string[]; linkedin?: string[] };
 }
 
 const SLOT_COUNT: Record<Layout, number> = {
   single: 1,
   "carousel-3": 3,
   "carousel-5": 5,
-  "story-only": 1,
   "recap-weekly": 0,
 };
 
@@ -273,7 +255,6 @@ export default function StudioPage() {
   const [sourcesCache, setSourcesCache] = useState<Partial<Record<AtomType, { id: number; label: string; createdAt?: string }[]>>>({});
   const [style, setStyle] = useState<Style>("minimal-serif");
   const [tone, setTone] = useState<Tone>(null);
-  const [useAiImage, setUseAiImage] = useState(false);
   const [kitId, setKitId] = useState<string | null>(null);
   const [assets, setAssets] = useState<StudioAsset[]>([]);
   const [generating, setGenerating] = useState(false);
@@ -290,11 +271,12 @@ export default function StudioPage() {
 
   const [activeSize, setActiveSize] = useState<string>("ig_square");
   const [activeSlide, setActiveSlide] = useState<number>(0);
-  const [chosenIndex, setChosenIndex] = useState<Record<Platform, number>>({ x: 0, ig: 0, linkedin: 0 });
-  const [editedCaption, setEditedCaption] = useState<Record<Platform, string>>({ x: "", ig: "", linkedin: "" });
+  // One neutral caption set, three variants (Studio 2026-05-31 — no per-platform tabs).
+  const [variantIdx, setVariantIdx] = useState(0);
+  const [editedCaption, setEditedCaption] = useState("");
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [zipBusy, setZipBusy] = useState(false);
-  const [regenPlatform, setRegenPlatform] = useState<Platform | null>(null);
+  const [regenBusy, setRegenBusy] = useState(false);
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
@@ -307,22 +289,6 @@ export default function StudioPage() {
   }, [layout]);
 
   const filledSlots = useMemo(() => slots.filter((s): s is NonNullable<Slot> => s !== null), [slots]);
-
-  // AI image is only offered when every filled slot is AI-eligible.
-  const aiEligible = useMemo(() => {
-    if (isRecap) return false;
-    if (filledSlots.length === 0) return false;
-    return filledSlots.every((s) => AI_ELIGIBLE_ATOMS.has(s.atomType));
-  }, [isRecap, filledSlots]);
-
-  const aiGatedByAtom = useMemo(
-    () => filledSlots.length > 0 && filledSlots.some((s) => !AI_ELIGIBLE_ATOMS.has(s.atomType)),
-    [filledSlots],
-  );
-
-  useEffect(() => {
-    if (!aiEligible && useAiImage) setUseAiImage(false);
-  }, [aiEligible, useAiImage]);
 
   // Lazily fetch + cache sources for an atom type.
   const ensureSources = (atom: AtomType) => {
@@ -456,7 +422,7 @@ export default function StudioPage() {
 
   // Single-slot kits map to a postType+sourceId for the old caption endpoints.
   const singleSlotMap = useMemo(() => {
-    if ((layout === "single" || layout === "story-only") && filledSlots.length === 1) {
+    if (layout === "single" && filledSlots.length === 1) {
       const s = filledSlots[0];
       return { postType: ATOM_TO_POSTTYPE[s.atomType], sourceId: s.atomId };
     }
@@ -505,7 +471,7 @@ export default function StudioPage() {
         slots: payloadSlots,
         style,
         toneHint: tone,
-        useAiImage: aiEligible ? useAiImage : false,
+        useAiImage: false,
       });
       trackCms("cms_studio_generated", { layout, style, slots: payloadSlots.length });
 
@@ -531,33 +497,27 @@ export default function StudioPage() {
     }
   };
 
-  const regenPlatformCaption = async (platform: Platform) => {
+  // Pull the neutral caption set out of a variants blob, falling back to the
+  // legacy `x` array for kits composed before the single-caption switch.
+  const pickNeutral = (cv?: { neutral?: string[]; x?: string[] } | null): string[] =>
+    cv?.neutral?.length ? cv.neutral : cv?.x?.length ? cv.x : [];
+
+  const regenCaption = async () => {
     if (!singleSlotMap) return;
-    setRegenPlatform(platform);
+    setRegenBusy(true);
     try {
       const res = await api.studioRegenerateCaptions({
         postType: singleSlotMap.postType,
         sourceId: singleSlotMap.sourceId,
-        platform,
         toneHint: tone,
       });
-      const variants = res.captionVariants ?? {};
-      setAssets((prev) =>
-        prev.map((a) => ({
-          ...a,
-          captionVariants: {
-            x: platform !== "x" ? a.captionVariants?.x : variants.x,
-            ig: platform !== "ig" ? a.captionVariants?.ig : variants.ig,
-            linkedin: platform !== "linkedin" ? a.captionVariants?.linkedin : variants.linkedin,
-          },
-        })),
-      );
-      if (platform === "x") setEditedCaption((p) => ({ ...p, x: variants.x?.[0] ?? p.x }));
-      if (platform === "ig") setEditedCaption((p) => ({ ...p, ig: variants.ig?.[0] ?? p.ig }));
-      if (platform === "linkedin") setEditedCaption((p) => ({ ...p, linkedin: variants.linkedin?.[0] ?? p.linkedin }));
-      setChosenIndex((p) => ({ ...p, [platform]: 0 }));
+      const cv = res.captionVariants ?? {};
+      const variants = pickNeutral(cv);
+      setAssets((prev) => prev.map((a) => ({ ...a, captionVariants: cv })));
+      setVariantIdx(0);
+      setEditedCaption(variants[0] ?? "");
     } finally {
-      setRegenPlatform(null);
+      setRegenBusy(false);
     }
   };
 
@@ -568,7 +528,6 @@ export default function StudioPage() {
     setTimeout(() => setCopyToast(null), 1200);
   };
 
-  const sizes = useMemo(() => Array.from(new Set(assets.map((a) => a.size))), [assets]);
   const sizeAssets = useMemo(
     () => assets.filter((a) => a.size === activeSize).sort((a, b) => a.slideIndex - b.slideIndex),
     [assets, activeSize],
@@ -583,7 +542,7 @@ export default function StudioPage() {
   // UI to THAT asset's own variants — the compose-level variants are only a
   // first-slot fallback, so without this every slide shows slide-1's captions.
   const captionAssetRef = useRef<number | null>(null);
-  const composeVariantsRef = useRef<{ x?: string[]; ig?: string[]; linkedin?: string[] }>({});
+  const composeVariantsRef = useRef<{ neutral?: string[]; x?: string[]; ig?: string[]; linkedin?: string[] }>({});
 
   useEffect(() => {
     if (!currentAsset) {
@@ -593,23 +552,11 @@ export default function StudioPage() {
     if (captionAssetRef.current === currentAsset.id) return;
     captionAssetRef.current = currentAsset.id;
 
-    const av = currentAsset.captionVariants ?? {};
-    const fb = composeVariantsRef.current;
-    const pick = (p: Platform): string[] => {
-      const fromAsset = av[p];
-      if (fromAsset && fromAsset.length) return fromAsset;
-      const fromCompose = fb[p];
-      return fromCompose && fromCompose.length ? fromCompose : ["", "", ""];
-    };
-    const xv = pick("x");
-    const igv = pick("ig");
-    const liv = pick("linkedin");
-    setChosenIndex({ x: 0, ig: 0, linkedin: 0 });
-    setEditedCaption({
-      x: currentAsset.chosenCaptionX ?? xv[0] ?? "",
-      ig: currentAsset.chosenCaptionIg ?? igv[0] ?? "",
-      linkedin: currentAsset.chosenCaptionLi ?? liv[0] ?? "",
-    });
+    const fromAsset = pickNeutral(currentAsset.captionVariants);
+    const fromCompose = pickNeutral(composeVariantsRef.current);
+    const variants = fromAsset.length ? fromAsset : fromCompose;
+    setVariantIdx(0);
+    setEditedCaption(currentAsset.chosenCaptionX ?? variants[0] ?? "");
   }, [currentAsset]);
 
   const downloadCurrent = async () => {
@@ -884,39 +831,6 @@ export default function StudioPage() {
             </div>
           </div>
 
-          {/* AI image */}
-          {aiEligible ? (
-            <button
-              type="button"
-              onClick={() => setUseAiImage((v) => !v)}
-              className={`w-full flex items-center gap-2.5 px-3 py-3 rounded-lg border-2 transition-colors ${
-                useAiImage
-                  ? "border-primary bg-primary/[0.12]"
-                  : "border-primary/40 bg-primary/[0.04] hover:border-primary/70 hover:bg-primary/[0.08]"
-              }`}
-            >
-              <span
-                className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 ${
-                  useAiImage ? "bg-primary border-primary" : "border-primary/60"
-                }`}
-              >
-                {useAiImage && <Check className="w-3.5 h-3.5 text-white" />}
-              </span>
-              <span className="flex-1 text-left">
-                <span className="block text-xs font-bold uppercase tracking-[0.12em] text-foreground">
-                  Generate AI image
-                </span>
-                <span className="block text-[10px] text-muted-foreground mt-0.5">
-                  Brand-styled background via Gemini 2.5 Flash Image
-                </span>
-              </span>
-            </button>
-          ) : aiGatedByAtom ? (
-            <p className="text-[10px] text-muted-foreground/70 leading-snug px-1">AI image unavailable for this selection.</p>
-          ) : (
-            <p className="text-[10px] text-muted-foreground/60 leading-snug px-1">Fill a slot above to enable AI imagery.</p>
-          )}
-
           {/* Generate */}
           <button
             type="button"
@@ -929,7 +843,7 @@ export default function StudioPage() {
           </button>
           {generating && (
             <p className="text-[10px] text-muted-foreground/70 text-center mt-2 leading-relaxed">
-              Rendering {SLOT_COUNT[layout] || 1} slide{(SLOT_COUNT[layout] || 1) > 1 ? "s" : ""} × 4 sizes + AI captions. Carousels can take ~30–60s; please don't re-click.
+              Rendering {SLOT_COUNT[layout] || 1} square slide{(SLOT_COUNT[layout] || 1) > 1 ? "s" : ""} + captions. Carousels can take ~20–40s; please don't re-click.
             </p>
           )}
 
@@ -965,25 +879,11 @@ export default function StudioPage() {
         <aside className="bg-background overflow-y-auto flex flex-col">
           {/* PREVIEW */}
           <div className="border-b border-white/[0.06]">
-            <div className="flex items-center gap-1 px-4 pt-4 pb-2 flex-wrap">
-              {(sizes.length > 0 ? sizes : Object.keys(SIZE_LABELS)).map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  onClick={() => {
-                    setActiveSize(s);
-                    setActiveSlide(0);
-                  }}
-                  disabled={sizes.length === 0}
-                  className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] rounded transition-colors ${
-                    activeSize === s
-                      ? "bg-white/10 text-foreground"
-                      : "text-muted-foreground hover:text-foreground hover:bg-white/5 disabled:opacity-40"
-                  }`}
-                >
-                  {SIZE_LABELS[s] ?? s}
-                </button>
-              ))}
+            <div className="flex items-center gap-1.5 px-4 pt-4 pb-2">
+              <Square className="w-3 h-3 text-muted-foreground" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                1:1 Square · 1080×1080
+              </span>
             </div>
             <div className="px-4 pb-4 flex items-center justify-center min-h-[260px] relative">
               <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_rgba(220,20,60,0.06),_transparent_60%)] pointer-events-none" />
@@ -1055,55 +955,47 @@ export default function StudioPage() {
             )}
           </div>
 
-          {/* CAPTIONS */}
-          <div className="p-4 space-y-4">
-            <div>
-              <h2 className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground mb-1">Captions</h2>
-              <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
-                Three Claude variants per platform. Click to pick, edit inline, copy.
-              </p>
-            </div>
-
-            {(["x", "ig", "linkedin"] as const).map((platform) => {
-              const platformLabel = platform === "x" ? "X" : platform === "ig" ? "Instagram" : "LinkedIn";
-              const variants =
-                (currentAsset?.captionVariants?.[platform]?.length
-                  ? currentAsset.captionVariants[platform]
-                  : composeVariantsRef.current[platform]) ?? ["", "", ""];
-              const chosen = chosenIndex[platform];
-              const isRegen = regenPlatform === platform;
-              const captionActionsDisabled = !singleSlotMap;
-              return (
-                <GlassCard key={platform} className="p-3 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-foreground">{platformLabel}</p>
-                    <button
-                      type="button"
-                      onClick={() => regenPlatformCaption(platform)}
-                      disabled={isRegen || captionActionsDisabled}
-                      title={
-                        captionActionsDisabled
-                          ? "Per-slide caption editing comes later — edit & copy still works."
-                          : "Regenerate variants for this platform"
-                      }
-                      className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-white/5 disabled:opacity-30 transition-colors"
-                    >
-                      <RefreshCw className={`w-3 h-3 ${isRegen ? "animate-spin" : ""}`} />
-                    </button>
+          {/* CAPTION */}
+          {(() => {
+            const variants =
+              (pickNeutral(currentAsset?.captionVariants).length
+                ? pickNeutral(currentAsset?.captionVariants)
+                : pickNeutral(composeVariantsRef.current)) ?? [];
+            const padded = [0, 1, 2].map((i) => variants[i] ?? "");
+            const canRegen = !!singleSlotMap;
+            return (
+              <div className="p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground mb-1">Caption</h2>
+                    <p className="text-[10px] text-muted-foreground/80 leading-relaxed">
+                      Three Claude variants. Pick one, edit inline, copy.
+                    </p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={regenCaption}
+                    disabled={regenBusy || !canRegen}
+                    title={canRegen ? "Regenerate the three variants" : "Regenerate is available for single posts"}
+                    className="text-muted-foreground hover:text-foreground p-1.5 rounded hover:bg-white/5 disabled:opacity-30 transition-colors"
+                  >
+                    <RefreshCw className={`w-3.5 h-3.5 ${regenBusy ? "animate-spin" : ""}`} />
+                  </button>
+                </div>
 
+                <GlassCard className="p-3 space-y-2.5">
                   <div className="grid grid-cols-3 gap-1">
-                    {variants.slice(0, 3).map((v, i) => (
+                    {padded.map((v, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => {
-                          setChosenIndex((p) => ({ ...p, [platform]: i }));
-                          setEditedCaption((p) => ({ ...p, [platform]: v }));
+                          setVariantIdx(i);
+                          setEditedCaption(v);
                         }}
                         disabled={!v}
                         className={`px-2 py-1.5 text-[10px] font-bold uppercase tracking-[0.12em] rounded border transition-colors ${
-                          chosen === i && v
+                          variantIdx === i && v
                             ? "bg-primary/20 border-primary/60 text-primary"
                             : "bg-white/[0.03] border-white/[0.08] text-muted-foreground hover:text-foreground hover:border-white/20 disabled:opacity-30"
                         }`}
@@ -1114,37 +1006,30 @@ export default function StudioPage() {
                   </div>
 
                   <textarea
-                    value={editedCaption[platform]}
-                    onChange={(e) => setEditedCaption((p) => ({ ...p, [platform]: e.target.value }))}
-                    rows={platform === "x" ? 4 : 6}
+                    value={editedCaption}
+                    onChange={(e) => setEditedCaption(e.target.value)}
+                    rows={7}
                     placeholder={!currentAsset ? "Generate to see captions" : "Click a variant above"}
                     className="w-full bg-black/30 border border-white/[0.08] rounded px-2.5 py-2 text-xs leading-relaxed font-mono text-foreground/90 focus:outline-none focus:border-white/20 resize-y"
                   />
                   <div className="flex items-center gap-1.5">
                     <span className="text-[9px] uppercase tracking-[0.15em] text-muted-foreground">
-                      {editedCaption[platform].length} chars
+                      {editedCaption.length} chars
                     </span>
                     <div className="flex-1" />
                     <button
                       type="button"
-                      onClick={() => copyText(editedCaption[platform])}
-                      disabled={!editedCaption[platform].trim()}
+                      onClick={() => copyText(editedCaption)}
+                      disabled={!editedCaption.trim()}
                       className="px-2 py-1 text-[10px] font-bold uppercase tracking-[0.15em] rounded bg-foreground text-background hover:bg-foreground/90 disabled:opacity-30 inline-flex items-center gap-1"
                     >
                       <Copy className="w-2.5 h-2.5" /> Copy
                     </button>
                   </div>
                 </GlassCard>
-              );
-            })}
-
-            {currentAsset && !singleSlotMap && (
-              <div className="text-[10px] text-muted-foreground/70 leading-relaxed flex items-start gap-1">
-                <ChevronRight className="w-3 h-3 mt-0.5 shrink-0" />
-                Per-slide caption regen/save comes later — edit &amp; copy still works for carousels.
               </div>
-            )}
-          </div>
+            );
+          })()}
         </aside>
       </div>
 

@@ -1,3 +1,41 @@
+# Social Studio — Simplification (2026-05-31)
+
+Grilled & confirmed with user. Guiding principle: **don't complicate** — leave dead
+code/columns (`nano-banana.ts`, `useAiImage`, `chosenCaptionIg/Li`) in place, no schema churn.
+
+## Decisions
+- All posters render at **1:1 square** only (drop x_landscape / ig_story / linkedin).
+- **Prediction poster** = hand-drawn SVG trend chart (hero) + big `% SAY YES` verdict + question.
+  Chart applies to **predictions only**. Thread `predictionsTable.trendData` through (synthetic fallback).
+- Captions: **one neutral caption area, 3 distinct variants** (no per-platform tabs/limits). Fix empty bug.
+- **Remove AI image generation** from the UI + compose entirely.
+- Formats: drop **Story**; keep Single / Carousel·3 / Carousel·5 / Weekly recap, all 1:1.
+
+## Tasks
+### 1. Single 1:1 + drop Story + remove AI toggle (backend — studio.ts)
+- [ ] `compose`: force `requestedSizes = ["ig_square"]`; remove story-only branch + AI image block.
+### 2. UI (studio.tsx)
+- [ ] Remove `story-only` from LAYOUTS; remove AI image toggle + `useAiImage` state.
+- [ ] Remove size-switcher tabs in preview; always show the single square.
+### 3. Prediction trend-chart poster
+- [ ] Thread `trendData` (+ synthetic fallback) into prediction source.
+- [ ] Rewrite `prediction-momentum.ts`: SVG area+line chart (data-URI `<img>`) + % verdict + question.
+### 4. Captions: neutral single area + fix empty
+- [ ] `captions.ts`: `generateNeutralCaptions()` → 3 distinct variants, distinct fallback.
+- [ ] compose + getKit: store/expose neutral variants; studio.tsx shows one area + regenerate.
+### 5. Verify
+- [ ] Typecheck api-server + cms; run a prediction compose end-to-end.
+
+## Review
+**Done & verified (typecheck clean on api-server + cms; prediction poster rendered to PNG in all 3 styles).**
+- `studio.ts` compose: `requestedSizes = ["ig_square"]`; `wantAiImage = false` (AI image disabled, code left in place).
+- Prediction source threads `pred.trendData`; `prediction-momentum.ts` rewritten — SVG area+line chart (base64 data-URI `<img>`) as hero + dashed 50% ref + `NN% say YES/NO` verdict + resolve countdown. Synthetic-trend fallback mirrors the public API.
+- `captions.ts`: `generateNeutralCaptions()` → 3 **distinct** non-empty variants (reuses the 3 per-platform fallback phrasings with one {{LINK}} substitution), so the pane is never blank even with no API key. compose + regen endpoint store `neutral` (mirrored into x/ig/linkedin; no migration — added optional `neutral?` to `CaptionVariants`).
+- `studio.tsx`: dropped Story layout, removed AI toggle, removed size tabs (static "1:1 Square" label), rebuilt captions as one neutral area (3 variants, edit, copy, regenerate). Cleaned dead decls.
+- Verified chart renders in minimal-serif / bold-crimson / magazine + synthetic-trend path.
+
+---
+
 # Account — Show user activity stats
 
 User reported: after login, account page shows nothing about their interactions. Add a stats summary above the avatar selector.

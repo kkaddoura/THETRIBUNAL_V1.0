@@ -57,6 +57,7 @@ import {
   type CaptionInput,
   type CaptionVariants,
   generateCaptionVariants,
+  generateNeutralCaptions,
   renderToPng,
   uploadAsset,
   pollResultSplit,
@@ -331,10 +332,12 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
       buildElements: (style, size) => [
         predictionMomentum(
           {
+            id: sourceId,
             question: pred.question,
             yesPercentage: pred.yesPercentage,
             totalVotes: pred.totalCount + (pred.dummyTotalCount ?? 0),
             daysToResolve: days,
+            trend: pred.trendData,
           },
           tokens,
           size,
@@ -785,7 +788,10 @@ router.post("/cms/studio/compose", requireCmsAuth, async (req, res) => {
   const layout: Layout = layoutRaw
   const style: TemplateStyle = isValidStyle(styleRaw) ? styleRaw : "minimal-serif"
   const safeToneHint: ToneHint = ["punchy", "analytical", "warm"].includes(toneHint) ? toneHint : null
-  const wantAiImage = useAiImage === true
+  // AI image generation was removed from Studio (2026-05-31) — kept the field in
+  // the request/response shape for back-compat but it never renders an AI card.
+  void useAiImage
+  const wantAiImage = false
 
   // Resolve slots. recap-weekly is auto-composed (no slot picker): treat it as
   // a single pseudo-slot that delegates to the existing recap loader.
@@ -828,19 +834,23 @@ router.post("/cms/studio/compose", requireCmsAuth, async (req, res) => {
     }
   }
 
-  // story-only renders just the vertical 9:16; everything else renders all sizes.
-  const requestedSizes: SizeKey[] = layout === "story-only"
-    ? (["ig_story"].filter(isValidSize) as SizeKey[])
-    : ALL_SIZE_KEYS
+  // Every poster renders at a single 1:1 square. Per-platform sizes and the
+  // story-only vertical were dropped (2026-05-31) — one consistent aspect ratio.
+  const requestedSizes: SizeKey[] = ["ig_square"]
 
-  // Caption variants: derive from the first slot (Phase 1). Multi-atom
-  // synthesis for carousels is a Phase 4 refinement.
+  // Caption variants: one neutral, platform-agnostic set of 3 distinct variants
+  // derived from the first slot. `generateNeutralCaptions` always returns three
+  // non-empty distinct variants (fallback-backed), so the pane is never blank.
+  // We mirror `neutral` into x/ig/linkedin so legacy readers (ZIP, getKit's
+  // chosenCaption* columns) keep working without a schema change.
   let captionVariants: CaptionVariants
   try {
-    captionVariants = await generateCaptionVariants(resolved[0].source.caption, appUrl(), { toneHint: safeToneHint })
+    const neutral = await generateNeutralCaptions(resolved[0].source.caption, appUrl(), { toneHint: safeToneHint })
+    captionVariants = { neutral, x: neutral, ig: neutral, linkedin: neutral }
   } catch (err) {
     console.error("[studio/compose] caption generation failed:", err)
-    captionVariants = { x: ["", "", ""], ig: ["", "", ""], linkedin: ["", "", ""] }
+    const empty = ["", "", ""]
+    captionVariants = { neutral: empty, x: empty, ig: empty, linkedin: empty }
   }
 
   const kitId = randomUUID()
@@ -1109,13 +1119,13 @@ router.get("/cms/studio/assets", requireCmsAuth, async (req, res) => {
   return res.json({ assets })
 })
 
-// ── POST /cms/studio/captions (regenerate variants) ───────────────
+// ── POST /cms/studio/captions (regenerate the neutral caption set) ─────────
+// Studio uses one platform-agnostic caption set; `platform` is accepted but
+// ignored for back-compat. Returns + persists three fresh distinct variants.
 router.post("/cms/studio/captions", requireCmsAuth, async (req, res) => {
-  const { postType, sourceId, platform, toneHint } = req.body ?? {}
+  const { postType, sourceId, toneHint } = req.body ?? {}
   if (!VALID_POST_TYPES.has(postType)) return res.status(400).json({ error: "invalid_post_type" })
   const safeToneHint: ToneHint = ["punchy", "analytical", "warm"].includes(toneHint) ? toneHint : null
-  const platforms: Platform[] | undefined =
-    platform === "x" || platform === "ig" || platform === "linkedin" ? [platform] : undefined
 
   let source: SourceData
   try {
@@ -1124,14 +1134,16 @@ router.post("/cms/studio/captions", requireCmsAuth, async (req, res) => {
     return res.status(404).json({ error: err instanceof Error ? err.message : "load_failed" })
   }
 
-  let variants: CaptionVariants
+  let neutral: string[]
   try {
-    variants = await generateCaptionVariants(source.caption, appUrl(), { toneHint: safeToneHint, platforms })
+    neutral = await generateNeutralCaptions(source.caption, appUrl(), { toneHint: safeToneHint })
   } catch (err) {
     return res.status(500).json({ error: "generation_failed", detail: String(err) })
   }
 
-  // Merge platform-only updates with existing variants on the rows
+  const variants: CaptionVariants = { neutral, x: neutral, ig: neutral, linkedin: neutral }
+
+  // Persist the fresh set onto every row for this content.
   const family = POST_TYPE_FAMILIES[postType as PostType]
   const filters = [
     eq(pressKitAssetsTable.templateFamily, family),
@@ -1140,21 +1152,13 @@ router.post("/cms/studio/captions", requireCmsAuth, async (req, res) => {
   ]
   const existing = await db.select().from(pressKitAssetsTable).where(and(...filters))
   for (const row of existing) {
-    const merged: CaptionVariants = {
-      x: platforms && !platforms.includes("x") ? row.captionVariants?.x ?? ["", "", ""] : variants.x,
-      ig: platforms && !platforms.includes("ig") ? row.captionVariants?.ig ?? ["", "", ""] : variants.ig,
-      linkedin:
-        platforms && !platforms.includes("linkedin")
-          ? row.captionVariants?.linkedin ?? ["", "", ""]
-          : variants.linkedin,
-    }
     await db
       .update(pressKitAssetsTable)
       .set({
-        captionVariants: merged,
-        captionX: merged.x[0] ?? null,
-        captionIg: merged.ig[0] ?? null,
-        captionLi: merged.linkedin[0] ?? null,
+        captionVariants: variants,
+        captionX: neutral[0] ?? null,
+        captionIg: neutral[0] ?? null,
+        captionLi: neutral[0] ?? null,
         toneHint: safeToneHint,
         updatedAt: new Date(),
       })

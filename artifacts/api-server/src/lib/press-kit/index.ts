@@ -7,6 +7,7 @@ export { renderToPng, renderBatch, uploadAsset, type UploadResult } from "./rend
 export {
   generateCaptions,
   generateCaptionVariants,
+  generateNeutralCaptions,
   type CaptionSet,
   type CaptionInput,
   type CaptionVariants,

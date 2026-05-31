@@ -12,6 +12,10 @@
 import { pgTable, serial, text, integer, timestamp, uniqueIndex, jsonb, boolean } from "drizzle-orm/pg-core";
 
 export interface CaptionVariants {
+  /** Single platform-agnostic caption set (Studio 2026-05-31). Primary source. */
+  neutral?: string[];
+  // Legacy per-platform arrays — kept for back-compat; Studio mirrors `neutral`
+  // into all three so older readers (ZIP, legacy press-kit) still work.
   x?: string[];
   ig?: string[];
   linkedin?: string[];
