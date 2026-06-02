@@ -338,6 +338,6 @@ function pulseSlide(d: RecapData, tokens: BrandTokens, size: SizeKey, style: Tem
   return frame(spec, size, body, { eyebrow: "WEEKLY RECAP", footerLeft: "4 / 4" })
 }
 
-export function weeklyRecap(d: RecapData, tokens: BrandTokens, size: SizeKey, style: TemplateStyle = "minimal-serif") {
+export function weeklyRecap(d: RecapData, tokens: BrandTokens, size: SizeKey, style: TemplateStyle = "dark-editorial") {
   return [coverSlide(d, tokens, size, style), debateSlide(d, tokens, size, style), predictionSlide(d, tokens, size, style), pulseSlide(d, tokens, size, style)]
 }

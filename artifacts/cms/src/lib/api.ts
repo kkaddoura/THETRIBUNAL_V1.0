@@ -274,6 +274,10 @@ export const api = {
     toneHint?: "punchy" | "analytical" | "warm" | null
     useAiImage?: boolean
   }) => request("/studio/compose", { method: "POST", body: JSON.stringify(data) }),
+  // Re-render an existing kit's slides in a new visual style (same kitId, no
+  // caption regeneration). Powers the post-generation style switcher.
+  studioRestyle: (data: { kitId: string; style: string }) =>
+    request("/studio/restyle", { method: "POST", body: JSON.stringify(data) }),
   studioGetKit: (kitId: string) => request(`/studio/kit?kitId=${encodeURIComponent(kitId)}`),
   studioListSources: (postType: string) => request(`/studio/sources/${postType}`),
   studioPortraitStreamUrl: (postType: string, sourceId: number) => {

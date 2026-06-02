@@ -16,7 +16,7 @@ export function founderQuote(
   data: FounderQuoteData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "minimal-serif",
+  style: TemplateStyle = "dark-editorial",
 ) {
   const spec = styleFor(style, tokens, size)
   const scale = sizeScale(size)

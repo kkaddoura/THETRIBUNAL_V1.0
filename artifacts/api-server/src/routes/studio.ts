@@ -120,17 +120,19 @@ async function requireCmsAuth(req: Request, res: Response, next: NextFunction): 
 }
 
 let warnedAppUrl = false
+const APP_URL_FALLBACK = "https://themiddleeasthustle.com"
 function appUrl(): string {
   const url = process.env.APP_URL
   if (url) return url
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("APP_URL env var is required in production (used in caption links)")
-  }
+  // APP_URL is only the base for caption share-links. It must NEVER throw: this
+  // is called as an argument to caption generation, so a throw bubbles up into
+  // the compose catch and blanks the entire caption set (the "captions not
+  // generating" bug). Fall back to the canonical domain and warn instead.
   if (!warnedAppUrl) {
-    console.warn("[studio] APP_URL not set — using https://themiddleeasthustle.com as a dev default for caption links")
+    console.warn(`[studio] APP_URL not set — using ${APP_URL_FALLBACK} as a fallback for caption links. Set APP_URL for correct links.`)
     warnedAppUrl = true
   }
-  return "https://themiddleeasthustle.com"
+  return APP_URL_FALLBACK
 }
 
 function downloadUrlFor(assetId: number): string {
@@ -648,7 +650,7 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
 router.post("/cms/studio/generate", requireCmsAuth, async (req, res) => {
   const { postType, sourceId, style: styleRaw, sizes, toneHint } = req.body ?? {}
   if (!VALID_POST_TYPES.has(postType)) return res.status(400).json({ error: "invalid_post_type" })
-  const style: TemplateStyle = isValidStyle(styleRaw) ? styleRaw : "minimal-serif"
+  const style: TemplateStyle = isValidStyle(styleRaw) ? styleRaw : "dark-editorial"
   const requestedSizes: SizeKey[] = Array.isArray(sizes) && sizes.length
     ? (sizes as string[]).filter(isValidSize)
     : ALL_SIZE_KEYS
@@ -786,7 +788,7 @@ router.post("/cms/studio/compose", requireCmsAuth, async (req, res) => {
 
   if (!isLayout(layoutRaw)) return res.status(400).json({ error: "invalid_layout" })
   const layout: Layout = layoutRaw
-  const style: TemplateStyle = isValidStyle(styleRaw) ? styleRaw : "minimal-serif"
+  const style: TemplateStyle = isValidStyle(styleRaw) ? styleRaw : "dark-editorial"
   const safeToneHint: ToneHint = ["punchy", "analytical", "warm"].includes(toneHint) ? toneHint : null
   // AI image generation was removed from Studio (2026-05-31) — kept the field in
   // the request/response shape for back-compat but it never renders an AI card.
@@ -1025,6 +1027,229 @@ router.post("/cms/studio/compose", requireCmsAuth, async (req, res) => {
     aiImageErrors,
     captionVariants,
   })
+})
+
+// ── POST /cms/studio/restyle ───────────────────────────────────────
+//
+// Re-render an EXISTING kit's slides in a different visual style WITHOUT
+// minting a new kitId and WITHOUT regenerating captions (style is purely
+// visual; captions are style-independent). This powers the post-generation
+// style switcher in the preview pane: the user generates once in the default
+// style, then swaps styles on demand and we re-render only the current kit's
+// slides into the requested style, reusing the same kitId.
+//
+// Why a dedicated endpoint vs. re-calling /compose:
+//  - /compose mints a fresh kitId every call (orphaning the loaded kit) and
+//    re-runs the slow + costly caption LLM even though only the image changed.
+//  - Style is baked into the `template` column (`${layout}-${style}-${atom}`),
+//    so a new style is a new conflict key → a NEW row, not an update. That
+//    means restyling is naturally a per-style render cache: switching back to a
+//    previously-rendered style is an instant cache hit (no render at all).
+router.post("/cms/studio/restyle", requireCmsAuth, async (req, res) => {
+  const { kitId: kitIdRaw, style: styleRaw } = req.body ?? {}
+  const kitId = String(kitIdRaw ?? "")
+  if (!kitId) return res.status(400).json({ error: "kitId_required" })
+  if (!isValidStyle(styleRaw)) return res.status(400).json({ error: "invalid_style" })
+  const style: TemplateStyle = styleRaw
+
+  // Load the kit's current slides. These rows carry everything we need to
+  // re-render: contentType/contentId (the source), slideIndex, layout, the
+  // existing captionVariants (copied verbatim), and the original `template`
+  // from which we recover the atomType.
+  const existing = await db
+    .select()
+    .from(pressKitAssetsTable)
+    .where(eq(pressKitAssetsTable.kitId, kitId))
+    .orderBy(pressKitAssetsTable.size, pressKitAssetsTable.slideIndex)
+
+  if (existing.length === 0) return res.status(404).json({ error: "kit_not_found" })
+
+  // Cache hit: the kit already has rows rendered in the requested style (the
+  // user switched back to a style they've seen). Return them as-is — no render.
+  const alreadyInStyle = existing.filter((r) => r.templateStyle === style)
+  if (alreadyInStyle.length > 0) {
+    return res.json({
+      kitId,
+      style,
+      cached: true,
+      generated: alreadyInStyle.map((r) => ({
+        assetId: r.id,
+        size: r.size,
+        slideIndex: r.slideIndex,
+        slideCount: r.slideCount,
+        publicUrl: downloadUrlFor(r.id),
+      })),
+      failures: [],
+    })
+  }
+
+  // Use any one source style's rows as the template for what to re-render. All
+  // styles of a kit share the same (size × slideIndex) shape, so picking the
+  // first-seen style's rows gives us the full set of slots/slides to redo.
+  const sourceStyle = existing[0].templateStyle
+  const sourceRows = existing.filter((r) => r.templateStyle === sourceStyle)
+
+  const layout = (sourceRows[0].layout ?? "single") as Layout
+  const isRecap = layout === "recap-weekly"
+  const isCarousel = layout === "carousel-3" || layout === "carousel-5"
+  // Captions are style-independent — copy from the existing rows verbatim
+  // instead of re-running the LLM. Keyed by slideIndex so each slide keeps its
+  // own caption set; falls back to slide 0's for any gap.
+  const captionsBySlide = new Map<number, unknown>()
+  for (const r of sourceRows) captionsBySlide.set(r.slideIndex, r.captionVariants)
+  const captionsFor = (slideIndex: number): CaptionVariants =>
+    ((captionsBySlide.get(slideIndex) ?? captionsBySlide.get(0) ?? {
+      neutral: [], x: [], ig: [], linkedin: [],
+    }) as CaptionVariants)
+
+  const tokens = await getBrandTokens()
+  const size: SizeKey = (sourceRows[0].size as SizeKey) ?? "ig_square"
+  const slideCount = sourceRows[0].slideCount ?? sourceRows.length
+
+  // Recover the atomType from `${layout}-${style}-${atomType}` by stripping the
+  // known `${layout}-${sourceStyle}-` prefix (both may contain hyphens).
+  const atomFromTemplate = (template: string, rowStyle: string): string =>
+    template.startsWith(`${layout}-${rowStyle}-`)
+      ? template.slice(`${layout}-${rowStyle}-`.length)
+      : template.split("-").slice(-1)[0]
+
+  // Build the render jobs for the new style.
+  type RestyleJob = {
+    slideIndex: number
+    element: any
+    contentType: string
+    contentId: number
+    atomType: string
+  }
+  const renderJobs: RestyleJob[] = []
+  try {
+    if (isRecap) {
+      // Recap = one source producing all slides. Re-run its element factory.
+      const r0 = sourceRows[0]
+      const source = await loadSource("recap-weekly" as PostType, r0.contentId)
+      const els = await source.buildElements(style, size)
+      els.forEach((element, slideIndex) => {
+        renderJobs.push({
+          slideIndex,
+          element,
+          contentType: source.storedContentType,
+          contentId: source.sourceId,
+          atomType: "recap",
+        })
+      })
+    } else {
+      // single / carousel = one source per slide (slideIndex == slot index).
+      for (const row of sourceRows) {
+        const atomType = atomFromTemplate(row.template, sourceStyle)
+        if (!isAtomType(atomType)) {
+          return res.status(422).json({ error: "unrecoverable_atom_type", template: row.template })
+        }
+        const source = await loadSource(ATOM_TO_POSTTYPE[atomType], row.contentId)
+        const element = (await source.buildElements(style, size))[0]
+        renderJobs.push({
+          slideIndex: row.slideIndex,
+          element,
+          contentType: source.storedContentType,
+          contentId: source.sourceId,
+          atomType,
+        })
+      }
+    }
+  } catch (err) {
+    return res.status(404).json({ error: err instanceof Error ? err.message : "source_load_failed" })
+  }
+
+  // Render every slide, then commit all-or-nothing (same guard as /compose:
+  // never persist a partial restyle).
+  const results = await Promise.allSettled(
+    renderJobs.map(async (job) => {
+      const buf = await renderToPng(job.element, size)
+      const upload = await uploadAsset(buf, job.contentType, job.contentId, `${layout}-${style}`, size, job.slideIndex)
+      return { job, upload }
+    }),
+  )
+
+  const failures: Array<{ size: string; slideIndex: number; error: string }> = []
+  const successfulJobs: Array<{ job: RestyleJob; upload: Awaited<ReturnType<typeof uploadAsset>> }> = []
+  for (let i = 0; i < results.length; i++) {
+    const result = results[i]
+    if (result.status === "rejected") {
+      failures.push({ size, slideIndex: renderJobs[i].slideIndex, error: String(result.reason ?? "render_failed") })
+    } else {
+      successfulJobs.push(result.value)
+    }
+  }
+
+  if (req.aborted || res.writableEnded) {
+    console.warn(`[studio/restyle] aborted mid-render; discarding ${successfulJobs.length} renders (kit=${kitId})`)
+    return
+  }
+  if (failures.length > 0) {
+    console.error(`[studio/restyle] ${failures.length}/${results.length} renders failed — refusing to persist a partial restyle:`, failures.slice(0, 3))
+    return res.status(500).json({
+      error: "restyle_partial_failure",
+      attempted: results.length,
+      succeeded: successfulJobs.length,
+      failures: failures.slice(0, 10),
+    })
+  }
+
+  // Persist. A new style → new `template` conflict key → new rows (the per-style
+  // render cache); restyling to the SAME style again upserts in place. kitId is
+  // preserved so the client's studioGetKit(kitId) keeps working unchanged.
+  const generated: Array<Record<string, unknown>> = []
+  for (const { job, upload } of successfulJobs) {
+    const captionVariants = captionsFor(job.slideIndex)
+    const [row] = await db
+      .insert(pressKitAssetsTable)
+      .values({
+        contentType: job.contentType,
+        contentId: job.contentId,
+        template: `${layout}-${style}-${job.atomType}`,
+        size,
+        slideIndex: job.slideIndex,
+        slideCount,
+        templateFamily: isRecap ? "recap" : (isCarousel ? "carousel" : "item"),
+        templateStyle: style,
+        layout,
+        kitId,
+        useAiImage: sourceRows[0].useAiImage ?? false,
+        r2Key: upload.r2Key,
+        captionX: captionVariants.x?.[0] ?? null,
+        captionIg: captionVariants.ig?.[0] ?? null,
+        captionLi: captionVariants.linkedin?.[0] ?? null,
+        captionVariants,
+        toneHint: sourceRows[0].toneHint ?? null,
+      })
+      .onConflictDoUpdate({
+        target: [
+          pressKitAssetsTable.contentType,
+          pressKitAssetsTable.contentId,
+          pressKitAssetsTable.template,
+          pressKitAssetsTable.size,
+          pressKitAssetsTable.slideIndex,
+        ],
+        set: {
+          r2Key: upload.r2Key,
+          slideCount,
+          layout,
+          kitId,
+          templateStyle: style,
+          captionVariants,
+          updatedAt: new Date(),
+        },
+      })
+      .returning({ id: pressKitAssetsTable.id })
+    generated.push({
+      assetId: row?.id,
+      size,
+      slideIndex: job.slideIndex,
+      slideCount,
+      publicUrl: row?.id ? downloadUrlFor(row.id) : upload.publicUrl,
+    })
+  }
+
+  return res.json({ kitId, style, cached: false, generated, failures })
 })
 
 // ── GET /cms/studio/kit?kitId=… ────────────────────────────────────

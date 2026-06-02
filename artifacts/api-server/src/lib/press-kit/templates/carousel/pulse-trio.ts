@@ -118,7 +118,7 @@ export function pulseTrio(
   d: PulseTrioData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "minimal-serif",
+  style: TemplateStyle = "dark-editorial",
 ) {
   const items = d.items.slice(0, 3)
   return items.map((it, i) => pulseSlide(it, tokens, size, style, i, items.length))

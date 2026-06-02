@@ -43,7 +43,12 @@ type AtomType =
   | "about-region"
   | "manifesto";
 type Layout = "single" | "carousel-3" | "carousel-5" | "recap-weekly";
-type Style = "minimal-serif" | "bold-crimson" | "magazine";
+type Style =
+  | "dark-editorial"
+  | "warm-broadsheet"
+  | "crimson-manifesto"
+  | "luxe-pull-quote"
+  | "terminal-ledger";
 type Platform = "x" | "ig" | "linkedin";
 type Tone = "punchy" | "analytical" | "warm" | null;
 
@@ -107,68 +112,121 @@ const ABOUT_SINGLETONS: { atomType: AtomType; label: string }[] = [
 ];
 
 // Mini-preview thumbnails — tiny, static, pure-CSS representations of what
-// a generated card looks like in each style so the picker is choosable by sight.
-// All three share the same outer geometry (w-20 h-14) so the picker layout
-// doesn't shift between selections.
+// a generated card looks like in each style so the switcher is choosable by
+// sight. All five share the same outer geometry (w-20 h-14) so the switcher
+// layout doesn't shift between selections.
 const StylePreview: Record<Style, React.ReactNode> = {
-  "minimal-serif": (
+  "dark-editorial": (
     <div
-      className="w-20 h-14 rounded-md shrink-0 border border-white/10 overflow-hidden relative"
-      style={{ background: "linear-gradient(135deg, #0A0A0A 0%, #1A1A1A 100%)" }}
+      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative"
+      style={{ background: "linear-gradient(168deg, #131313 0%, #0A0A0A 48%, #050505 100%)" }}
     >
+      {/* twin crimson edition-band hairlines top + bottom */}
       <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "#DC143C" }} />
+      <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: "#DC143C" }} />
       <div className="px-1.5 pt-1.5 pb-1 flex flex-col gap-0.5">
-        <div className="text-[5px] uppercase tracking-[0.18em] font-bold" style={{ color: "#9A9A9A" }}>
+        <div className="text-[5px] uppercase tracking-[0.18em] font-bold" style={{ color: "#DC143C" }}>
           Debate
         </div>
         <div
-          className="text-[8px] leading-[1.05] text-white truncate"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif" }}
+          className="text-[8px] leading-[1.05] truncate"
+          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#F0EDE9" }}
         >
           Quiet headline<span style={{ color: "#DC143C" }}>.</span>
         </div>
       </div>
     </div>
   ),
-  "bold-crimson": (
+  "warm-broadsheet": (
     <div
-      className="w-20 h-14 rounded-md shrink-0 border border-white/10 overflow-hidden relative shadow-[inset_0_-6px_12px_-6px_rgba(0,0,0,0.45)]"
-      style={{ background: "linear-gradient(135deg, #DC143C 0%, #8A0A24 100%)" }}
+      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative"
+      style={{ background: "linear-gradient(165deg, #FBF7EF 0%, #F5F0EB 46%, #EDE6DC 100%)" }}
     >
-      <div className="px-1.5 pt-1 pb-1 flex flex-col h-full justify-between">
+      {/* left crimson section bar */}
+      <div className="absolute top-0 bottom-0 left-0 w-[3px]" style={{ background: "#DC143C" }} />
+      <div className="pl-2 pr-1.5 pt-1.5 pb-1 flex flex-col h-full justify-between">
         <div
-          className="inline-block self-start text-[5px] uppercase tracking-[0.18em] font-bold px-1 py-[1px] rounded-sm"
-          style={{ background: "rgba(255,255,255,0.18)", color: "#FFFFFF" }}
+          className="text-[8px] leading-[1.05] truncate"
+          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#1A1A1A" }}
         >
-          Voice
+          Print feature<span style={{ color: "#DC143C" }}>.</span>
         </div>
         <div
-          className="text-[10px] leading-[0.95] font-extrabold text-white truncate"
-          style={{ fontFamily: "'Inter', system-ui, sans-serif", letterSpacing: "-0.02em" }}
+          className="text-[5px] uppercase tracking-[0.18em] font-bold truncate"
+          style={{ color: "#5C5C5C", borderTop: "1px solid #D4CFC9", paddingTop: "2px" }}
         >
-          LOUD TAKE
+          Issue · 05
         </div>
       </div>
     </div>
   ),
-  magazine: (
+  "crimson-manifesto": (
     <div
-      className="w-20 h-14 rounded-md shrink-0 border border-white/10 overflow-hidden relative"
-      style={{ background: "linear-gradient(180deg, #F2EDE4 0%, #EAE3D6 100%)" }}
+      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative"
+      style={{ background: "linear-gradient(150deg, #F11D45 0%, #DC143C 40%, #A60C28 100%)" }}
     >
-      <div className="absolute top-0 left-0 right-0 h-[3px]" style={{ background: "#DC143C" }} />
-      <div className="px-1.5 pt-1.5 pb-1 flex flex-col h-full justify-between">
+      {/* color-flipped white edition band top + bottom */}
+      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "rgba(255,255,255,0.4)" }} />
+      <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: "rgba(255,255,255,0.4)" }} />
+      <div className="px-1.5 pt-1 pb-1 flex flex-col h-full justify-between">
         <div
-          className="text-[8px] leading-[1.05] truncate"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#0A0A0A" }}
+          className="inline-block self-start text-[5px] uppercase tracking-[0.18em] font-bold px-1 py-[1px] rounded-[2px]"
+          style={{ background: "#0A0A0A", color: "#FFFFFF" }}
         >
-          Print feature
+          Reveal
+        </div>
+        <div
+          className="text-[9px] leading-[0.95] font-bold truncate"
+          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#FFFFFF", letterSpacing: "-0.02em" }}
+        >
+          BIG NUMBER<span style={{ color: "#0A0A0A" }}>.</span>
+        </div>
+      </div>
+    </div>
+  ),
+  "luxe-pull-quote": (
+    <div
+      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative"
+      style={{ background: "linear-gradient(180deg, #101010 0%, #0A0A0A 60%, #070707 100%)" }}
+    >
+      {/* single tall left crimson rule */}
+      <div className="absolute top-2 bottom-2 left-1.5 w-[3px]" style={{ background: "#DC143C" }} />
+      <div className="pl-3 pr-1.5 pt-1.5 pb-1 flex flex-col h-full justify-between">
+        <div
+          className="text-[8px] leading-[1.1] truncate"
+          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#F0EDE9" }}
+        >
+          The quote<span style={{ color: "#DC143C" }}>.</span>
         </div>
         <div
           className="text-[5px] uppercase tracking-[0.18em] font-bold truncate"
-          style={{ color: "#7A5A3A" }}
+          style={{ color: "#DC143C" }}
         >
-          Issue · 05
+          — Founder
+        </div>
+      </div>
+    </div>
+  ),
+  "terminal-ledger": (
+    <div
+      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative shadow-[0_8px_20px_-8px_rgba(0,0,0,0.6)]"
+      style={{ background: "linear-gradient(180deg, #121212 0%, #0D0D0D 55%, #080808 100%)" }}
+    >
+      <div className="px-1.5 pt-1.5 pb-1 flex flex-col h-full justify-between">
+        <div className="text-[5px] uppercase tracking-[0.18em] font-bold" style={{ color: "#10B981" }}>
+          ● Live
+        </div>
+        <div
+          className="text-[13px] leading-none font-extrabold tabular-nums truncate"
+          style={{ fontFamily: "ui-monospace, Menlo, monospace", color: "#F0EDE9" }}
+        >
+          64%
+        </div>
+        <div
+          className="text-[5px] uppercase tracking-[0.18em] font-bold truncate"
+          style={{ color: "#3B82F6", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "2px" }}
+        >
+          Prediction
         </div>
       </div>
     </div>
@@ -176,9 +234,11 @@ const StylePreview: Record<Style, React.ReactNode> = {
 };
 
 const STYLES: { id: Style; label: string; description: string }[] = [
-  { id: "minimal-serif", label: "Minimal Serif", description: "Restrained dark, editorial calm." },
-  { id: "bold-crimson", label: "Bold Crimson", description: "Loud, full-bleed brand." },
-  { id: "magazine", label: "Magazine", description: "Cream paper, accent rules." },
+  { id: "dark-editorial", label: "Dark Editorial", description: "Flagship near-black newsroom-at-night." },
+  { id: "warm-broadsheet", label: "Warm Broadsheet", description: "Light parchment print edition." },
+  { id: "crimson-manifesto", label: "Crimson Manifesto", description: "Full-bleed crimson agitprop poster." },
+  { id: "luxe-pull-quote", label: "Luxe Pull-Quote", description: "Restrained authoritative quote card." },
+  { id: "terminal-ledger", label: "Terminal Ledger", description: "Bloomberg-for-MENA data card." },
 ];
 
 const SIZE_ASPECT: Record<string, string> = {
@@ -253,7 +313,7 @@ export default function StudioPage() {
   const [libraryTab, setLibraryTab] = useState<LibraryTab>("all");
   const [librarySearch, setLibrarySearch] = useState("");
   const [sourcesCache, setSourcesCache] = useState<Partial<Record<AtomType, { id: number; label: string; createdAt?: string }[]>>>({});
-  const [style, setStyle] = useState<Style>("minimal-serif");
+  const [style, setStyle] = useState<Style>("dark-editorial");
   const [tone, setTone] = useState<Tone>(null);
   const [kitId, setKitId] = useState<string | null>(null);
   const [assets, setAssets] = useState<StudioAsset[]>([]);
@@ -277,6 +337,9 @@ export default function StudioPage() {
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [zipBusy, setZipBusy] = useState(false);
   const [regenBusy, setRegenBusy] = useState(false);
+  // Set to the style id currently being re-rendered by the post-generation
+  // switcher (null = idle). Drives the small per-style loading state.
+  const [restyling, setRestyling] = useState<Style | null>(null);
 
   const [dragIndex, setDragIndex] = useState<number | null>(null);
 
@@ -497,6 +560,32 @@ export default function StudioPage() {
     }
   };
 
+  // Post-generation style switch: re-render the CURRENT kit's slides in the
+  // chosen style (same kitId, no caption regeneration) and swap the preview.
+  // Switching to a style this kit already rendered is an instant cache hit
+  // server-side. The ~1–2s render shows a per-style loading state.
+  const handleRestyle = async (next: Style) => {
+    if (next === style || !kitId || restyling) return;
+    setError(null);
+    setRestyling(next);
+    try {
+      await api.studioRestyle({ kitId, style: next });
+      // Re-fetch the kit — it now also carries the new-style rows. The
+      // sizeAssets memo filters by `style`, so flipping `style` after the
+      // assets are in place swaps the preview to the freshly rendered slides.
+      const kit: { assets: StudioAsset[] } = await api.studioGetKit(kitId);
+      const kitAssets = kit.assets ?? [];
+      captionAssetRef.current = null;
+      setAssets(kitAssets);
+      setStyle(next);
+      trackCms("cms_studio_restyled", { layout, style: next });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Restyle failed");
+    } finally {
+      setRestyling(null);
+    }
+  };
+
   // Pull the neutral caption set out of a variants blob, falling back to the
   // legacy `x` array for kits composed before the single-caption switch.
   const pickNeutral = (cv?: { neutral?: string[]; x?: string[] } | null): string[] =>
@@ -528,9 +617,16 @@ export default function StudioPage() {
     setTimeout(() => setCopyToast(null), 1200);
   };
 
+  // Filter by size AND active style: after a restyle, studioGetKit(kitId)
+  // returns BOTH the old- and new-style rows under the same kitId, so the
+  // size+slide key is no longer unique. Pinning to the selected style keeps the
+  // preview showing exactly the active style's render.
   const sizeAssets = useMemo(
-    () => assets.filter((a) => a.size === activeSize).sort((a, b) => a.slideIndex - b.slideIndex),
-    [assets, activeSize],
+    () =>
+      assets
+        .filter((a) => a.size === activeSize && a.templateStyle === style)
+        .sort((a, b) => a.slideIndex - b.slideIndex),
+    [assets, activeSize, style],
   );
   const currentAsset = sizeAssets[Math.min(activeSlide, Math.max(0, sizeAssets.length - 1))];
   const slideTotal = sizeAssets.length;
@@ -780,24 +876,8 @@ export default function StudioPage() {
             </>
           )}
 
-          {/* Style picker */}
-          <div className="space-y-2">
-            <h2 className="text-[10px] font-bold uppercase tracking-[0.25em] text-muted-foreground">Visual style</h2>
-            <div className="grid grid-cols-1 gap-1.5">
-              {STYLES.map((s) => (
-                <GlassCard key={s.id} onClick={() => setStyle(s.id)} active={style === s.id} className="px-2.5 py-2">
-                  <div className="flex items-center gap-2.5">
-                    {StylePreview[s.id]}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-bold">{s.label}</p>
-                      <p className="text-[10px] text-muted-foreground leading-snug">{s.description}</p>
-                    </div>
-                    {style === s.id && <Check className="w-3 h-3 text-primary shrink-0" />}
-                  </div>
-                </GlassCard>
-              ))}
-            </div>
-          </div>
+          {/* Visual style is no longer a pre-generation choice — generate in the
+              default style, then switch styles on demand from the preview pane. */}
 
           {/* Tone */}
           <div className="space-y-2">
@@ -895,9 +975,19 @@ export default function StudioPage() {
                   <img
                     src={currentAsset.publicUrl}
                     alt={currentAsset.size}
-                    className="max-w-full max-h-[44vh] rounded shadow-[0_24px_64px_-16px_rgba(0,0,0,0.6)] border border-white/[0.06]"
+                    className={`max-w-full max-h-[44vh] rounded shadow-[0_24px_64px_-16px_rgba(0,0,0,0.6)] border border-white/[0.06] transition-opacity duration-200 ${restyling ? "opacity-40" : "opacity-100"}`}
                     style={{ aspectRatio: SIZE_ASPECT[currentAsset.size] ?? "1/1" }}
                   />
+                  {restyling && (
+                    <div className="absolute inset-0 flex items-center justify-center rounded">
+                      <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/70 backdrop-blur-sm border border-white/10">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-primary" />
+                        <span className="text-[10px] font-bold uppercase tracking-[0.18em] text-foreground/90">
+                          Re-rendering…
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center">
@@ -951,6 +1041,50 @@ export default function StudioPage() {
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
+              </div>
+            )}
+
+            {/* STYLE SWITCHER — post-generation. Pick the visual style AFTER
+                generating; clicking re-renders the current kit on demand. */}
+            {assets.length > 0 && (
+              <div className="px-4 pb-4 pt-1 space-y-2">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-[10px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                    Visual style
+                  </h2>
+                  {restyling && (
+                    <span className="text-[9px] font-bold uppercase tracking-[0.18em] text-primary inline-flex items-center gap-1">
+                      <Loader2 className="w-3 h-3 animate-spin" /> Rendering
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 gap-1.5">
+                  {STYLES.map((s) => {
+                    const active = style === s.id;
+                    const loading = restyling === s.id;
+                    return (
+                      <GlassCard
+                        key={s.id}
+                        onClick={() => handleRestyle(s.id)}
+                        active={active}
+                        className={`px-2.5 py-2 ${restyling && !loading ? "opacity-60" : ""} ${restyling ? "pointer-events-none" : ""}`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          {StylePreview[s.id]}
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-bold">{s.label}</p>
+                            <p className="text-[10px] text-muted-foreground leading-snug">{s.description}</p>
+                          </div>
+                          {loading ? (
+                            <Loader2 className="w-3.5 h-3.5 text-primary shrink-0 animate-spin" />
+                          ) : active ? (
+                            <Check className="w-3.5 h-3.5 text-primary shrink-0" />
+                          ) : null}
+                        </div>
+                      </GlassCard>
+                    );
+                  })}
+                </div>
               </div>
             )}
           </div>

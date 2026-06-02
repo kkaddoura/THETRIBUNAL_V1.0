@@ -228,7 +228,7 @@ export function debateCarousel(
   d: DebateCarouselData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "minimal-serif",
+  style: TemplateStyle = "dark-editorial",
 ) {
   return [hookSlide(d, tokens, size, style), contextSlide(d, tokens, size, style), voteSplitSlide(d, tokens, size, style)]
 }

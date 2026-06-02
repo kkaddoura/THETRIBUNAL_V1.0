@@ -8,7 +8,7 @@
  * driven by the selected `TemplateStyle`, so switching styles re-skins the
  * card while preserving its poll-bar identity.
  *
- * Style is the OPTIONAL last param (default "minimal-serif") so existing
+ * Style is the OPTIONAL last param (default "dark-editorial") so existing
  * callers in `routes/press-kit.ts` continue to work unchanged.
  */
 
@@ -32,7 +32,7 @@ export function pollResultSplit(
   data: PollData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "minimal-serif",
+  style: TemplateStyle = "dark-editorial",
 ): SatoriElement {
   const spec = styleFor(style, tokens, size)
   const scale = sizeScale(size)

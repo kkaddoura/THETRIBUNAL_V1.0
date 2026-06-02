@@ -33,7 +33,7 @@ const FONT_URLS = {
   bodyBold: `${GITHUB_FONTS}/barlow/Barlow-Bold.ttf`,
 } as const
 
-// Playfair Display — refined serif used by the "minimal-serif" / "magazine"
+// Playfair Display — refined serif used by the "dark-editorial" / "warm-broadsheet"
 // Studio styles. Registered under a fixed family name so styleFor() can opt in
 // via `displayFont` without coupling tokens to URLs. Loading failures are
 // non-fatal: the renderer falls back to the brand sans family.

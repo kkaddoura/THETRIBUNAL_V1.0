@@ -1103,7 +1103,7 @@ router.put("/cms/homepage", requireCmsAuth, async (req, res) => {
   try {
     const [existing] = await db.select().from(cmsConfigsTable).where(eq(cmsConfigsTable.key, "homepage"));
     const currentConfig = (existing?.value ?? {}) as Record<string, Record<string, unknown> | unknown[] | unknown>;
-    const { masthead, ticker, sections, banners, newsletter, sectionStats } = req.body;
+    const { masthead, ticker, sections, banners, newsletter, sectionStats, content } = req.body;
 
     if (masthead) currentConfig.masthead = { ...(currentConfig.masthead as Record<string, unknown> ?? {}), ...masthead };
     if (ticker) currentConfig.ticker = { ...(currentConfig.ticker as Record<string, unknown> ?? {}), ...ticker };
@@ -1111,6 +1111,7 @@ router.put("/cms/homepage", requireCmsAuth, async (req, res) => {
     if (banners) currentConfig.banners = banners;
     if (newsletter) currentConfig.newsletter = { ...(currentConfig.newsletter as Record<string, unknown> ?? {}), ...newsletter };
     if (sectionStats) currentConfig.sectionStats = { ...(currentConfig.sectionStats as Record<string, unknown> ?? {}), ...sectionStats };
+    if (content) currentConfig.content = { ...(currentConfig.content as Record<string, unknown> ?? {}), ...content };
 
     if (existing) {
       await db.update(cmsConfigsTable).set({ value: currentConfig, updatedAt: new Date() }).where(eq(cmsConfigsTable.key, "homepage"));
