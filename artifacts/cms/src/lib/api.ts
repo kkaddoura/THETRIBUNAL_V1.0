@@ -201,10 +201,23 @@ export const api = {
   createMajlisInvite: (data: { profileId: number; email: string }) =>
     request("/majlis/invites", { method: "POST", body: JSON.stringify(data) }),
 
-  // Newsletter digest
-  previewDigest: () => request("/digest/preview-this-week", { method: "POST" }),
-  pushDigest: () => request("/digest/push-to-beehiiv", { method: "POST" }),
+  // Newsletter send history
   listDigests: () => request("/digest"),
+
+  // Weekly editorial newsletter (Resend delivery)
+  previewNewsletter: () => request("/newsletter/preview", { method: "POST" }),
+  sendTestNewsletter: (to: string) =>
+    request("/newsletter/send-test", { method: "POST", body: JSON.stringify({ to }) }),
+  sendAllNewsletter: () =>
+    request("/newsletter/send-all", { method: "POST", body: JSON.stringify({}) }),
+  getNewsletterSchedule: () => request("/newsletter/schedule"),
+  updateNewsletterSchedule: (schedule: {
+    enabled: boolean;
+    dayOfWeek: number;
+    hour: number;
+    minute: number;
+    timezone: string;
+  }) => request("/newsletter/schedule", { method: "PUT", body: JSON.stringify(schedule) }),
 
   // Press kit
   generatePressKit: (data: {
