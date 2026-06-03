@@ -61,6 +61,7 @@ import {
   renderToPng,
   uploadAsset,
   pollResultSplit,
+  pollResultDetailed,
   predictionMomentum,
   voiceQuote,
   pulseStat,
@@ -152,13 +153,14 @@ function isValidStyle(s: unknown): s is TemplateStyle {
 // single source-resolution engine.
 
 type AtomType =
-  | "debate" | "prediction" | "voice" | "pulse"
+  | "debate" | "debate-detailed" | "prediction" | "voice" | "pulse"
   | "about-founder" | "about-pillar" | "about-belief" | "about-region"
   | "manifesto"
 type Layout = "single" | "carousel-3" | "carousel-5" | "story-only" | "recap-weekly"
 
 const ATOM_TO_POSTTYPE: Record<AtomType, PostType> = {
   debate: "item-poll",
+  "debate-detailed": "item-poll-detailed",
   prediction: "item-prediction",
   voice: "item-voice",
   pulse: "item-pulse",
@@ -310,6 +312,44 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
       },
       buildElements: (style, size) => [
         pollResultSplit(
+          { question: poll.question, category: poll.category, totalVotes: total, options },
+          tokens,
+          size,
+          style,
+        ),
+      ],
+      slideCount: 1,
+    }
+  }
+
+  if (postType === "item-poll-detailed") {
+    const [poll] = await db.select().from(pollsTable).where(eq(pollsTable.id, sourceId))
+    if (!poll) throw new Error("not_found")
+    const opts = await db.select().from(pollOptionsTable).where(eq(pollOptionsTable.pollId, sourceId))
+    const total = opts.reduce((s, o) => s + (o.voteCount ?? 0) + (o.dummyVoteCount ?? 0), 0)
+    const options = opts.map((o) => ({
+      text: o.text,
+      percentage: total > 0 ? ((o.voteCount ?? 0) + (o.dummyVoteCount ?? 0)) / total * 100 : 0,
+    }))
+    const winner = options.reduce(
+      (best, o) => (o.percentage > (best?.percentage ?? 0) ? o : best),
+      undefined as { text: string; percentage: number } | undefined,
+    )
+    return {
+      type: postType,
+      sourceId,
+      storedContentType: "poll",
+      caption: {
+        contentType: "poll",
+        contentId: sourceId,
+        question: poll.question,
+        category: poll.category,
+        winningOption: winner?.text,
+        winningPercentage: winner?.percentage,
+      },
+      // Detailed "Split card" — full ranked breakdown + auto takeaway + label.
+      buildElements: (style, size) => [
+        pollResultDetailed(
           { question: poll.question, category: poll.category, totalVotes: total, options },
           tokens,
           size,
@@ -1301,6 +1341,7 @@ router.get("/cms/studio/assets", requireCmsAuth, async (req, res) => {
   if (family === "item") {
     const itemMap: Record<string, string> = {
       "item-poll": "poll",
+      "item-poll-detailed": "poll",
       "item-prediction": "prediction",
       "item-voice": "voice",
       "item-pulse": "pulse",
@@ -1496,6 +1537,7 @@ router.get("/cms/studio/zip", requireCmsAuth, async (req, res) => {
     const filters = [eq(pressKitAssetsTable.templateFamily, family)]
     const itemMap: Record<string, string> = {
       "item-poll": "poll",
+      "item-poll-detailed": "poll",
       "item-prediction": "prediction",
       "item-voice": "voice",
       "item-pulse": "pulse",
@@ -1555,7 +1597,7 @@ router.get("/cms/studio/sources/:postType", requireCmsAuth, async (req, res) => 
   const postType = String(req.params.postType ?? "")
   if (!VALID_POST_TYPES.has(postType)) return res.status(400).json({ error: "invalid_post_type" })
 
-  if (postType === "item-poll" || postType === "carousel-debate") {
+  if (postType === "item-poll" || postType === "item-poll-detailed" || postType === "carousel-debate") {
     const rows = await db
       .select({ id: pollsTable.id, label: pollsTable.question, category: pollsTable.category, createdAt: pollsTable.createdAt })
       .from(pollsTable)

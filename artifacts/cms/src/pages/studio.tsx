@@ -34,6 +34,7 @@ import {
 
 type AtomType =
   | "debate"
+  | "debate-detailed"
   | "prediction"
   | "voice"
   | "pulse"
@@ -67,6 +68,7 @@ const LAYOUTS: LayoutMeta[] = [
 
 const ATOM_META: Record<AtomType, { label: string; icon: typeof Sparkles }> = {
   debate: { label: "Debate", icon: Newspaper },
+  "debate-detailed": { label: "Debate — Detailed", icon: Newspaper },
   prediction: { label: "Prediction", icon: TrendingUp },
   voice: { label: "Voice", icon: Users },
   pulse: { label: "Pulse", icon: Activity },
@@ -80,6 +82,7 @@ const ATOM_META: Record<AtomType, { label: string; icon: typeof Sparkles }> = {
 // AtomType → legacy postType token used by sources/captions endpoints.
 const ATOM_TO_POSTTYPE: Record<AtomType, string> = {
   debate: "item-poll",
+  "debate-detailed": "item-poll-detailed",
   prediction: "item-prediction",
   voice: "item-voice",
   pulse: "item-pulse",
@@ -93,6 +96,7 @@ const ATOM_TO_POSTTYPE: Record<AtomType, string> = {
 const LIBRARY_TABS: { id: LibraryTab; label: string }[] = [
   { id: "all", label: "All" },
   { id: "debate", label: "Debates" },
+  { id: "debate-detailed", label: "Debates · Detailed" },
   { id: "prediction", label: "Predictions" },
   { id: "voice", label: "Voices" },
   { id: "pulse", label: "Pulse" },
@@ -311,7 +315,7 @@ export default function StudioPage() {
   useEffect(() => {
     if (isRecap) return;
     if (libraryTab === "all") {
-      (["debate", "prediction", "voice", "pulse"] as AtomType[]).forEach(ensureSources);
+      (["debate", "debate-detailed", "prediction", "voice", "pulse"] as AtomType[]).forEach(ensureSources);
     } else if (libraryTab === "about") {
       ensureSources("about-pillar");
       ensureSources("about-belief");
@@ -332,6 +336,7 @@ export default function StudioPage() {
       // Keep backend order (recency) — do NOT sort.
       rows = [
         ...fromCache("debate"),
+        ...fromCache("debate-detailed"),
         ...fromCache("prediction"),
         ...fromCache("voice"),
         ...fromCache("pulse"),

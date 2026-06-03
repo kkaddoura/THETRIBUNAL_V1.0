@@ -18,6 +18,7 @@ export {
 
 // v1 templates (per-item)
 export { pollResultSplit, type PollData } from "./templates/poll-result-split.js"
+export { pollResultDetailed, type DetailedPollData } from "./templates/poll-result-detailed.js"
 export { voiceQuote, type VoiceData } from "./templates/voice-quote.js"
 export { predictionMomentum, type PredictionData } from "./templates/prediction-momentum.js"
 export { pulseStat, type PulseData } from "./templates/pulse-stat.js"
@@ -59,6 +60,7 @@ export type TemplateKey = keyof typeof TEMPLATES
 export const POST_TYPE_FAMILIES = {
   // per-item (v1, kept for compat)
   "item-poll": "item",
+  "item-poll-detailed": "item",
   "item-prediction": "item",
   "item-voice": "item",
   "item-pulse": "item",
