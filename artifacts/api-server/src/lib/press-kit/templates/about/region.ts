@@ -22,7 +22,7 @@ export function regionCard(
   data: RegionData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "dark-editorial",
+  style: TemplateStyle = "brutalist-index",
 ) {
   const spec = styleFor(style, tokens, size)
   const scale = sizeScale(size)

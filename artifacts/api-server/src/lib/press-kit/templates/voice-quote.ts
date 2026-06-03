@@ -9,7 +9,7 @@
  * use `spec.displayFont` (Playfair Display when loaded) for the focal
  * editorial feel; attribution stays in the body sans.
  *
- * Style is the OPTIONAL last param (default "dark-editorial") so existing
+ * Style is the OPTIONAL last param (default "brutalist-index") so existing
  * callers in `routes/press-kit.ts` continue to work unchanged.
  */
 
@@ -34,7 +34,7 @@ export function voiceQuote(
   data: VoiceData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "dark-editorial",
+  style: TemplateStyle = "brutalist-index",
 ): SatoriElement {
   const spec = styleFor(style, tokens, size)
   const scale = sizeScale(size)

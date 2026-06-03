@@ -44,11 +44,11 @@ type AtomType =
   | "manifesto";
 type Layout = "single" | "carousel-3" | "carousel-5" | "recap-weekly";
 type Style =
-  | "dark-editorial"
-  | "warm-broadsheet"
-  | "crimson-manifesto"
-  | "luxe-pull-quote"
-  | "terminal-ledger";
+  | "brutalist-index"
+  | "acid-poster"
+  | "atelier"
+  | "neo-pop"
+  | "noir-terminal";
 type Platform = "x" | "ig" | "linkedin";
 type Tone = "punchy" | "analytical" | "warm" | null;
 
@@ -116,129 +116,100 @@ const ABOUT_SINGLETONS: { atomType: AtomType; label: string }[] = [
 // sight. All five share the same outer geometry (w-20 h-14) so the switcher
 // layout doesn't shift between selections.
 const StylePreview: Record<Style, React.ReactNode> = {
-  "dark-editorial": (
-    <div
-      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative"
-      style={{ background: "linear-gradient(168deg, #131313 0%, #0A0A0A 48%, #050505 100%)" }}
-    >
-      {/* twin crimson edition-band hairlines top + bottom */}
-      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "#DC143C" }} />
-      <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: "#DC143C" }} />
-      <div className="px-1.5 pt-1.5 pb-1 flex flex-col gap-0.5">
-        <div className="text-[5px] uppercase tracking-[0.18em] font-bold" style={{ color: "#DC143C" }}>
-          Debate
+  "brutalist-index": (
+    <div className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative" style={{ background: "#EDEAE3" }}>
+      <div className="absolute inset-[3px] border-2 border-black flex flex-col justify-between p-1">
+        <div className="flex items-center justify-between" style={{ fontFamily: "ui-monospace, monospace" }}>
+          <span className="text-[4px] uppercase tracking-[0.18em] font-bold" style={{ color: "#E5240E" }}>Voice</span>
+          <span className="text-[4px] uppercase tracking-[0.12em] font-bold text-black">Nº 01</span>
+        </div>
+        <div className="text-[9px] leading-[0.9] truncate" style={{ fontFamily: "'Arial Black', sans-serif", color: "#0A0A0A" }}>
+          HEAVY INDEX
         </div>
         <div
-          className="text-[8px] leading-[1.05] truncate"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#F0EDE9" }}
+          className="text-[4px] uppercase tracking-[0.16em] font-bold truncate"
+          style={{ color: "#6B6862", fontFamily: "ui-monospace, monospace", borderTop: "1px solid #0A0A0A", paddingTop: "2px" }}
         >
-          Quiet headline<span style={{ color: "#DC143C" }}>.</span>
+          The Tribunal<span style={{ color: "#E5240E" }}>.</span>
         </div>
       </div>
     </div>
   ),
-  "warm-broadsheet": (
-    <div
-      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative"
-      style={{ background: "linear-gradient(165deg, #FBF7EF 0%, #F5F0EB 46%, #EDE6DC 100%)" }}
-    >
-      {/* left crimson section bar */}
-      <div className="absolute top-0 bottom-0 left-0 w-[3px]" style={{ background: "#DC143C" }} />
-      <div className="pl-2 pr-1.5 pt-1.5 pb-1 flex flex-col h-full justify-between">
+  "acid-poster": (
+    <div className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex flex-col justify-between" style={{ background: "#0B0B0B" }}>
+      <div className="px-1.5 pt-1.5">
+        <span className="inline-block text-[4px] uppercase tracking-[0.2em] font-extrabold px-1 py-[1px]" style={{ background: "#D7FF2E", color: "#0B0B0B" }}>
+          Pulse
+        </span>
         <div
-          className="text-[8px] leading-[1.05] truncate"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#1A1A1A" }}
+          className="text-[14px] leading-[0.8] font-black mt-0.5 truncate"
+          style={{ color: "#D7FF2E", fontFamily: "'Arial Narrow', 'Arial Black', sans-serif", letterSpacing: "0.01em" }}
         >
-          Print feature<span style={{ color: "#DC143C" }}>.</span>
+          LOUD
         </div>
-        <div
-          className="text-[5px] uppercase tracking-[0.18em] font-bold truncate"
-          style={{ color: "#5C5C5C", borderTop: "1px solid #D4CFC9", paddingTop: "2px" }}
-        >
-          Issue · 05
+      </div>
+      <div className="flex items-center justify-between px-1.5 py-[3px]" style={{ background: "#D7FF2E" }}>
+        <span className="text-[4px] uppercase font-extrabold tracking-[0.14em]" style={{ color: "#0B0B0B" }}>
+          The Tribunal<span>.</span>
+        </span>
+      </div>
+    </div>
+  ),
+  atelier: (
+    <div
+      className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex flex-col items-center justify-center px-1.5"
+      style={{ background: "linear-gradient(180deg, #F8F3EA, #ECE4D6)" }}
+    >
+      <div className="w-5 h-px mb-1" style={{ background: "#9A7B33" }} />
+      <div className="text-[3.5px] uppercase tracking-[0.4em] font-semibold mb-1" style={{ color: "#9A7B33" }}>
+        Voice
+      </div>
+      <div className="text-[11px] leading-[1] text-center" style={{ fontFamily: "Georgia, serif", color: "#16241D" }}>
+        Atelier
+      </div>
+      <div className="w-5 h-px mt-1" style={{ background: "#9A7B33" }} />
+    </div>
+  ),
+  "neo-pop": (
+    <div className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex items-center justify-center p-1" style={{ background: "#FFD23F" }}>
+      <div className="w-full h-full bg-white border-2 border-black rounded-md flex flex-col justify-between p-1" style={{ boxShadow: "3px 3px 0 #141414" }}>
+        <span className="inline-block self-start text-[4px] uppercase tracking-[0.14em] font-bold px-1 rounded-full text-white" style={{ background: "#2D5BFF" }}>
+          New
+        </span>
+        <div className="text-[10px] leading-[0.85] truncate" style={{ fontFamily: "'Arial Black', sans-serif", color: "#141414" }}>
+          POP!
+        </div>
+        <div className="text-[4px] uppercase font-bold tracking-[0.1em] truncate" style={{ color: "#141414", fontFamily: "ui-monospace, monospace" }}>
+          The Tribunal<span style={{ color: "#2D5BFF" }}>.</span>
         </div>
       </div>
     </div>
   ),
-  "crimson-manifesto": (
-    <div
-      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative"
-      style={{ background: "linear-gradient(150deg, #F11D45 0%, #DC143C 40%, #A60C28 100%)" }}
-    >
-      {/* color-flipped white edition band top + bottom */}
-      <div className="absolute top-0 left-0 right-0 h-[2px]" style={{ background: "rgba(255,255,255,0.4)" }} />
-      <div className="absolute bottom-0 left-0 right-0 h-[2px]" style={{ background: "rgba(255,255,255,0.4)" }} />
-      <div className="px-1.5 pt-1 pb-1 flex flex-col h-full justify-between">
-        <div
-          className="inline-block self-start text-[5px] uppercase tracking-[0.18em] font-bold px-1 py-[1px] rounded-[2px]"
-          style={{ background: "#0A0A0A", color: "#FFFFFF" }}
-        >
-          Reveal
-        </div>
-        <div
-          className="text-[9px] leading-[0.95] font-bold truncate"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#FFFFFF", letterSpacing: "-0.02em" }}
-        >
-          BIG NUMBER<span style={{ color: "#0A0A0A" }}>.</span>
-        </div>
+  "noir-terminal": (
+    <div className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex flex-col justify-between p-1.5" style={{ background: "#06090D" }}>
+      <div className="absolute top-1 left-1 w-1.5 h-1.5" style={{ borderTop: "1px solid #2BF5C8", borderLeft: "1px solid #2BF5C8" }} />
+      <div className="absolute top-1 right-1 w-1.5 h-1.5" style={{ borderTop: "1px solid #2BF5C8", borderRight: "1px solid #2BF5C8" }} />
+      <div className="absolute bottom-1 left-1 w-1.5 h-1.5" style={{ borderBottom: "1px solid #2BF5C8", borderLeft: "1px solid #2BF5C8" }} />
+      <div className="absolute bottom-1 right-1 w-1.5 h-1.5" style={{ borderBottom: "1px solid #2BF5C8", borderRight: "1px solid #2BF5C8" }} />
+      <div className="text-[4px] uppercase tracking-[0.22em] font-bold" style={{ color: "#2BF5C8", fontFamily: "ui-monospace, monospace" }}>
+        ● Live
       </div>
-    </div>
-  ),
-  "luxe-pull-quote": (
-    <div
-      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative"
-      style={{ background: "linear-gradient(180deg, #101010 0%, #0A0A0A 60%, #070707 100%)" }}
-    >
-      {/* single tall left crimson rule */}
-      <div className="absolute top-2 bottom-2 left-1.5 w-[3px]" style={{ background: "#DC143C" }} />
-      <div className="pl-3 pr-1.5 pt-1.5 pb-1 flex flex-col h-full justify-between">
-        <div
-          className="text-[8px] leading-[1.1] truncate"
-          style={{ fontFamily: "'Playfair Display', Georgia, serif", color: "#F0EDE9" }}
-        >
-          The quote<span style={{ color: "#DC143C" }}>.</span>
-        </div>
-        <div
-          className="text-[5px] uppercase tracking-[0.18em] font-bold truncate"
-          style={{ color: "#DC143C" }}
-        >
-          — Founder
-        </div>
+      <div className="text-[12px] leading-none font-bold tabular-nums truncate" style={{ color: "#D8E6E2", fontFamily: "ui-monospace, monospace" }}>
+        64%
       </div>
-    </div>
-  ),
-  "terminal-ledger": (
-    <div
-      className="w-20 h-14 rounded-[2px] shrink-0 border border-white/10 overflow-hidden relative shadow-[0_8px_20px_-8px_rgba(0,0,0,0.6)]"
-      style={{ background: "linear-gradient(180deg, #121212 0%, #0D0D0D 55%, #080808 100%)" }}
-    >
-      <div className="px-1.5 pt-1.5 pb-1 flex flex-col h-full justify-between">
-        <div className="text-[5px] uppercase tracking-[0.18em] font-bold" style={{ color: "#10B981" }}>
-          ● Live
-        </div>
-        <div
-          className="text-[13px] leading-none font-extrabold tabular-nums truncate"
-          style={{ fontFamily: "ui-monospace, Menlo, monospace", color: "#F0EDE9" }}
-        >
-          64%
-        </div>
-        <div
-          className="text-[5px] uppercase tracking-[0.18em] font-bold truncate"
-          style={{ color: "#3B82F6", borderTop: "1px solid rgba(255,255,255,0.06)", paddingTop: "2px" }}
-        >
-          Prediction
-        </div>
+      <div className="text-[4px] uppercase tracking-[0.16em] font-bold truncate" style={{ color: "#5E706C", fontFamily: "ui-monospace, monospace" }}>
+        Tribunal<span style={{ color: "#2BF5C8" }}>.</span>
       </div>
     </div>
   ),
 };
 
 const STYLES: { id: Style; label: string; description: string }[] = [
-  { id: "dark-editorial", label: "Dark Editorial", description: "Flagship near-black newsroom-at-night." },
-  { id: "warm-broadsheet", label: "Warm Broadsheet", description: "Light parchment print edition." },
-  { id: "crimson-manifesto", label: "Crimson Manifesto", description: "Full-bleed crimson agitprop poster." },
-  { id: "luxe-pull-quote", label: "Luxe Pull-Quote", description: "Restrained authoritative quote card." },
-  { id: "terminal-ledger", label: "Terminal Ledger", description: "Bloomberg-for-MENA data card." },
+  { id: "brutalist-index", label: "Brutalist Index", description: "Newsprint dossier — heavy type, mono meta, black rule frame." },
+  { id: "acid-poster", label: "Acid Poster", description: "Acid-lime rave flyer on black, oversized condensed headline." },
+  { id: "atelier", label: "Atelier", description: "Ivory fashion editorial — Didone serif, gold hairlines, centred." },
+  { id: "neo-pop", label: "Neo-Pop", description: "Playful white card, hard offset shadow, cobalt + sunshine pop." },
+  { id: "noir-terminal", label: "Noir Terminal", description: "Neon-mint trading terminal — corner brackets, ticker, glow." },
 ];
 
 const SIZE_ASPECT: Record<string, string> = {
@@ -313,7 +284,7 @@ export default function StudioPage() {
   const [libraryTab, setLibraryTab] = useState<LibraryTab>("all");
   const [librarySearch, setLibrarySearch] = useState("");
   const [sourcesCache, setSourcesCache] = useState<Partial<Record<AtomType, { id: number; label: string; createdAt?: string }[]>>>({});
-  const [style, setStyle] = useState<Style>("dark-editorial");
+  const [style, setStyle] = useState<Style>("brutalist-index");
   const [tone, setTone] = useState<Tone>(null);
   const [kitId, setKitId] = useState<string | null>(null);
   const [assets, setAssets] = useState<StudioAsset[]>([]);

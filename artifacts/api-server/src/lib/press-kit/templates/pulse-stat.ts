@@ -8,7 +8,7 @@
  * `frame()` helper driven by the selected `TemplateStyle`. The drop-cap
  * style uplifts the number further via `spec.numberStyle === "drop-cap"`.
  *
- * Style is the OPTIONAL last param (default "dark-editorial") so existing
+ * Style is the OPTIONAL last param (default "brutalist-index") so existing
  * callers in `routes/press-kit.ts` continue to work unchanged.
  */
 
@@ -33,7 +33,7 @@ export function pulseStat(
   data: PulseData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "dark-editorial",
+  style: TemplateStyle = "brutalist-index",
 ): SatoriElement {
   const spec = styleFor(style, tokens, size)
   const scale = sizeScale(size)

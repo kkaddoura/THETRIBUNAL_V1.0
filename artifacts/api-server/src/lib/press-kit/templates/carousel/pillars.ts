@@ -16,7 +16,7 @@ export function pillarsCarousel(
   data: PillarsCarouselData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "dark-editorial",
+  style: TemplateStyle = "brutalist-index",
 ) {
   return data.pillars.map((p) => pillarCard(p, tokens, size, style))
 }
