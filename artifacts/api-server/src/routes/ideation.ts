@@ -214,7 +214,10 @@ router.post("/cms/ideation/sessions/:id/research", requireCmsAuth, async (req, r
     return res.json({ researchData });
   } catch (err) {
     console.error("Research error:", err);
-    return res.status(500).json({ error: "Research step failed" });
+    // Surface the real reason (e.g. Perplexity API error / ungrounded result)
+    // so the CMS shows it instead of silently substituting canned research.
+    const message = err instanceof Error ? err.message : "Research step failed";
+    return res.status(500).json({ error: message });
   }
 });
 
@@ -298,7 +301,10 @@ router.post("/cms/ideation/sessions/:id/generate", requireCmsAuth, async (req, r
     return res.json({ ideas: inserted });
   } catch (err) {
     console.error("Generation error:", err);
-    return res.status(500).json({ error: "Generation step failed" });
+    // Surface the real reason (e.g. missing ANTHROPIC_API_KEY / bad JSON) so the
+    // CMS shows it instead of silently masking the failure.
+    const message = err instanceof Error ? err.message : "Generation step failed";
+    return res.status(500).json({ error: message });
   }
 });
 

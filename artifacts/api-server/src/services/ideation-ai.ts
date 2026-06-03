@@ -72,8 +72,8 @@ async function callPerplexity(prompt: string): Promise<string> {
   });
 
   if (!res.ok) {
-    console.error("Perplexity API error:", res.status, await res.text());
-    return generateMockResearch(prompt);
+    const body = await res.text();
+    throw new Error(`Research failed: Perplexity API error ${res.status}. ${body.slice(0, 300)}`);
   }
 
   const data = await res.json() as {
@@ -84,14 +84,13 @@ async function callPerplexity(prompt: string): Promise<string> {
   const content = data.choices?.[0]?.message?.content;
   const citationCount = data.citations?.length ?? data.search_results?.length ?? 0;
   // A grounded `sonar` answer carries citations/search_results. With none, the
-  // model answered WITHOUT live search and will refuse ("I don't have access
-  // to current search…"). Passing that into idea generation produces generic,
-  // source-less ideas — so treat it as a failed research run and fall back.
+  // model answered WITHOUT live search (it will refuse: "I don't have access to
+  // current search…"). That's not real research — surface it as an error rather
+  // than silently substituting canned topics that look live but aren't.
   if (!content || citationCount === 0) {
-    console.warn(
-      `[ideation] Perplexity returned an ungrounded result (citations=${citationCount}); using fallback research instead of refusal text.`,
+    throw new Error(
+      `Research failed: Perplexity returned an ungrounded result (no live sources, citations=${citationCount}). Check PERPLEXITY_API_KEY / model access — not substituting canned data.`,
     );
-    return generateMockResearch(prompt);
   }
   return content;
 }
@@ -255,7 +254,9 @@ Return ONLY valid JSON.`;
   try {
     return JSON.parse(result);
   } catch {
-    return JSON.parse(generateMockResearch(prompt));
+    throw new Error(
+      `Research failed: Perplexity did not return valid JSON. First 300 chars: ${result.slice(0, 300)}`,
+    );
   }
 }
 
@@ -280,11 +281,36 @@ export async function runGeneration(config: GenerationConfig): Promise<Generated
     ? `\n\nEDITORIAL FOCUS — Prioritize ideas in these areas:\nCategories: ${config.categories?.join(", ") || "any"}\nThemes/Tags: ${config.tags?.join(", ") || "any"}`
     : "";
 
-  const researchContext = `Research data:\n${JSON.stringify(config.researchData, null, 2)}`;
+  // Enumerate the research into a numbered work-list so each idea can be
+  // anchored to a SPECIFIC item (its number + source) rather than the model
+  // free-associating off a JSON blob.
+  const rd = (config.researchData ?? {}) as ResearchResult;
+  const researchItems: string[] = [
+    ...(rd.topics ?? []).map((t, i) => `T${i + 1} [topic] ${t.title} — ${t.summary} (src: ${t.source})`),
+    ...(rd.dataPoints ?? []).map((d, i) => `D${i + 1} [data] ${d.fact} — ${d.relevance}`),
+    ...(rd.trends ?? []).map((t, i) => `R${i + 1} [trend] ${t}`),
+  ];
+  const researchContext = researchItems.length
+    ? `RESEARCH WORK-LIST — build ideas from THESE specific items (cite each item's number/source in the context):\n${researchItems.join("\n")}`
+    : `Research data:\n${JSON.stringify(config.researchData, null, 2)}`;
+
+  // Rotate every idea through a different rhetorical frame so the batch reads
+  // like distinct posts, not one post rewritten. This is the core fix for the
+  // "all ideas sound the same" problem.
+  const framingPalette = [
+    "blunt assertion (a claim stated as fact)",
+    "sharp question (provocative, not neutral)",
+    "contrarian reversal (\"everyone thinks X — the opposite is true\")",
+    "human-stakes angle (a person/community, not an abstraction)",
+    "follow-the-money (who profits / who pays)",
+    "false-binary challenge (reject the obvious two options)",
+    "ranking/comparison (vs another country, era, or sector)",
+    "prediction-tease (where this is heading)",
+  ];
 
   const pillarInstructions: Record<string, string> = {
-    debates: `Generate debate ideas. Each must have: title (string, 8-15 words, a DECLARATIVE ASSERTION using superlatives or comparison — NOT a neutral question), content with {question (string — same as title), context (string, EXACTLY 2-4 sentences: [shocking stat with hard number] + [comparative number showing disparity] + [poetic kicker 3-7 words]. Target ~150 chars. Every sentence must contain a specific number, name, or date. End with a gut-punch fragment, not a full sentence.), options (array of EXACTLY 4 strings — NOT "Yes"/"No". Each option must be a relatable, opinionated stance that feels personal. Think first-person reactions people actually have: "It's already too late", "Progress is happening faster than people think", "The numbers don't tell the full story". Options should cover: a strong agree, a strong disagree, a nuanced middle, and a contrarian/unexpected take. Keep each option under 12 words.)}.
-QUALITY GATES: Reject any idea where (1) context has no specific numbers, (2) title is a neutral question rather than a provocative assertion, (3) context exceeds 200 characters, (4) the kicker is missing, or (5) options are generic "Yes"/"No"/"Maybe"/"I don't know".`,
+    debates: `Generate debate ideas. Each must have: title (string, 8-15 words — a PROVOCATIVE HOOK whose rhetorical form you VARY per the FRAMING PALETTE below; do NOT make every title the same "[fact] proves [superlative]" shape), content with {question (string — same as title), context (string, EXACTLY 2-4 sentences: [shocking stat with hard number] + [comparative number showing disparity] + [poetic kicker 3-7 words]. Target ~150 chars. Every sentence must contain a specific number, name, or date. End with a gut-punch fragment, not a full sentence.), options (array of EXACTLY 4 strings — NOT "Yes"/"No". Each option must be a relatable, opinionated stance that feels personal. Think first-person reactions people actually have: "It's already too late", "Progress is happening faster than people think", "The numbers don't tell the full story". Options should cover: a strong agree, a strong disagree, a nuanced middle, and a contrarian/unexpected take. Keep each option under 12 words.)}.
+QUALITY GATES: Reject any idea where (1) context has no specific numbers, (2) the title is bland/neutral with no tension, (3) context exceeds 200 characters, (4) the kicker is missing, (5) options are generic "Yes"/"No"/"Maybe"/"I don't know", or (6) the title reuses the same rhetorical structure as another idea in this batch.`,
     predictions: `Generate prediction market questions. Each must have: title (string, same as question), content with {question (string, a SPECIFIC MILESTONE with a threshold number and named entity — e.g., "Morocco's Casablanca Finance City will host 250+ international financial firms"), category (string from: Economy & Finance, Technology & AI, Energy & Climate, Geopolitics & Governance, Infrastructure & Cities, Education & Workforce, Health & Demographics, Culture & Society, Sports & Entertainment), resolvesAt (ISO date string, 12-36 months from now), options (array of EXACTLY 4 strings — NOT "Yes"/"No". Each option must be a nuanced position on the prediction's likelihood. Think informed takes people actually hold: "Already on track — it's inevitable", "Close but they'll miss the deadline", "The whole premise is flawed", "Depends entirely on X factor". Cover: confident yes, conditional yes, skeptical no, and a wildcard/contrarian take. Keep each under 12 words.)}.
 QUALITY GATES: Reject any prediction where (1) there's no specific threshold number, (2) the entity is vague ("a MENA country" instead of naming it), (3) resolution is obvious (>90% or <10% probability), or (4) options are generic "Yes"/"No"/"Maybe".`,
     pulse: `Generate pulse/stat cards. Each must have: title (string, max 5 words — punchy label like "Billionaire Wealth vs. GDP" or "Press Freedom Collapse"), content with {title (string, same), stat (string — a specific number/ratio: "$4.8B" or "17 of 19 countries" or "1 in 5 girls"), delta (string — change indicator: "+62% since 2021" or "Highest globally" or "Death penalty in 6"), direction ("up"|"down"), blurb (string, ONE sentence max ~20 words — editorial interpretation with juxtaposition or benchmark comparison, ending with punch), source (string — named institutional source with year)}.
@@ -310,26 +336,46 @@ ${pillarPrompt}
 
 Generate exactly ${totalCount} ideas. Return a JSON array of objects, each with: pillarType ("debates"|"predictions"|"pulse"), title (string), content (object matching the pillar schema).
 
-CRITICAL QUALITY STANDARDS:
-- Every context/blurb must contain at least 2 SPECIFIC numbers (dollar amounts, percentages, population counts, rankings)
-- Use JUXTAPOSITION: pair wealth with poverty, growth with stagnation, connected with censored
-- End debate contexts with a POETIC KICKER: a 3-7 word gut-punch fragment (e.g., "Two MENAs.", "Wealth without welfare.", "Stigma kills more than illness.")
-- Titles are DECLARATIVE ASSERTIONS, not neutral questions
-- Cover the full MENA region: Gulf, North Africa, Levant, Turkey, Iran — not just UAE and Saudi
-- NO generic filler: "this raises important questions", "time will tell", "remains to be seen"
+ANCHORING (use the research):
+- Build each idea from a SPECIFIC research work-list item above. Reuse that item's hard number and named source inside the context/blurb.
+- Spread across DIFFERENT items — no two ideas may be about the same item or topic. If there are fewer items than ideas requested, extend to adjacent angles on under-covered items, but never duplicate a topic.
+
+DIVERSITY (this is critical — the #1 failure is every idea sounding identical):
+- Rotate each idea through a DIFFERENT rhetorical frame from this palette, cycling so no frame repeats until all are used:
+${framingPalette.map((f, i) => `  ${i + 1}. ${f}`).join("\n")}
+- No two titles may share the same opening words or the same grammatical structure. AVOID making everything a "[fact] proves/is/makes [superlative]" assertion — at most TWO ideas in the whole batch may be superlative assertions.
+- Vary sentence rhythm, length, and entry point across ideas. They should read like they were written by different sharp editors, not one template.
+
+QUALITY (keep the edge):
+- Every context/blurb contains at least 2 SPECIFIC numbers (dollar amounts, percentages, counts, rankings) and a named source.
+- Use JUXTAPOSITION where it fits: wealth vs poverty, growth vs stagnation, connected vs censored.
+- End debate contexts with a POETIC KICKER: a 3-7 word gut-punch fragment ("Two MENAs.", "Wealth without welfare.").
+- Cover the full MENA region: Gulf, North Africa, Levant, Turkey, Iran — not just UAE and Saudi.
+- NO generic filler ("this raises important questions", "time will tell", "remains to be seen").
 - OPTIONS must be dynamic, relatable, opinionated stances — NEVER "Yes"/"No"/"Maybe". Write options as things real people would actually say.
 
 Return ONLY a valid JSON array.`;
 
-  const result = await callClaude(systemPrompt, userPrompt, { temperature: 0.7, max_tokens: 4096 });
+  // 8192 leaves ample headroom so a full batch of detailed ideas can't truncate
+  // (a truncated array used to silently fall back to mock). Higher temperature
+  // for more varied phrasing across the batch.
+  const result = await callClaude(systemPrompt, userPrompt, { temperature: 0.9, max_tokens: 8192 });
+
+  // We only reach here when ANTHROPIC_API_KEY is set (checked above), so any
+  // failure is a REAL error worth surfacing — not something to mask with mock
+  // ideas that ignore the research and look repetitive.
+  if (result === "MOCK_RESPONSE") {
+    throw new Error(
+      "Idea generation failed: the Claude API call did not succeed. Check ANTHROPIC_API_KEY in the api-server environment and the server logs for the Claude API error.",
+    );
+  }
   try {
     const jsonMatch = result.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0]);
-    }
-    return JSON.parse(result);
+    return JSON.parse(jsonMatch ? jsonMatch[0] : result);
   } catch {
-    return generateMockIdeas(config);
+    throw new Error(
+      `Idea generation failed: the model did not return valid JSON. First 300 chars: ${result.slice(0, 300)}`,
+    );
   }
 }
 

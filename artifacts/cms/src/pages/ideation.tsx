@@ -168,6 +168,7 @@ export default function IdeationPage() {
 
   const [currentStep, setCurrentStep] = useState<number>(() => loadPersistedState()?.currentStep ?? -1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(() => loadPersistedState()?.session ?? null);
   const [ideas, setIdeas] = useState<Idea[]>(() => loadPersistedState()?.ideas ?? []);
   const [researchData, setResearchData] = useState<Record<string, unknown> | null>(() => loadPersistedState()?.researchData ?? null);
@@ -223,6 +224,7 @@ export default function IdeationPage() {
     setCurrentStep(0);
     setIdeas([]);
     setResearchData(null);
+    setWorkflowError(null);
 
     try {
       const config: Record<string, unknown> = {
@@ -260,6 +262,7 @@ export default function IdeationPage() {
       setCurrentStep(3);
     } catch (err) {
       console.error("Workflow error:", err);
+      setWorkflowError(err instanceof Error ? err.message : "The ideation workflow failed. Check the api-server logs.");
     } finally {
       setIsProcessing(false);
     }
@@ -489,6 +492,13 @@ export default function IdeationPage() {
 
             <div className="space-y-4">
               <WorkflowStepper currentStep={currentStep} isProcessing={isProcessing} />
+
+              {workflowError && !isProcessing && (
+                <div className="bg-red-500/10 border border-red-500/40 text-red-300 p-4 text-sm">
+                  <p className="font-semibold mb-1">Generation failed</p>
+                  <p className="text-red-300/90 break-words">{workflowError}</p>
+                </div>
+              )}
 
               {currentStep === 0 && isProcessing && (
                 <div className="bg-card border border-border p-6 text-center">
