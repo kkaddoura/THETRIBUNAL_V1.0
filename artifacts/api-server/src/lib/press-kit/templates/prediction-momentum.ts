@@ -11,7 +11,7 @@
  * chart is built as a standalone SVG string and embedded as a base64 data-URI
  * `<img>` — the one reliable way to get vector chart art into a Satori render.
  *
- * Style is the OPTIONAL last param (default "brutalist-index") so existing
+ * Style is the OPTIONAL last param (default "dark") so existing
  * callers in `routes/press-kit.ts` continue to work unchanged.
  */
 
@@ -112,7 +112,7 @@ export function predictionMomentum(
   data: PredictionData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "brutalist-index",
+  style: TemplateStyle = "dark",
 ): SatoriElement {
   const spec = styleFor(style, tokens, size)
   const scale = sizeScale(size)

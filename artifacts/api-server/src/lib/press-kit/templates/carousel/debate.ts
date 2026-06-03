@@ -228,7 +228,7 @@ export function debateCarousel(
   d: DebateCarouselData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "brutalist-index",
+  style: TemplateStyle = "dark",
 ) {
   return [hookSlide(d, tokens, size, style), contextSlide(d, tokens, size, style), voteSplitSlide(d, tokens, size, style)]
 }

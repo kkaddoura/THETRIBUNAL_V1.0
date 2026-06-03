@@ -650,7 +650,7 @@ async function loadSource(postType: PostType, sourceId: number): Promise<SourceD
 router.post("/cms/studio/generate", requireCmsAuth, async (req, res) => {
   const { postType, sourceId, style: styleRaw, sizes, toneHint } = req.body ?? {}
   if (!VALID_POST_TYPES.has(postType)) return res.status(400).json({ error: "invalid_post_type" })
-  const style: TemplateStyle = isValidStyle(styleRaw) ? styleRaw : "brutalist-index"
+  const style: TemplateStyle = isValidStyle(styleRaw) ? styleRaw : "dark"
   const requestedSizes: SizeKey[] = Array.isArray(sizes) && sizes.length
     ? (sizes as string[]).filter(isValidSize)
     : ALL_SIZE_KEYS
@@ -788,7 +788,7 @@ router.post("/cms/studio/compose", requireCmsAuth, async (req, res) => {
 
   if (!isLayout(layoutRaw)) return res.status(400).json({ error: "invalid_layout" })
   const layout: Layout = layoutRaw
-  const style: TemplateStyle = isValidStyle(styleRaw) ? styleRaw : "brutalist-index"
+  const style: TemplateStyle = isValidStyle(styleRaw) ? styleRaw : "dark"
   const safeToneHint: ToneHint = ["punchy", "analytical", "warm"].includes(toneHint) ? toneHint : null
   // AI image generation was removed from Studio (2026-05-31) — kept the field in
   // the request/response shape for back-compat but it never renders an AI card.

@@ -326,7 +326,7 @@ function pulseSlide(d: RecapData, tokens: BrandTokens, size: SizeKey, style: Tem
                       fontWeight: 900,
                       color: d.topPulse.deltaUp ? spec.accent : spec.muted,
                     },
-                    children: `${d.topPulse.deltaUp ? "▲" : "▼"} ${d.topPulse.delta}`,
+                    children: d.topPulse.delta,
                   },
                 },
               ]
@@ -338,6 +338,6 @@ function pulseSlide(d: RecapData, tokens: BrandTokens, size: SizeKey, style: Tem
   return frame(spec, size, body, { eyebrow: "WEEKLY RECAP", footerLeft: "4 / 4" })
 }
 
-export function weeklyRecap(d: RecapData, tokens: BrandTokens, size: SizeKey, style: TemplateStyle = "brutalist-index") {
+export function weeklyRecap(d: RecapData, tokens: BrandTokens, size: SizeKey, style: TemplateStyle = "dark") {
   return [coverSlide(d, tokens, size, style), debateSlide(d, tokens, size, style), predictionSlide(d, tokens, size, style), pulseSlide(d, tokens, size, style)]
 }

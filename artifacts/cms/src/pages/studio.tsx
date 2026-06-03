@@ -43,12 +43,7 @@ type AtomType =
   | "about-region"
   | "manifesto";
 type Layout = "single" | "carousel-3" | "carousel-5" | "recap-weekly";
-type Style =
-  | "brutalist-index"
-  | "acid-poster"
-  | "atelier"
-  | "neo-pop"
-  | "noir-terminal";
+type Style = "dark" | "light" | "gilded";
 type Platform = "x" | "ig" | "linkedin";
 type Tone = "punchy" | "analytical" | "warm" | null;
 
@@ -113,103 +108,80 @@ const ABOUT_SINGLETONS: { atomType: AtomType; label: string }[] = [
 
 // Mini-preview thumbnails — tiny, static, pure-CSS representations of what
 // a generated card looks like in each style so the switcher is choosable by
-// sight. All five share the same outer geometry (w-20 h-14) so the switcher
-// layout doesn't shift between selections.
+// sight. All three share the same outer geometry (w-20 h-14) so the switcher
+// layout doesn't shift between selections. Serif headline = Playfair (Georgia
+// proxy in the thumbnail), crimson #DC143C, the edition-band grammar.
 const StylePreview: Record<Style, React.ReactNode> = {
-  "brutalist-index": (
-    <div className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative" style={{ background: "#EDEAE3" }}>
-      <div className="absolute inset-[3px] border-2 border-black flex flex-col justify-between p-1">
-        <div className="flex items-center justify-between" style={{ fontFamily: "ui-monospace, monospace" }}>
-          <span className="text-[4px] uppercase tracking-[0.18em] font-bold" style={{ color: "#E5240E" }}>Voice</span>
-          <span className="text-[4px] uppercase tracking-[0.12em] font-bold text-black">Nº 01</span>
-        </div>
-        <div className="text-[9px] leading-[0.9] truncate" style={{ fontFamily: "'Arial Black', sans-serif", color: "#0A0A0A" }}>
-          HEAVY INDEX
-        </div>
-        <div
-          className="text-[4px] uppercase tracking-[0.16em] font-bold truncate"
-          style={{ color: "#6B6862", fontFamily: "ui-monospace, monospace", borderTop: "1px solid #0A0A0A", paddingTop: "2px" }}
-        >
-          The Tribunal<span style={{ color: "#E5240E" }}>.</span>
-        </div>
-      </div>
-    </div>
-  ),
-  "acid-poster": (
-    <div className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex flex-col justify-between" style={{ background: "#0B0B0B" }}>
-      <div className="px-1.5 pt-1.5">
-        <span className="inline-block text-[4px] uppercase tracking-[0.2em] font-extrabold px-1 py-[1px]" style={{ background: "#D7FF2E", color: "#0B0B0B" }}>
-          Pulse
-        </span>
-        <div
-          className="text-[14px] leading-[0.8] font-black mt-0.5 truncate"
-          style={{ color: "#D7FF2E", fontFamily: "'Arial Narrow', 'Arial Black', sans-serif", letterSpacing: "0.01em" }}
-        >
-          LOUD
-        </div>
-      </div>
-      <div className="flex items-center justify-between px-1.5 py-[3px]" style={{ background: "#D7FF2E" }}>
-        <span className="text-[4px] uppercase font-extrabold tracking-[0.14em]" style={{ color: "#0B0B0B" }}>
-          The Tribunal<span>.</span>
-        </span>
-      </div>
-    </div>
-  ),
-  atelier: (
+  dark: (
     <div
-      className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex flex-col items-center justify-center px-1.5"
-      style={{ background: "linear-gradient(180deg, #F8F3EA, #ECE4D6)" }}
+      className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex flex-col justify-between p-1.5"
+      style={{ background: "linear-gradient(168deg, #151515 0%, #0A0A0A 50%, #050505 100%)" }}
     >
-      <div className="w-5 h-px mb-1" style={{ background: "#9A7B33" }} />
-      <div className="text-[3.5px] uppercase tracking-[0.4em] font-semibold mb-1" style={{ color: "#9A7B33" }}>
-        Voice
+      <div className="flex flex-col">
+        <div className="w-full h-[2px]" style={{ background: "#DC143C" }} />
+        <div className="text-[4px] uppercase tracking-[0.3em] font-bold mt-1" style={{ color: "#DC143C" }}>Voice</div>
       </div>
-      <div className="text-[11px] leading-[1] text-center" style={{ fontFamily: "Georgia, serif", color: "#16241D" }}>
-        Atelier
+      <div className="text-[10px] leading-[0.95]" style={{ fontFamily: "Georgia, serif", color: "#F0EDE9", letterSpacing: "-0.02em" }}>
+        The headline<span style={{ color: "#DC143C" }}>.</span>
       </div>
-      <div className="w-5 h-px mt-1" style={{ background: "#9A7B33" }} />
-    </div>
-  ),
-  "neo-pop": (
-    <div className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex items-center justify-center p-1" style={{ background: "#FFD23F" }}>
-      <div className="w-full h-full bg-white border-2 border-black rounded-md flex flex-col justify-between p-1" style={{ boxShadow: "3px 3px 0 #141414" }}>
-        <span className="inline-block self-start text-[4px] uppercase tracking-[0.14em] font-bold px-1 rounded-full text-white" style={{ background: "#2D5BFF" }}>
-          New
-        </span>
-        <div className="text-[10px] leading-[0.85] truncate" style={{ fontFamily: "'Arial Black', sans-serif", color: "#141414" }}>
-          POP!
-        </div>
-        <div className="text-[4px] uppercase font-bold tracking-[0.1em] truncate" style={{ color: "#141414", fontFamily: "ui-monospace, monospace" }}>
-          The Tribunal<span style={{ color: "#2D5BFF" }}>.</span>
+      <div className="flex flex-col">
+        <div className="w-full h-[2px]" style={{ background: "#DC143C" }} />
+        <div className="text-[4px] uppercase tracking-[0.18em] font-bold mt-1" style={{ fontFamily: "Georgia, serif", color: "#F0EDE9" }}>
+          The Tribunal<span style={{ color: "#DC143C" }}>.</span>
         </div>
       </div>
     </div>
   ),
-  "noir-terminal": (
-    <div className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex flex-col justify-between p-1.5" style={{ background: "#06090D" }}>
-      <div className="absolute top-1 left-1 w-1.5 h-1.5" style={{ borderTop: "1px solid #2BF5C8", borderLeft: "1px solid #2BF5C8" }} />
-      <div className="absolute top-1 right-1 w-1.5 h-1.5" style={{ borderTop: "1px solid #2BF5C8", borderRight: "1px solid #2BF5C8" }} />
-      <div className="absolute bottom-1 left-1 w-1.5 h-1.5" style={{ borderBottom: "1px solid #2BF5C8", borderLeft: "1px solid #2BF5C8" }} />
-      <div className="absolute bottom-1 right-1 w-1.5 h-1.5" style={{ borderBottom: "1px solid #2BF5C8", borderRight: "1px solid #2BF5C8" }} />
-      <div className="text-[4px] uppercase tracking-[0.22em] font-bold" style={{ color: "#2BF5C8", fontFamily: "ui-monospace, monospace" }}>
-        ● Live
+  light: (
+    <div
+      className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex flex-col justify-between p-1.5"
+      style={{ background: "linear-gradient(170deg, #FBF7EF 0%, #F6F1E8 52%, #EEE7D9 100%)" }}
+    >
+      <div className="flex flex-col">
+        <div className="w-full h-[4px]" style={{ background: "#DC143C" }} />
+        <div className="text-[4px] uppercase tracking-[0.3em] font-bold mt-1" style={{ color: "#DC143C" }}>Voice</div>
       </div>
-      <div className="text-[12px] leading-none font-bold tabular-nums truncate" style={{ color: "#D8E6E2", fontFamily: "ui-monospace, monospace" }}>
-        64%
+      <div className="text-[10px] leading-[0.95]" style={{ fontFamily: "Georgia, serif", color: "#1A1A1A", letterSpacing: "-0.012em" }}>
+        Print feature<span style={{ color: "#DC143C" }}>.</span>
       </div>
-      <div className="text-[4px] uppercase tracking-[0.16em] font-bold truncate" style={{ color: "#5E706C", fontFamily: "ui-monospace, monospace" }}>
-        Tribunal<span style={{ color: "#2BF5C8" }}>.</span>
+      <div className="flex flex-col">
+        <div className="w-full h-px" style={{ background: "#DC143C" }} />
+        <div className="text-[4px] uppercase tracking-[0.18em] font-bold mt-1" style={{ fontFamily: "Georgia, serif", color: "#1A1A1A" }}>
+          The Tribunal<span style={{ color: "#DC143C" }}>.</span>
+        </div>
+      </div>
+    </div>
+  ),
+  gilded: (
+    <div
+      className="w-20 h-14 rounded-[2px] shrink-0 overflow-hidden relative flex flex-col justify-between p-1.5"
+      style={{ background: "linear-gradient(165deg, #161310 0%, #0A0A0A 52%, #050505 100%)" }}
+    >
+      <div className="flex flex-col gap-[2px]">
+        <div className="w-full h-px" style={{ background: "#C9A227" }} />
+        <div className="w-full h-px" style={{ background: "#C9A227" }} />
+        <div className="flex items-center gap-1 mt-1">
+          <div className="w-[3px] h-[3px]" style={{ background: "#C9A227" }} />
+          <div className="text-[4px] uppercase tracking-[0.3em] font-bold" style={{ color: "#C9A227" }}>Special</div>
+        </div>
+      </div>
+      <div className="text-[10px] leading-[0.95]" style={{ fontFamily: "Georgia, serif", color: "#F4EFE6", letterSpacing: "-0.018em" }}>
+        Feature<span style={{ color: "#DC143C" }}>.</span>
+      </div>
+      <div className="flex flex-col">
+        <div className="w-full h-px" style={{ background: "#C9A227" }} />
+        <div className="text-[4px] uppercase tracking-[0.18em] font-bold mt-1" style={{ fontFamily: "Georgia, serif", color: "#F4EFE6" }}>
+          The Tribunal<span style={{ color: "#DC143C" }}>.</span>
+        </div>
       </div>
     </div>
   ),
 };
 
 const STYLES: { id: Style; label: string; description: string }[] = [
-  { id: "brutalist-index", label: "Brutalist Index", description: "Newsprint dossier — heavy type, mono meta, black rule frame." },
-  { id: "acid-poster", label: "Acid Poster", description: "Acid-lime rave flyer on black, oversized condensed headline." },
-  { id: "atelier", label: "Atelier", description: "Ivory fashion editorial — Didone serif, gold hairlines, centred." },
-  { id: "neo-pop", label: "Neo-Pop", description: "Playful white card, hard offset shadow, cobalt + sunshine pop." },
-  { id: "noir-terminal", label: "Noir Terminal", description: "Neon-mint trading terminal — corner brackets, ticker, glow." },
+  { id: "dark", label: "Editorial Dark", description: "Flagship near-black editorial, twin crimson edition band." },
+  { id: "light", label: "Editorial Light", description: "Parchment broadsheet — black ink, heavy crimson masthead bar." },
+  { id: "gilded", label: "Gilded Edition", description: "Special feature — near-black with antique-gold hairlines." },
 ];
 
 const SIZE_ASPECT: Record<string, string> = {
@@ -284,7 +256,7 @@ export default function StudioPage() {
   const [libraryTab, setLibraryTab] = useState<LibraryTab>("all");
   const [librarySearch, setLibrarySearch] = useState("");
   const [sourcesCache, setSourcesCache] = useState<Partial<Record<AtomType, { id: number; label: string; createdAt?: string }[]>>>({});
-  const [style, setStyle] = useState<Style>("brutalist-index");
+  const [style, setStyle] = useState<Style>("dark");
   const [tone, setTone] = useState<Tone>(null);
   const [kitId, setKitId] = useState<string | null>(null);
   const [assets, setAssets] = useState<StudioAsset[]>([]);

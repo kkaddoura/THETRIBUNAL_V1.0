@@ -16,7 +16,7 @@ export function beliefCard(
   data: BeliefData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "brutalist-index",
+  style: TemplateStyle = "dark",
 ) {
   const spec = styleFor(style, tokens, size)
   const scale = sizeScale(size)

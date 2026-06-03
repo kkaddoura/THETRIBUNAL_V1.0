@@ -82,7 +82,7 @@ function pulseSlide(item: PulseItem, tokens: BrandTokens, size: SizeKey, style: 
                       backgroundColor: item.deltaUp ? spec.accent : spec.panelBg,
                       letterSpacing: "-0.01em",
                     },
-                    children: `${item.deltaUp ? "▲" : "▼"} ${item.delta}`,
+                    children: item.delta,
                   },
                 },
               ]
@@ -118,7 +118,7 @@ export function pulseTrio(
   d: PulseTrioData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "brutalist-index",
+  style: TemplateStyle = "dark",
 ) {
   const items = d.items.slice(0, 3)
   return items.map((it, i) => pulseSlide(it, tokens, size, style, i, items.length))

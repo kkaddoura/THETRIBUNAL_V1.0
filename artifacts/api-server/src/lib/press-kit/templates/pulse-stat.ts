@@ -8,7 +8,7 @@
  * `frame()` helper driven by the selected `TemplateStyle`. The drop-cap
  * style uplifts the number further via `spec.numberStyle === "drop-cap"`.
  *
- * Style is the OPTIONAL last param (default "brutalist-index") so existing
+ * Style is the OPTIONAL last param (default "dark") so existing
  * callers in `routes/press-kit.ts` continue to work unchanged.
  */
 
@@ -33,14 +33,13 @@ export function pulseStat(
   data: PulseData,
   tokens: BrandTokens,
   size: SizeKey,
-  style: TemplateStyle = "brutalist-index",
+  style: TemplateStyle = "dark",
 ): SatoriElement {
   const spec = styleFor(style, tokens, size)
   const scale = sizeScale(size)
   const isStory = size === "ig_story"
   const deltaIsDown = data.deltaUp === false
   const deltaColor = deltaIsDown ? spec.accent : "#22C55E"
-  const deltaArrow = deltaIsDown ? "▼" : "▲"
   // Slightly oversize the stat when the style asks for "drop-cap" emphasis.
   const statScale = spec.numberStyle === "drop-cap" ? 1.1 : 1
 
@@ -56,7 +55,7 @@ export function pulseStat(
         lineHeight: 1.15,
         letterSpacing: spec.displayTracking,
         textTransform: "uppercase" as const,
-        marginBottom: "auto",
+        marginBottom: "0",
         maxWidth: "82%",
       },
       children: data.title,
@@ -70,7 +69,7 @@ export function pulseStat(
         display: "flex",
         flexDirection: "column",
         alignItems: "flex-start",
-        marginTop: "auto",
+        marginTop: isStory ? "44px" : "30px",
       },
       children: [
         {
@@ -106,7 +105,7 @@ export function pulseStat(
                     backgroundColor: deltaColor,
                     letterSpacing: "1px",
                   },
-                  children: `${deltaArrow} ${data.delta}`,
+                  children: data.delta,
                 },
               } as SatoriElement,
             ]
