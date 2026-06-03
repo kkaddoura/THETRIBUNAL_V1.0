@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
-import { Search, ChevronLeft, ChevronRight, ExternalLink, CheckCircle, XCircle, Clock, Star, MessageSquare, Send } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight, ExternalLink, CheckCircle, XCircle, Clock, MessageSquare, Send } from "lucide-react";
 
 interface Application {
   id: number;
@@ -165,11 +165,6 @@ export default function ApplicationsPage() {
                       <MessageSquare className="w-3 h-3" /> Majlis
                     </span>
                   )}
-                  {app.aiScore !== null && (
-                    <span className="flex items-center gap-1 text-xs text-muted-foreground shrink-0">
-                      <Star className="w-3 h-3" /> AI: {app.aiScore}/100
-                    </span>
-                  )}
                 </div>
                 <p className="text-sm text-muted-foreground mt-0.5">{app.title} at {app.company}</p>
                 <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
@@ -212,13 +207,6 @@ export default function ApplicationsPage() {
                     )}
                   </div>
                 </div>
-
-                {app.aiReasoning && (
-                  <div className="bg-background border border-border p-3">
-                    <p className="text-xs text-muted-foreground uppercase tracking-wide mb-1">AI Assessment</p>
-                    <p className="text-sm">{app.aiReasoning}</p>
-                  </div>
-                )}
 
                 <div>
                   <label className="text-xs text-muted-foreground uppercase tracking-wide">Editor Notes</label>

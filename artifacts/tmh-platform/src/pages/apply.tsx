@@ -134,7 +134,7 @@ export default function Apply() {
       <div className="bg-foreground text-background py-16 border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">{hero?.tagline || "The Voices"}</p>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "hsl(var(--background))", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
             {hero?.titleLine1 || "Think You Belong"}<br />
             {hero?.titleLine2 || "In The Voices?"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
