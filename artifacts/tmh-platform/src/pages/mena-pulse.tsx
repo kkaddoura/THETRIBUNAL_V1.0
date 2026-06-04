@@ -1446,12 +1446,40 @@ function TopicCardComponent({
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginTop: 12,
           paddingTop: 10,
           borderTop: "1px solid rgba(255,255,255,0.06)",
         }}
       >
+        {/* Tap affordance — the whole card toggles expand; this signals it. */}
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 6,
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontSize: 11,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "0.14em",
+            color: topic.tagColor,
+          }}
+        >
+          {expanded ? t("Show less") : t("Read the full context")}
+          <span
+            style={{
+              display: "inline-block",
+              transform: expanded ? "rotate(180deg)" : "none",
+              transition: "transform 0.3s ease",
+              fontSize: 12,
+              lineHeight: 1,
+            }}
+          >
+            ▾
+          </span>
+        </span>
         <PulseShareBtn topic={topic} />
       </div>
 
