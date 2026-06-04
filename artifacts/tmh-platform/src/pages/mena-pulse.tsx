@@ -1458,22 +1458,22 @@ function TopicCardComponent({
           style={{
             display: "inline-flex",
             alignItems: "center",
-            gap: 6,
+            gap: 4,
             fontFamily: "'Barlow Condensed', sans-serif",
-            fontSize: 11,
+            fontSize: 9,
             fontWeight: 800,
             textTransform: "uppercase",
-            letterSpacing: "0.14em",
+            letterSpacing: "0.12em",
             color: topic.tagColor,
           }}
         >
-          {expanded ? t("Show less") : t("Read the full context")}
+          {expanded ? t("Show less") : t("View more")}
           <span
             style={{
               display: "inline-block",
               transform: expanded ? "rotate(180deg)" : "none",
               transition: "transform 0.3s ease",
-              fontSize: 12,
+              fontSize: 9,
               lineHeight: 1,
             }}
           >
