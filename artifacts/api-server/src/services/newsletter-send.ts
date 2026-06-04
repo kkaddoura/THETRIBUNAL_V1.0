@@ -50,13 +50,13 @@ function lintContent(c: NewsletterContent): NewsletterContent {
   // already hedges. Subject + takeaways are the human-readable surfaces.
   return {
     ...c,
-    subjectLine: sanitize("subjectLine", c.subjectLine, "Where current voters actually split — The Tribunal"),
+    subjectLine: sanitize("subjectLine", c.subjectLine, "Where current voters actually split"),
     signal: { ...c.signal, takeaway: sanitize("signal.takeaway", c.signal.takeaway, "Among current voters, this one is far from decided.") },
     split: c.split
       ? { ...c.split, takeaway: sanitize("split.takeaway", c.split.takeaway, "Among current voters, this one is far from decided.") }
       : undefined,
     oneToWatch: c.oneToWatch
-      ? { ...c.oneToWatch, takeaway: sanitize("oneToWatch.takeaway", c.oneToWatch.takeaway, "Still open — your vote moves the line.") }
+      ? { ...c.oneToWatch, takeaway: sanitize("oneToWatch.takeaway", c.oneToWatch.takeaway, "Still open. Your vote moves the line.") }
       : undefined,
   }
 }

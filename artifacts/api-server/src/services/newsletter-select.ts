@@ -107,9 +107,9 @@ function hedgedSignalTakeaway(c: PollCandidate): string {
   const [top, second] = c.options
   const divided = isDivided(c.options)
   if (divided) {
-    return `Among current voters there's no clear majority — the leading answer, "${top.text}", sits at ${top.percentage}%, with "${second.text}" close behind at ${second.percentage}%. That gap is the signal.`
+    return `Among current voters there's no clear majority. The leading answer, "${top.text}", sits at ${top.percentage}%, with "${second.text}" close behind at ${second.percentage}%. That gap is the signal.`
   }
-  return `So far, the leading answer among current voters is "${top.text}" at ${top.percentage}% — but with the field split across ${c.options.length} options, the picture is less settled than the headline suggests.`
+  return `So far, the leading answer among current voters is "${top.text}" at ${top.percentage}%, but with the field split across ${c.options.length} options, the picture is less settled than the headline suggests.`
 }
 
 function hedgedSplitTakeaway(c: PollCandidate): string {

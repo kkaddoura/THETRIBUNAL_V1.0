@@ -267,18 +267,21 @@ export async function runGeneration(config: GenerationConfig): Promise<Generated
     return generateMockIdeas(config);
   }
 
-  const systemPrompt = config.promptTemplate || `You are a content ideation engine for "The Middle East Hustle", a platform covering business, technology, and culture in the MENA region. Generate engaging, thought-provoking content ideas.`;
+  // Mandatory house-style rule appended to EVERY ideation prompt (regardless of
+  // the editable per-pillar template) so generated copy never contains dashes.
+  const NO_EM_DASH_RULE = `\n\nWRITING STYLE (mandatory): Never use em dashes or en dashes (the long "—" or "–" characters) anywhere in your output. This applies to every field (title, question, context, options, blurb, stat, blurb). Use a comma, period, colon, or parentheses instead.`;
+  const systemPrompt = (config.promptTemplate || `You are a content ideation engine for "The Middle East Hustle", a platform covering business, technology, and culture in the MENA region. Generate engaging, thought-provoking content ideas.`) + NO_EM_DASH_RULE;
 
   const exclusionNote = config.exclusionList.length > 0
-    ? `\n\nEXCLUSION LIST — Do NOT generate ideas about these topics/phrases:\n${config.exclusionList.map(e => `- ${e}`).join("\n")}`
+    ? `\n\nEXCLUSION LIST (do NOT generate ideas about these topics/phrases):\n${config.exclusionList.map(e => `- ${e}`).join("\n")}`
     : "";
 
   const guardrailNote = config.guardrails && config.guardrails.length > 0
-    ? `\n\nCONTENT GUARDRAILS — You MUST follow these rules:\n${config.guardrails.map(g => `- ${g}`).join("\n")}`
+    ? `\n\nCONTENT GUARDRAILS (you MUST follow these rules):\n${config.guardrails.map(g => `- ${g}`).join("\n")}`
     : "";
 
   const focusNote = (config.categories?.length || config.tags?.length)
-    ? `\n\nEDITORIAL FOCUS — Prioritize ideas in these areas:\nCategories: ${config.categories?.join(", ") || "any"}\nThemes/Tags: ${config.tags?.join(", ") || "any"}`
+    ? `\n\nEDITORIAL FOCUS (prioritize ideas in these areas):\nCategories: ${config.categories?.join(", ") || "any"}\nThemes/Tags: ${config.tags?.join(", ") || "any"}`
     : "";
 
   // Enumerate the research into a numbered work-list so each idea can be

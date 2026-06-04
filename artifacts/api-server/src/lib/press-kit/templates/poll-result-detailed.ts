@@ -46,9 +46,9 @@ function deriveTakeaway(options: { text: string; percentage: number }[]): string
   if (!top) return ""
   const divided = !options.some((o) => o.percentage > 45)
   if (divided && second) {
-    return `Among current voters there's no clear majority — the leading answer, "${top.text}", sits at ${top.percentage}%, with "${second.text}" close behind at ${second.percentage}%. That gap is the signal.`
+    return `Among current voters there's no clear majority. The leading answer, "${top.text}", sits at ${top.percentage}%, with "${second.text}" close behind at ${second.percentage}%. That gap is the signal.`
   }
-  return `So far, the leading answer among current voters is "${top.text}" at ${top.percentage}% — but the field is split across ${options.length} options, so the picture is less settled than the headline suggests.`
+  return `So far, the leading answer among current voters is "${top.text}" at ${top.percentage}%, but the field is split across ${options.length} options, so the picture is less settled than the headline suggests.`
 }
 
 export function pollResultDetailed(
@@ -91,8 +91,8 @@ export function pollResultDetailed(
         display: "flex",
         flexDirection: "column",
         width: "100%",
-        gap: `${isStory ? 26 : 20}px`,
-        marginTop: `${isStory ? 48 : 34}px`,
+        gap: `${isStory ? 20 : 16}px`,
+        marginTop: `${isStory ? 36 : 24}px`,
       },
       children: options.map((opt) => {
         const isLead = opt.percentage === leadPct && leadPct > 0
@@ -186,12 +186,12 @@ export function pollResultDetailed(
     props: {
       style: {
         display: "flex",
-        marginTop: `${isStory ? 48 : 34}px`,
-        fontSize: `${scale.body}px`,
+        marginTop: `${isStory ? 30 : 22}px`,
+        fontSize: `${Math.round(scale.body * 0.74)}px`,
         fontFamily: spec.bodyFont,
         fontStyle: "italic",
         color: spec.muted,
-        lineHeight: 1.45,
+        lineHeight: 1.4,
       },
       children: takeaway,
     },
@@ -203,7 +203,7 @@ export function pollResultDetailed(
     props: {
       style: {
         display: "flex",
-        marginTop: `${isStory ? 28 : 20}px`,
+        marginTop: `${isStory ? 18 : 14}px`,
         fontSize: `${scale.caption}px`,
         fontFamily: spec.bodyFont,
         letterSpacing: "0.04em",

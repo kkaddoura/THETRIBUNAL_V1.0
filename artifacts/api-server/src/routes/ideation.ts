@@ -252,6 +252,8 @@ router.post("/cms/ideation/sessions/:id/generate", requireCmsAuth, async (req, r
       promptTemplate = [
         "You are a multi-pillar content ideation engine for 'The Middle East Hustle'.",
         "",
+        "WRITING STYLE (mandatory): Never use em dashes or en dashes (the long '—' or '–' characters) in any generated text. Use commas, periods, colons, or parentheses instead.",
+        "",
         "When generating DEBATES ideas, follow this guidance:",
         getPromptForPillar("debates"),
         "",

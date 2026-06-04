@@ -137,7 +137,7 @@ function resultRow(opt: ResultOption, isLead: boolean): string {
 function signalCard(s: SignalSection): string {
   // If a hosted PNG is available (R2 configured), prefer it; HTML card is the fallback.
   if (s.infographicUrl) {
-    const alt = `The Week's Signal — ${s.category}: ${s.question} (${s.label} · ${s.totalVotes} votes)`
+    const alt = `The Week's Signal, ${s.category}: ${s.question} (${s.label} · ${s.totalVotes} votes)`
     return `
     <tr><td style="padding:8px 0 28px;">
       <img src="${esc(s.infographicUrl)}" alt="${esc(alt)}" width="100%"
