@@ -125,6 +125,25 @@ export function usePulseTopics() {
   })
 }
 
+export interface TopItem {
+  type: "debate" | "prediction"
+  id: number
+  question: string
+  category: string
+  votes: number
+  window: "24h" | "all-time"
+  href: string
+}
+
+/** Top debate + prediction of the day (most votes in last 24h, all-time fallback). */
+export function useTopPost() {
+  return useQuery<{ topDebate: TopItem | null; topPrediction: TopItem | null; topPost: TopItem | null }>({
+    queryKey: ["top-post"],
+    queryFn: () => fetchJson("/api/public/top-post"),
+    staleTime: 60_000,
+  })
+}
+
 export function usePageConfig<T = Record<string, unknown>>(page: string) {
   return useQuery<T>({
     queryKey: ["page-config", page],

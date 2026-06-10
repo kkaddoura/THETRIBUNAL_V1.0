@@ -1624,23 +1624,29 @@ router.get("/public/predictions/:id", async (req, res) => {
 });
 
 // ── Top post of the day ──────────────────────────────────────────
-// On-demand (no cron): the debate OR prediction with the most votes cast in the
-// trailing 24h, across both content types. Excludes hidden categories and
-// non-approved items. Always returns a post: if nothing was voted on in the
-// last 24h, it falls back to the most-voted approved post overall.
-type TopCandidate = { type: "debate" | "prediction"; id: number; question: string; category: string; votes: number };
+// On-demand (no cron): the top debate AND the top prediction, each by the most
+// votes cast in the trailing 24h. Excludes hidden categories and non-approved
+// items. Always returns an item per type: if nothing was voted on in the last
+// 24h, it falls back to the most-voted approved item of that type overall.
+interface TopItem {
+  type: "debate" | "prediction";
+  id: number;
+  question: string;
+  category: string;
+  votes: number;
+  window: "24h" | "all-time";
+  href: string;
+}
 
-function formatTopPost(c: TopCandidate, window: "24h" | "all-time") {
+function toTopItem(type: "debate" | "prediction", row: { id: number; question: string; category: string; votes: number }, window: "24h" | "all-time"): TopItem {
   return {
-    topPost: {
-      type: c.type,
-      id: c.id,
-      question: c.question,
-      category: c.category,
-      votes: c.votes,
-      window,
-      href: c.type === "debate" ? `/debates/${c.id}` : `/predictions/${c.id}`,
-    },
+    type,
+    id: row.id,
+    question: row.question,
+    category: row.category,
+    votes: Number(row.votes),
+    window,
+    href: type === "debate" ? `/debates/${row.id}` : `/predictions/${row.id}`,
   };
 }
 
@@ -1651,8 +1657,8 @@ router.get("/public/top-post", async (_req, res) => {
     const pollNotHidden = disabled.length ? notInArray(pollsTable.category, disabled) : undefined;
     const predNotHidden = disabled.length ? notInArray(predictionsTable.category, disabled) : undefined;
 
-    // 1) Top debate + prediction by real votes in the last 24h.
-    const [topPoll24] = await db
+    // ── Top debate: most poll votes in the last 24h, else most-voted overall.
+    const [poll24] = await db
       .select({ id: pollsTable.id, question: pollsTable.question, category: pollsTable.category, votes: sql<number>`count(*)` })
       .from(votesTable)
       .innerJoin(pollsTable, eq(pollsTable.id, votesTable.pollId))
@@ -1661,7 +1667,20 @@ router.get("/public/top-post", async (_req, res) => {
       .orderBy(desc(sql`count(*)`))
       .limit(1);
 
-    const [topPred24] = await db
+    let topDebate: TopItem | null = poll24 && Number(poll24.votes) > 0 ? toTopItem("debate", poll24, "24h") : null;
+    if (!topDebate) {
+      const pollTotal = sql<number>`COALESCE((SELECT SUM(vote_count + COALESCE(dummy_vote_count, 0)) FROM poll_options WHERE poll_id = ${pollsTable.id}), 0)`;
+      const [pollAll] = await db
+        .select({ id: pollsTable.id, question: pollsTable.question, category: pollsTable.category, votes: pollTotal })
+        .from(pollsTable)
+        .where(and(eq(pollsTable.editorialStatus, "approved"), pollNotHidden))
+        .orderBy(desc(pollTotal))
+        .limit(1);
+      topDebate = pollAll ? toTopItem("debate", pollAll, "all-time") : null;
+    }
+
+    // ── Top prediction: most prediction votes in the last 24h, else overall.
+    const [pred24] = await db
       .select({ id: predictionsTable.id, question: predictionsTable.question, category: predictionsTable.category, votes: sql<number>`count(*)` })
       .from(predictionVotesTable)
       .innerJoin(predictionsTable, eq(predictionsTable.id, predictionVotesTable.predictionId))
@@ -1670,42 +1689,22 @@ router.get("/public/top-post", async (_req, res) => {
       .orderBy(desc(sql`count(*)`))
       .limit(1);
 
-    const recent: TopCandidate[] = [];
-    if (topPoll24) recent.push({ type: "debate", id: topPoll24.id, question: topPoll24.question, category: topPoll24.category, votes: Number(topPoll24.votes) });
-    if (topPred24) recent.push({ type: "prediction", id: topPred24.id, question: topPred24.question, category: topPred24.category, votes: Number(topPred24.votes) });
-    recent.sort((a, b) => b.votes - a.votes);
-    if (recent.length && recent[0].votes > 0) {
-      return res.json(formatTopPost(recent[0], "24h"));
+    let topPrediction: TopItem | null = pred24 && Number(pred24.votes) > 0 ? toTopItem("prediction", pred24, "24h") : null;
+    if (!topPrediction) {
+      const predTotal = sql<number>`(${predictionsTable.totalCount} + ${predictionsTable.dummyTotalCount})`;
+      const [predAll] = await db
+        .select({ id: predictionsTable.id, question: predictionsTable.question, category: predictionsTable.category, votes: predTotal })
+        .from(predictionsTable)
+        .where(and(eq(predictionsTable.editorialStatus, "approved"), predNotHidden))
+        .orderBy(desc(predTotal))
+        .limit(1);
+      topPrediction = predAll ? toTopItem("prediction", predAll, "all-time") : null;
     }
 
-    // 2) Fallback — most-voted approved post overall (incl. seeded counts), so
-    // the endpoint always has something to return on quiet days / fresh data.
-    const pollTotal = sql<number>`COALESCE((SELECT SUM(vote_count + COALESCE(dummy_vote_count, 0)) FROM poll_options WHERE poll_id = ${pollsTable.id}), 0)`;
-    const [topPollAll] = await db
-      .select({ id: pollsTable.id, question: pollsTable.question, category: pollsTable.category, votes: pollTotal })
-      .from(pollsTable)
-      .where(and(eq(pollsTable.editorialStatus, "approved"), pollNotHidden))
-      .orderBy(desc(pollTotal))
-      .limit(1);
+    // `topPost` = the higher-voted of the two, for callers that want a single item.
+    const topPost = [topDebate, topPrediction].filter((x): x is TopItem => !!x).sort((a, b) => b.votes - a.votes)[0] ?? null;
 
-    const predTotal = sql<number>`(${predictionsTable.totalCount} + ${predictionsTable.dummyTotalCount})`;
-    const [topPredAll] = await db
-      .select({ id: predictionsTable.id, question: predictionsTable.question, category: predictionsTable.category, votes: predTotal })
-      .from(predictionsTable)
-      .where(and(eq(predictionsTable.editorialStatus, "approved"), predNotHidden))
-      .orderBy(desc(predTotal))
-      .limit(1);
-
-    const overall: TopCandidate[] = [];
-    if (topPollAll) overall.push({ type: "debate", id: topPollAll.id, question: topPollAll.question, category: topPollAll.category, votes: Number(topPollAll.votes) });
-    if (topPredAll) overall.push({ type: "prediction", id: topPredAll.id, question: topPredAll.question, category: topPredAll.category, votes: Number(topPredAll.votes) });
-    overall.sort((a, b) => b.votes - a.votes);
-    if (overall.length) {
-      return res.json(formatTopPost(overall[0], "all-time"));
-    }
-
-    // 3) No approved content at all.
-    return res.json({ topPost: null });
+    return res.json({ topDebate, topPrediction, topPost });
   } catch (err) {
     console.error("Top post error:", err);
     return res.status(500).json({ error: "Failed to fetch top post" });

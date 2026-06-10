@@ -371,6 +371,7 @@ import {
   useHomepageConfig,
   useLiveCounts,
   useSiteSettings,
+  useTopPost,
   type ApiPrediction,
 } from "@/hooks/use-cms-data";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -1604,15 +1605,20 @@ export default function Home() {
   // Extract CMS-selected content IDs
   const cmsSelectedDebateId = homepageConfig?.sections?.find(s => s.type === "lead_debate")?.config?.selectedDebateId as number | undefined;
 
-  // Lead debate: use CMS-selected debate if set, otherwise fall back to featured
+  // Top debate/prediction of the day (auto). A CMS-pinned lead debate wins;
+  // otherwise the lead debate auto-replaces with the day's top debate.
+  const { data: topPost } = useTopPost();
+  const effectiveDebateId = cmsSelectedDebateId ?? topPost?.topDebate?.id;
+
+  // Lead debate: CMS pin → top debate of the day → generic featured poll.
   const { data: defaultFeaturedPoll, isLoading: defaultFeaturedLoading } =
     useGetFeaturedPoll();
-  const { data: cmsSelectedPoll, isLoading: cmsSelectedLoading } = useGetPoll(
-    cmsSelectedDebateId ?? 0,
-    { query: { enabled: !!cmsSelectedDebateId } as any },
+  const { data: selectedPoll, isLoading: selectedPollLoading } = useGetPoll(
+    effectiveDebateId ?? 0,
+    { query: { enabled: !!effectiveDebateId } as any },
   );
-  const featuredPoll = cmsSelectedPoll ?? defaultFeaturedPoll;
-  const featuredLoading = cmsSelectedDebateId ? cmsSelectedLoading : defaultFeaturedLoading;
+  const featuredPoll = selectedPoll ?? defaultFeaturedPoll;
+  const featuredLoading = effectiveDebateId ? selectedPollLoading : defaultFeaturedLoading;
 
   const { data: trendingPolls, isLoading: trendingLoading } = useListPolls({
     filter: "trending",
@@ -1662,6 +1668,13 @@ export default function Home() {
       return apiPredictions.items.map(apiToPredCard);
     return FALLBACK_PREDICTIONS;
   }, [apiPredictions]);
+
+  // Featured prediction: the day's top prediction if it's in the list, else the
+  // first one. (Predictions have no separate CMS pin today.)
+  const featuredPrediction = useMemo(() => {
+    const topId = topPost?.topPrediction?.id;
+    return (topId != null && PREDICTIONS.find((p) => p.id === topId)) || PREDICTIONS[0];
+  }, [PREDICTIONS, topPost]);
 
   const handleCtaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -2163,7 +2176,7 @@ export default function Home() {
               </div>
               </FadeIn>
               {(() => {
-                const featured = PREDICTIONS[0];
+                const featured = featuredPrediction;
                 const noData = featured.data.map((v) => 100 - v);
                 const months = [
                   "Jan",
@@ -2238,10 +2251,11 @@ export default function Home() {
               <StaggerGrid>
                 {(() => {
                   const seen = new Set<string>();
-                  seen.add(PREDICTIONS[0].category);
+                  seen.add(featuredPrediction.category);
                   const mixed: typeof PREDICTIONS = [];
                   for (const p of PREDICTIONS) {
                     if (mixed.length >= 3) break;
+                    if (p.id === featuredPrediction.id) continue;
                     if (!seen.has(p.category)) {
                       seen.add(p.category);
                       mixed.push(p);
