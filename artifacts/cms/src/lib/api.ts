@@ -51,6 +51,8 @@ export const api = {
 
   getStats: () => request("/stats"),
   getTaxonomy: () => request("/taxonomy"),
+  getCategories: () => request("/categories"),
+  updateCategories: (disabled: string[]) => request("/categories", { method: "PUT", body: JSON.stringify({ disabled }) }),
 
   getBoostCategories: () => request("/boost/categories"),
   boostVotes: (data: { scope: "all" | "category"; category?: string }) => request("/boost", { method: "POST", body: JSON.stringify(data) }),

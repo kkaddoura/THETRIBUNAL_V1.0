@@ -27,6 +27,7 @@ import PageVoices from "@/pages/page-voices";
 import PagePolls from "@/pages/page-polls";
 import PageApply from "@/pages/page-apply";
 import PageSiteSettings from "@/pages/page-site-settings";
+import PageCategories from "@/pages/page-categories";
 import DesignTokensPage from "@/pages/design-tokens";
 import IdeationPage from "@/pages/ideation";
 import MajlisPage from "@/pages/majlis";
@@ -73,6 +74,7 @@ function ProtectedRoutes() {
         <Route path="/pages/polls" component={PagePolls} />
         <Route path="/pages/apply" component={PageApply} />
         <Route path="/site-settings" component={PageSiteSettings} />
+        <Route path="/categories" component={PageCategories} />
         <Route path="/subscribers" component={SubscribersPage} />
         <Route path="/applications" component={ApplicationsPage} />
         <Route path="/majlis" component={MajlisPage} />

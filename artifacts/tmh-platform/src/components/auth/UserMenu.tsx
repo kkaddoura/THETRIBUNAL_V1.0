@@ -37,13 +37,6 @@ export function UserMenu() {
         aria-haspopup="menu"
         aria-expanded={open}
       >
-        {user.avatarUrl && (
-          <img
-            src={user.avatarUrl}
-            alt=""
-            className="w-7 h-7 border border-border"
-          />
-        )}
         <span className="text-xs uppercase tracking-widest font-bold hidden sm:inline">
           @{user.username}
         </span>

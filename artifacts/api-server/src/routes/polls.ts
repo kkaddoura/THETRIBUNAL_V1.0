@@ -1,8 +1,9 @@
 import { Router, type IRouter } from "express";
 import rateLimit from "express-rate-limit";
 import { db, pollsTable, pollOptionsTable, votesTable, profilesTable, newsletterSubscribersTable, pollSnapshotsTable } from "@workspace/db";
-import { eq, desc, sql, and, inArray, asc } from "drizzle-orm";
+import { eq, desc, sql, and, inArray, asc, notInArray } from "drizzle-orm";
 import { syncToBeehiiv } from "./newsletter";
+import { getDisabledCategories } from "../lib/category-settings";
 
 const router: IRouter = Router();
 
@@ -121,7 +122,11 @@ router.get("/polls", async (req, res) => {
     const lim = Math.min(parseInt(limit) || 20, 50);
     const off = parseInt(offset) || 0;
 
-    const approvedFilter = eq(pollsTable.editorialStatus, "approved");
+    // Exclude debates in CMS-disabled categories from every public listing branch.
+    const disabledCats = await getDisabledCategories();
+    const approvedFilter = disabledCats.length
+      ? and(eq(pollsTable.editorialStatus, "approved"), notInArray(pollsTable.category, disabledCats))!
+      : eq(pollsTable.editorialStatus, "approved");
 
     // Branch: explicit ID list (manual-pick sections). Returns polls in requested order.
     if (ids && ids.trim()) {

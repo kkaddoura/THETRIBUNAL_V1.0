@@ -92,9 +92,12 @@ export interface CaptionVariants {
 }
 
 const TONE_LINES: Record<NonNullable<ToneHint>, string> = {
-  punchy: "Voice: punchy, declarative, short sentences, no hedging.",
-  analytical: "Voice: analytical, calm, weighs both sides, cites the number.",
-  warm: "Voice: warm, human, first-person plural, invites the reader in.",
+  punchy:
+    "VOICE = PUNCHY. Short, declarative sentences (max ~8 words). Lead with the number or the verdict. No hedging, no qualifiers, no 'perhaps'. End lines on a hard stop. Confident, almost provocative.",
+  analytical:
+    "VOICE = ANALYTICAL. Calm and measured. Open by framing the question, then weigh both sides ('advocates… / skeptics…'). Always cite the supplied number and what it implies. Longer, complete sentences. No hype, no emoji.",
+  warm:
+    "VOICE = WARM. Human and conversational, first-person plural ('we asked, you answered'). Invite the reader in, acknowledge the shared stakes. Gentle, inclusive, a little reflective. No jargon.",
 }
 
 function systemPromptFor(tone: ToneHint, platforms: Platform[]): string {
@@ -184,11 +187,78 @@ Return JSON with exactly three distinct caption variants that read well on ANY p
 Each variant: a strong hook, 2-4 short lines, medium length (roughly 200-500 characters), ending with one or two relevant hashtags (always include #MENA). The three variants must take meaningfully different angles — not paraphrases. Never invent percentages or quotes that weren't supplied. End each variant with the canonical link — use {{LINK}} as a placeholder; the caller substitutes it.`
 }
 
-/** Reuse the per-platform fallback phrasings (already three distinct angles)
- * but with a {{LINK}} placeholder so the link is substituted exactly once. */
-function buildNeutralFallback(input: CaptionInput): string[] {
-  const fb = buildFallbackVariants(input, "{{LINK}}")
-  return [fb.x[0], fb.ig[0], fb.linkedin[0]]
+/** The core subject line for a piece of content, used to build tone-aware
+ * fallback captions when the AI is unavailable. */
+function subjectOf(input: CaptionInput): string {
+  switch (input.contentType) {
+    case "poll":
+    case "prediction":
+    case "carousel-debate":
+      return input.question ?? "A new MENA debate"
+    case "voice":
+      return input.quote ? `"${input.quote}"${input.voicesName ? ` — ${input.voicesName}` : ""}` : (input.voicesName ?? "A new voice")
+    case "pulse":
+    case "carousel-pulse-trio":
+      return input.stat ?? "The numbers shaping MENA"
+    case "about-founder":
+      return input.founderText ? `"${input.founderText}"${input.founderAuthor ? ` — ${input.founderAuthor}` : ""}` : "A note from the founder"
+    case "about-pillar":
+      return input.pillarTitle ?? "A pillar of The Tribunal"
+    case "about-belief":
+      return input.beliefTitle ?? "What we believe"
+    case "about-region":
+      return `${input.regionCount ?? 19} countries, one regional lens`
+    case "manifesto":
+      return input.manifestoTitle ?? "The region, on record"
+    case "carousel-pillars":
+      return "The four pillars of The Tribunal"
+    case "recap-weekly":
+      return "This week on The Tribunal"
+    default:
+      return "The region, on record"
+  }
+}
+
+/** The supplied data point (e.g. the winning split), or "" when none. */
+function dataOf(input: CaptionInput): string {
+  if (input.winningPercentage != null && input.winningOption) {
+    return `${Math.round(input.winningPercentage)}% chose ${input.winningOption}.`
+  }
+  if (input.stat) return input.stat
+  return ""
+}
+
+/** Three fallback caption variants whose voice changes with the tone hint, so
+ * regenerating with a different tone always yields different text even when the
+ * AI is unavailable. Each variant ends with the {{LINK}} placeholder. */
+function buildNeutralFallback(input: CaptionInput, tone: ToneHint): string[] {
+  const s = subjectOf(input)
+  const d = dataOf(input)
+  const dataLine = d ? `${d} ` : ""
+
+  const frames: Record<NonNullable<ToneHint> | "auto", (s: string) => string[]> = {
+    punchy: () => [
+      `${dataLine}${s}\nThe region voted. Now it's your turn.\n{{LINK}} #MENA`,
+      `${s}\n${dataLine}No hedging. Where do you stand?\n{{LINK}} #MENA #Tribunal`,
+      `${dataLine}${s}\nThe debate is live. Cast your vote.\n{{LINK}} #MENA`,
+    ],
+    analytical: () => [
+      `${s}\n${dataLine}The Tribunal breaks down the split by country and sector.\nWhere do you land?\n{{LINK}} #MENA`,
+      `${s}\nAdvocates and skeptics both have a case. ${dataLine}See the full picture.\n{{LINK}} #MENA #Tribunal`,
+      `${dataLine}${s}\nThe data is in — the interpretation is up for debate.\n{{LINK}} #MENA`,
+    ],
+    warm: () => [
+      `We asked, you answered. ${dataLine}${s}\nJoin the conversation — your view matters.\n{{LINK}} #MENA`,
+      `${s}\n${dataLine}Whatever you believe, there's room for your voice here.\n{{LINK}} #MENA #Tribunal`,
+      `${s}\nWe're working it out together. ${dataLine}Come weigh in.\n{{LINK}} #MENA`,
+    ],
+    auto: () => {
+      const fb = buildFallbackVariants(input, "{{LINK}}")
+      return [fb.x[0], fb.ig[0], fb.linkedin[0]]
+    },
+  }
+
+  return (frames[tone ?? "auto"])(s)
 }
 
 export async function generateNeutralCaptions(
@@ -211,7 +281,7 @@ export async function generateNeutralCaptions(
   }
 
   // Guarantee three distinct, non-empty variants regardless of AI availability.
-  const fallback = buildNeutralFallback(input)
+  const fallback = buildNeutralFallback(input, opts.toneHint)
   const ai = parsed ?? []
   const base = [0, 1, 2].map((i) => ai[i] || fallback[i] || fallback[0])
   return sanitizeVariants(base, link, 600)

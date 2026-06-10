@@ -79,9 +79,6 @@ export default function ProfilePublic() {
         </Link>
 
         <div className="bg-card border border-border p-8 md:p-12 flex flex-col md:flex-row items-start gap-8">
-          {user.avatarUrl && (
-            <img src={user.avatarUrl} alt="" className="w-32 h-32 border border-border flex-shrink-0" />
-          )}
           <div className="flex-1">
             <h1 className="text-4xl md:text-5xl font-serif font-black uppercase tracking-tight">
               @{user.username}<span className="text-primary">.</span>

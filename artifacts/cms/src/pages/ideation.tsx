@@ -1022,7 +1022,6 @@ function ResearchPanel({ data }: { data: Record<string, unknown> }) {
                 <div key={i} className="bg-secondary/30 p-2">
                   <p className="text-sm font-medium">{t.title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{t.summary}</p>
-                  <p className="text-[10px] text-primary mt-0.5">{t.source}</p>
                 </div>
               ))}
             </div>

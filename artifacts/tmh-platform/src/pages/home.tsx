@@ -1799,8 +1799,8 @@ export default function Home() {
 
                 {/* Headline */}
                 <motion.h1
-                  className="font-display font-black uppercase tracking-tight text-foreground leading-none"
-                  style={{ fontSize: "clamp(1.35rem, 2.8vw, 2.2rem)", lineHeight: 1.1 }}
+                  className="font-serif font-black uppercase tracking-[-0.01em] text-foreground text-center max-w-5xl"
+                  style={{ fontSize: "clamp(2.2rem, 6vw, 4.5rem)", lineHeight: 0.95 }}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.1 }}
@@ -1808,6 +1808,14 @@ export default function Home() {
                   {t(C.hero.headline)}
                   <span className="text-primary">.</span>
                 </motion.h1>
+
+                {/* Underline accent */}
+                <motion.div
+                  className="h-[3px] bg-primary mt-4"
+                  initial={{ width: 0 }}
+                  animate={{ width: "5rem" }}
+                  transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.45 }}
+                />
 
                 {/* Body */}
                 <motion.p
@@ -1830,18 +1838,20 @@ export default function Home() {
                 </motion.p>
 
                 {/* Account microcopy */}
-                <motion.p
-                  className="text-[12px] sm:text-[13px] text-foreground/55 font-sans mt-2"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.55 }}
-                >
-                  {t(C.hero.accountMicrocopy)}
-                </motion.p>
+                {C.hero.accountMicrocopy?.trim() && (
+                  <motion.p
+                    className="text-[12px] sm:text-[13px] text-foreground/55 font-sans mt-2"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.55 }}
+                  >
+                    {t(C.hero.accountMicrocopy)}
+                  </motion.p>
+                )}
 
                 {/* CTAs */}
                 <motion.div
-                  className="mt-7 flex items-center gap-4 flex-wrap justify-center lg:justify-start"
+                  className="mt-7 flex items-center gap-4 flex-wrap justify-center"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.5, delay: 0.6 }}

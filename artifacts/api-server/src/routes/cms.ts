@@ -4,8 +4,9 @@ import path from "path";
 import { supabaseAdmin, isSupabaseStorageAvailable, STORAGE_BUCKET, getPublicUrl } from "../utils/supabase-storage";
 import crypto from "crypto";
 import { db, pollsTable, pollOptionsTable, votesTable, newsletterSubscribersTable, hustlerApplicationsTable, profilesTable, predictionsTable, pulseTopicsTable, cmsConfigsTable, designTokensTable, majlisInvitesTable, cmsSessionsTable } from "@workspace/db";
-import { eq, desc, sql, count, like, or, inArray, and, asc, gt } from "drizzle-orm";
+import { eq, desc, sql, count, like, or, inArray, notInArray, and, asc, gt } from "drizzle-orm";
 import { sendEmail } from "../lib/email.js";
+import { getDisabledCategories, setDisabledCategories } from "../lib/category-settings";
 
 const router = Router();
 
@@ -274,6 +275,58 @@ router.get("/cms/taxonomy", requireCmsAuth, async (_req, res) => {
   } catch (err) {
     console.error("Taxonomy error:", err);
     return res.status(500).json({ error: "Taxonomy failed" });
+  }
+});
+
+// ── Category enable/disable (admin) ──────────────────────────────
+// Lists every category that has content, with how many debates/predictions use
+// it and whether it is currently disabled. Disabling hides the category and all
+// of its content from the public site.
+router.get("/cms/categories", requireCmsAuth, async (_req, res) => {
+  try {
+    const debateRows = await db
+      .select({ category: pollsTable.category, count: sql<number>`count(*)` })
+      .from(pollsTable)
+      .groupBy(pollsTable.category);
+    const predRows = await db
+      .select({ category: predictionsTable.category, count: sql<number>`count(*)` })
+      .from(predictionsTable)
+      .groupBy(predictionsTable.category);
+
+    const map = new Map<string, { name: string; debateCount: number; predictionCount: number }>();
+    for (const r of debateRows) {
+      if (!r.category) continue;
+      const e = map.get(r.category) ?? { name: r.category, debateCount: 0, predictionCount: 0 };
+      e.debateCount += Number(r.count);
+      map.set(r.category, e);
+    }
+    for (const r of predRows) {
+      if (!r.category) continue;
+      const e = map.get(r.category) ?? { name: r.category, debateCount: 0, predictionCount: 0 };
+      e.predictionCount += Number(r.count);
+      map.set(r.category, e);
+    }
+
+    const disabled = new Set(await getDisabledCategories());
+    const categories = [...map.values()]
+      .map((c) => ({ ...c, disabled: disabled.has(c.name) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return res.json({ categories });
+  } catch (err) {
+    console.error("CMS categories error:", err);
+    return res.status(500).json({ error: "Failed to list categories" });
+  }
+});
+
+router.put("/cms/categories", requireCmsAuth, async (req, res) => {
+  try {
+    const disabled = Array.isArray(req.body?.disabled) ? req.body.disabled : [];
+    await setDisabledCategories(disabled);
+    return res.json({ success: true, disabled: await getDisabledCategories() });
+  } catch (err) {
+    console.error("CMS update categories error:", err);
+    return res.status(500).json({ error: "Failed to update categories" });
   }
 });
 
@@ -1471,6 +1524,8 @@ router.get("/public/predictions", async (req, res) => {
     const offset = Math.max(0, Number(req.query.offset) || 0);
 
     const conditions: any[] = [eq(predictionsTable.editorialStatus, "approved")];
+    const disabledCats = await getDisabledCategories();
+    if (disabledCats.length) conditions.push(notInArray(predictionsTable.category, disabledCats));
     if (category) conditions.push(eq(predictionsTable.category, category));
     if (search?.trim()) {
       const term = `%${search.trim().toLowerCase()}%`;
