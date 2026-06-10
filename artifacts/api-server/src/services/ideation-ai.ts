@@ -28,6 +28,7 @@ interface ResearchConfig {
   categories: string[];
   tags: string[];
   regions: string[];
+  recency?: ResearchRecency;
 }
 
 interface GenerationConfig {
@@ -48,7 +49,18 @@ interface RefinementConfig {
   idea: GeneratedIdea;
 }
 
-async function callPerplexity(prompt: string): Promise<string> {
+// News recency window for the research phase. Maps to Perplexity's
+// search_recency_filter; the label is also injected into the prompts so the
+// model's own framing matches the search window.
+export type ResearchRecency = "day" | "week" | "month" | "year";
+export const RECENCY_LABEL: Record<ResearchRecency, string> = {
+  day: "past 24 hours",
+  week: "past 7 days",
+  month: "past 30 days",
+  year: "past 12 months",
+};
+
+async function callPerplexity(prompt: string, recency: ResearchRecency = "week"): Promise<string> {
   const apiKey = process.env.PERPLEXITY_API_KEY;
   if (!apiKey) {
     return generateMockResearch(prompt);
@@ -63,11 +75,11 @@ async function callPerplexity(prompt: string): Promise<string> {
     body: JSON.stringify({
       model: "sonar",
       messages: [
-        { role: "system", content: "You are a MENA-focused research analyst. Return ONLY valid JSON. Focus on verifiable facts from the past 7 days. Include specific numbers, named sources, and dates. Prioritize breaking news, policy changes, funding rounds, and market data from the Middle East and North Africa." },
+        { role: "system", content: `You are a MENA-focused research analyst. Return ONLY valid JSON. Focus on verifiable facts from the ${RECENCY_LABEL[recency]}. Include specific numbers, named sources, and dates. Prioritize breaking news, policy changes, funding rounds, and market data from the Middle East and North Africa.` },
         { role: "user", content: prompt },
       ],
       temperature: 0.5,
-      search_recency_filter: "week",
+      search_recency_filter: recency,
     }),
   });
 
@@ -236,8 +248,9 @@ function generateMockSafetyReview(): SafetyReview {
 }
 
 export async function runResearch(config: ResearchConfig): Promise<ResearchResult> {
+  const recency = config.recency ?? "week";
   const today = new Date().toISOString().split("T")[0];
-  const prompt = `Today is ${today}. Find the most important MENA news and data from the past 7 days.
+  const prompt = `Today is ${today}. Find the most important MENA news and data from the ${RECENCY_LABEL[recency]}.
 
 Focus areas: ${config.categories.join(", ") || "business, technology, culture, politics, economy"}
 Tags: ${config.tags.join(", ") || "any"}
@@ -250,7 +263,7 @@ Return a JSON object with:
 
 Return ONLY valid JSON.`;
 
-  const result = await callPerplexity(prompt);
+  const result = await callPerplexity(prompt, recency);
   try {
     return JSON.parse(result);
   } catch {

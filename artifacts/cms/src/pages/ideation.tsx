@@ -11,6 +11,14 @@ import {
 type Mode = "explore" | "focused";
 type PillarType = "debates" | "predictions" | "pulse";
 type ViewTab = "generate" | "prompts" | "exclusions" | "history" | "rejections";
+type Recency = "day" | "week" | "month" | "year";
+
+const RECENCY_OPTIONS: { value: Recency; label: string; hint: string }[] = [
+  { value: "day", label: "Latest", hint: "Past 24 hours" },
+  { value: "week", label: "Week", hint: "Past 7 days" },
+  { value: "month", label: "Month", hint: "Past 30 days" },
+  { value: "year", label: "Year", hint: "Past 12 months" },
+];
 
 interface Idea {
   id: number;
@@ -133,6 +141,7 @@ interface IdeationPersistedState {
   selectedCategories: string[];
   selectedTags: string[];
   selectedRegions: string[];
+  recency: Recency;
   guardrails: string[];
   currentStep: number;
   session: Session | null;
@@ -162,6 +171,7 @@ export default function IdeationPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => loadPersistedState()?.selectedCategories ?? []);
   const [selectedTags, setSelectedTags] = useState<string[]>(() => loadPersistedState()?.selectedTags ?? []);
   const [selectedRegions, setSelectedRegions] = useState<string[]>(() => loadPersistedState()?.selectedRegions ?? []);
+  const [recency, setRecency] = useState<Recency>(() => loadPersistedState()?.recency ?? "week");
   const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
   const [guardrails, setGuardrails] = useState<string[]>(() => loadPersistedState()?.guardrails ?? DEFAULT_GUARDRAILS);
   const [showGuardrails, setShowGuardrails] = useState(false);
@@ -199,12 +209,12 @@ export default function IdeationPage() {
       data: {
         activeTab, mode, focusedPillar, batchSize, pillarCounts,
         usePillarCounts, selectedCategories, selectedTags, selectedRegions,
-        guardrails, currentStep, session, ideas, researchData,
+        recency, guardrails, currentStep, session, ideas, researchData,
       },
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
   }, [activeTab, mode, focusedPillar, batchSize, pillarCounts, usePillarCounts,
-      selectedCategories, selectedTags, selectedRegions, guardrails,
+      selectedCategories, selectedTags, selectedRegions, recency, guardrails,
       currentStep, session, ideas, researchData]);
 
   useEffect(() => {
@@ -231,6 +241,7 @@ export default function IdeationPage() {
         categories: selectedCategories,
         tags: selectedTags,
         regions: selectedRegions,
+        recency,
         batchSize: mode === "explore" && usePillarCounts
           ? pillarCounts.debates + pillarCounts.predictions + pillarCounts.pulse
           : batchSize,
@@ -266,7 +277,7 @@ export default function IdeationPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [mode, focusedPillar, batchSize, pillarCounts, usePillarCounts, selectedCategories, selectedTags, selectedRegions, exclusionList, guardrails]);
+  }, [mode, focusedPillar, batchSize, pillarCounts, usePillarCounts, selectedCategories, selectedTags, selectedRegions, recency, exclusionList, guardrails]);
 
   const handleCherryPick = async (ideaId: number, action: string, tag?: string) => {
     try {
@@ -481,6 +492,8 @@ export default function IdeationPage() {
               regions={taxonomy?.countries || []}
               selectedRegions={selectedRegions}
               setSelectedRegions={setSelectedRegions}
+              recency={recency}
+              setRecency={setRecency}
               guardrails={guardrails}
               setGuardrails={setGuardrails}
               showGuardrails={showGuardrails}
@@ -699,6 +712,7 @@ function ConfigPanel({
   categories, selectedCategories, setSelectedCategories,
   tags, selectedTags, setSelectedTags,
   regions, selectedRegions, setSelectedRegions,
+  recency, setRecency,
   guardrails, setGuardrails, showGuardrails, setShowGuardrails,
   onStart, isProcessing, onReset,
 }: {
@@ -711,6 +725,7 @@ function ConfigPanel({
   categories: string[]; selectedCategories: string[]; setSelectedCategories: (c: string[]) => void;
   tags: string[]; selectedTags: string[]; setSelectedTags: (t: string[]) => void;
   regions: string[]; selectedRegions: string[]; setSelectedRegions: (r: string[]) => void;
+  recency: Recency; setRecency: (r: Recency) => void;
   guardrails: string[]; setGuardrails: (g: string[]) => void;
   showGuardrails: boolean; setShowGuardrails: (b: boolean) => void;
   onStart: () => void; isProcessing: boolean;
@@ -829,6 +844,25 @@ function ConfigPanel({
       <MultiSelectDropdown label="Categories" items={categories} selected={selectedCategories} setSelected={setSelectedCategories} placeholder="Filter by categories..." />
       <MultiSelectDropdown label="Tags" items={tags} selected={selectedTags} setSelected={setSelectedTags} placeholder="Filter by tags..." />
       <MultiSelectDropdown label="Regions" items={regions} selected={selectedRegions} setSelected={setSelectedRegions} placeholder="Filter by regions..." />
+
+      <div>
+        <label className="text-xs text-muted-foreground uppercase tracking-wider block mb-1.5" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>News recency</label>
+        <div className="grid grid-cols-4 gap-1">
+          {RECENCY_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setRecency(opt.value)}
+              title={opt.hint}
+              className={`px-2 py-1.5 text-xs transition-colors ${recency === opt.value ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          {RECENCY_OPTIONS.find(o => o.value === recency)?.hint} — how far back research pulls news.
+        </p>
+      </div>
 
       <div>
         <button

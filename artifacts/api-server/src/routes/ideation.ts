@@ -200,11 +200,12 @@ router.post("/cms/ideation/sessions/:id/research", requireCmsAuth, async (req, r
     const [session] = await db.select().from(ideationSessionsTable).where(eq(ideationSessionsTable.id, sessionId));
     if (!session) return res.status(404).json({ error: "Session not found" });
 
-    const config = session.configSnapshot as { categories: string[]; tags: string[]; regions: string[] };
+    const config = session.configSnapshot as { categories: string[]; tags: string[]; regions: string[]; recency?: "day" | "week" | "month" | "year" };
     const researchData = await runResearch({
       categories: config.categories || [],
       tags: config.tags || [],
       regions: config.regions || [],
+      recency: config.recency,
     });
 
     await db.update(ideationSessionsTable)

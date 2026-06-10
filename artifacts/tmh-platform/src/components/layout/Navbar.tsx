@@ -97,6 +97,9 @@ export function Navbar() {
   const ctaButton = (() => {
     if (!ctaCandidate) return null
     const href = (ctaCandidate.href ?? "").toLowerCase().trim().replace(/^https?:\/\/[^/]+/, "")
+    // The UserMenu already provides the sign-in / account entry, so a nav CTA
+    // pointing at the auth pages would be a duplicate "Sign In" button.
+    if (href.startsWith("/login") || href.startsWith("/signup")) return null
     const targetsVoices = href.startsWith("/voices") || href.startsWith("/apply")
     const targetsMajlis = href.startsWith("/majlis")
     const targetsPulse = href.startsWith("/pulse")
