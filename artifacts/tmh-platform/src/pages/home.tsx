@@ -1491,10 +1491,10 @@ function SidebarPredictionItem({
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-[13px] uppercase tracking-widest text-[#3B82F6] font-serif font-bold">
+            <p className="text-[14px] uppercase tracking-widest text-[#3B82F6] font-serif font-bold">
               {pred.category}
             </p>
-            <p className="font-serif font-black uppercase text-[14px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
+            <p className="font-serif font-black uppercase text-[15px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
               {pred.question.length > 70
                 ? pred.question.slice(0, 70) + "…"
                 : pred.question}
@@ -1539,13 +1539,13 @@ function SidebarPredictionItem({
         </div>
         <div className="flex items-center gap-3 mt-1.5">
           <span
-            className="text-[10px] font-bold font-serif"
+            className="text-[11px] font-bold font-serif"
             style={{ color: "#10B981" }}
           >
             Yes {pred.yes}%
           </span>
           <span
-            className="text-[10px] font-bold font-serif"
+            className="text-[11px] font-bold font-serif"
             style={{ color: "#DC143C" }}
           >
             No {pred.no}%
@@ -2123,15 +2123,15 @@ export default function Home() {
                         whileHover={{ x: 4 }}
                         transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
                       >
-                        <p className="text-[13px] uppercase tracking-widest text-primary font-serif font-bold">
+                        <p className="text-[14px] uppercase tracking-widest text-primary font-serif font-bold">
                           {poll.category}
                         </p>
-                        <p className="font-serif font-black uppercase text-[13px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
+                        <p className="font-serif font-black uppercase text-[15px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
                           {poll.question.length > 90
                             ? poll.question.slice(0, 90) + "…"
                             : poll.question}
                         </p>
-                        <p className="text-[12px] text-muted-foreground mt-1 font-serif">
+                        <p className="text-[13px] text-muted-foreground mt-1 font-serif">
                           {(poll.totalVotes ?? 0).toLocaleString()} votes
                         </p>
                       </motion.div>
