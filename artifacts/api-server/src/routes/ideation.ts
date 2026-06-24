@@ -8,9 +8,11 @@ import {
   ideationPromptTemplatesTable,
   pollsTable,
   pollOptionsTable,
+  predictionsTable,
+  pulseTopicsTable,
 } from "@workspace/db";
 import { eq, desc } from "drizzle-orm";
-import { cmsSessions, mockPredictions, incrementPredictionId } from "./cms";
+import { cmsSessions } from "./cms";
 import {
   runResearch,
   runGeneration,
@@ -497,9 +499,6 @@ router.post("/cms/ideation/ideas/:id/publish-draft", requireCmsAuth, async (req,
       const categorySlug = ((content.category as string) || "general")
         .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
-      const newId = incrementPredictionId();
-      const now = new Date().toISOString();
-
       const predOptions = (content.options as string[]) || ["Confident this will happen", "Possible but timeline is too aggressive", "Unlikely — too many obstacles", "The question itself is flawed"];
       const equalPct = Math.floor(100 / predOptions.length);
       const optionResults: Record<string, number> = {};
@@ -507,57 +506,60 @@ router.post("/cms/ideation/ideas/:id/publish-draft", requireCmsAuth, async (req,
         optionResults[opt] = i === 0 ? 100 - equalPct * (predOptions.length - 1) : equalPct;
       });
 
-      mockPredictions.push({
-        id: newId,
-        question: (content.question as string) || idea.title,
-        category: (content.category as string) || "General",
-        categorySlug,
-        resolvesAt: (content.resolvesAt as string) || null,
-        yesPercentage: 50,
-        noPercentage: 50,
-        totalCount: 0,
-        momentum: 0,
-        momentumDirection: "neutral",
-        trendData: [50, 50, 50],
-        cardLayout: "grid",
-        editorialStatus: "draft",
-        isFeatured: false,
-        tags: (content.tags as string[]) || ["ai-generated"],
-        options: predOptions,
-        optionResults,
-        createdAt: now,
-        updatedAt: now,
-      });
+      // Persist to the real predictions table as a draft so it shows up in the
+      // CMS Predictions manager, where it can be reviewed and pushed live.
+      const prediction = await db.transaction(async (tx) => {
+        const [created] = await tx.insert(predictionsTable).values({
+          question: (content.question as string) || idea.title,
+          category: (content.category as string) || "General",
+          categorySlug,
+          resolvesAt: (content.resolvesAt as string) || null,
+          cardLayout: "grid",
+          editorialStatus: "draft",
+          tags: (content.tags as string[]) || ["ai-generated"],
+          options: predOptions,
+          optionResults,
+          trendData: [50, 50, 50],
+        }).returning();
 
-      await db.transaction(async (tx) => {
+        if (!created) throw new Error("Failed to create prediction");
+
         await tx.update(ideationIdeasTable)
           .set({ status: "published" })
           .where(eq(ideationIdeasTable.id, ideaId));
+
+        return created;
       });
 
-      return res.json({ success: true, type: "prediction", id: newId });
+      return res.json({ success: true, type: "prediction", id: prediction.id });
     }
 
     if (idea.pillarType === "pulse") {
-      await db.transaction(async (tx) => {
-        await tx.update(ideationIdeasTable)
-          .set({ status: "published" })
-          .where(eq(ideationIdeasTable.id, ideaId));
-      });
-
-      return res.json({
-        success: true,
-        type: "pulse",
-        draft: {
+      // Persist to the real pulse_topics table as a draft so it shows up in the
+      // CMS Pulse manager, where it can be reviewed and pushed live.
+      const topic = await db.transaction(async (tx) => {
+        const [created] = await tx.insert(pulseTopicsTable).values({
+          topicId: `ideation-${ideaId}`,
+          tag: (content.tag as string) || "PULSE",
           title: (content.title as string) || idea.title,
           stat: (content.stat as string) || "N/A",
           delta: (content.delta as string) || "0%",
-          direction: (content.direction as string) || "up",
+          deltaUp: (content.direction as string) !== "down",
           blurb: (content.blurb as string) || "",
           source: (content.source as string) || "AI Generated",
-        },
-        note: "Pulse draft data returned — add to Pulse page configuration to publish",
+          editorialStatus: "draft",
+        }).returning();
+
+        if (!created) throw new Error("Failed to create pulse topic");
+
+        await tx.update(ideationIdeasTable)
+          .set({ status: "published" })
+          .where(eq(ideationIdeasTable.id, ideaId));
+
+        return created;
       });
+
+      return res.json({ success: true, type: "pulse", id: topic.id });
     }
 
     return res.status(400).json({ error: `Unsupported pillar type: ${idea.pillarType}` });
