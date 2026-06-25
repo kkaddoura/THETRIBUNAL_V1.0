@@ -1584,7 +1584,7 @@ export default function Home() {
     description: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
   });
   // Fetch homepage CMS config first (needed for content selection)
-  const { data: homepageConfig } = useHomepageConfig<{
+  const { data: homepageConfig, isLoading: homeConfigLoading } = useHomepageConfig<{
     masthead?: { basePopulation?: number; growthRate?: number; countries?: string[] };
     populationBase?: number;
     populationBaseDate?: string;
@@ -1608,6 +1608,11 @@ export default function Home() {
   // so existing installs render exactly as before until a toggle is flipped.
   const sectionVisibility = homepageConfig?.sectionVisibility ?? {};
   const showSection = (key: string) => sectionVisibility[key] !== false;
+
+  // Hold the hero copy hidden until the CMS config resolves, so the hardcoded
+  // fallback text never flashes before the real (CMS) values load on first paint.
+  // Falls back to true on error/cache hit, so defaults still show if there's no CMS value.
+  const heroReady = !homeConfigLoading;
 
   // Extract CMS-selected content IDs
   const cmsSelectedDebateId = homepageConfig?.sections?.find(s => s.type === "lead_debate")?.config?.selectedDebateId as number | undefined;
@@ -1801,7 +1806,10 @@ export default function Home() {
           >
             <div className="flex flex-col items-center gap-8">
               {/* Hero copy */}
-              <div className="flex flex-col items-center justify-center w-full text-center">
+              <div
+                className="flex flex-col items-center justify-center w-full text-center"
+                style={{ opacity: heroReady ? 1 : 0, transition: "opacity 0.35s ease" }}
+              >
                 {/* Eyebrow */}
                 <motion.div
                   className="flex items-center gap-2.5 mb-5"
