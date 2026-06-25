@@ -630,7 +630,7 @@ export default function HomepagePage() {
         <div className="space-y-5">
           <p className="text-sm text-muted-foreground">Every visible copy block on the homepage — including the hero — is editable here. Blank fields fall back to the site defaults.</p>
 
-          <Grp title="Hero">
+          <Grp title="Hero" visible={isSectionVisible("hero")} onToggleVisible={() => setSectionVisible("hero", !isSectionVisible("hero"))}>
             <Field label="Eyebrow"><TI value={content.hero.eyebrow} onChange={v => setContent({ ...content, hero: { ...content.hero, eyebrow: v } })} /></Field>
             <Field label="Headline"><TI value={content.hero.headline} onChange={v => setContent({ ...content, hero: { ...content.hero, headline: v } })} /></Field>
             <Field label="Subcopy"><TA value={content.hero.subcopy} onChange={v => setContent({ ...content, hero: { ...content.hero, subcopy: v } })} /></Field>
@@ -654,7 +654,7 @@ export default function HomepagePage() {
             </Field>
           </Grp>
 
-          <Grp title="Intro — What is The Tribunal?">
+          <Grp title="Intro — What is The Tribunal?" visible={isSectionVisible("intro")} onToggleVisible={() => setSectionVisible("intro", !isSectionVisible("intro"))}>
             <Field label="Heading"><TI value={content.intro.heading} onChange={v => setContent({ ...content, intro: { ...content.intro, heading: v } })} /></Field>
             <Field label="Lead"><TI value={content.intro.lead} onChange={v => setContent({ ...content, intro: { ...content.intro, lead: v } })} /></Field>
             <Field label="Body"><TA value={content.intro.body} onChange={v => setContent({ ...content, intro: { ...content.intro, body: v } })} /></Field>
@@ -668,7 +668,7 @@ export default function HomepagePage() {
             <Field label="Quote attribution"><TI value={content.intro.quoteAuthor} onChange={v => setContent({ ...content, intro: { ...content.intro, quoteAuthor: v } })} /></Field>
           </Grp>
 
-          <Grp title="Product cards — What you'll find here">
+          <Grp title="Product cards — What you'll find here" visible={isSectionVisible("cards")} onToggleVisible={() => setSectionVisible("cards", !isSectionVisible("cards"))}>
             <Field label="Section heading"><TI value={content.cards.heading} onChange={v => setContent({ ...content, cards: { ...content.cards, heading: v } })} /></Field>
             {content.cards.items.map((card, i) => (
               <div key={card.key} className="border border-border rounded p-3 space-y-2">
@@ -687,7 +687,7 @@ export default function HomepagePage() {
             <Field label="Explore Topics heading"><TI value={content.exploreTopics.heading} onChange={v => setContent({ ...content, exploreTopics: { ...content.exploreTopics, heading: v } })} /></Field>
           </Grp>
 
-          <Grp title="Newsletter CTA">
+          <Grp title="Newsletter CTA" visible={isSectionVisible("newsletter")} onToggleVisible={() => setSectionVisible("newsletter", !isSectionVisible("newsletter"))}>
             <Field label="Eyebrow"><TI value={content.newsletter.eyebrow} onChange={v => setContent({ ...content, newsletter: { ...content.newsletter, eyebrow: v } })} /></Field>
             <Field label="Heading"><TA value={content.newsletter.heading} onChange={v => setContent({ ...content, newsletter: { ...content.newsletter, heading: v } })} /></Field>
             <Field label="Body"><TA value={content.newsletter.body} onChange={v => setContent({ ...content, newsletter: { ...content.newsletter, body: v } })} /></Field>
@@ -917,10 +917,22 @@ function TI({ value, onChange }: { value: string; onChange: (v: string) => void 
 function TA({ value, onChange, rows = 2 }: { value: string; onChange: (v: string) => void; rows?: number }) {
   return <textarea value={value} onChange={e => onChange(e.target.value)} rows={rows} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm resize-none focus:outline-none focus:ring-1 focus:ring-primary" />;
 }
-function Grp({ title, children }: { title: string; children: React.ReactNode }) {
+function Grp({ title, children, visible, onToggleVisible }: { title: string; children: React.ReactNode; visible?: boolean; onToggleVisible?: () => void }) {
   return (
     <div className="border border-border rounded-md bg-card p-4 space-y-3">
-      <h3 className="text-xs font-bold uppercase tracking-wider text-primary">{title}</h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-xs font-bold uppercase tracking-wider text-primary">{title}</h3>
+        {onToggleVisible && (
+          <button
+            onClick={onToggleVisible}
+            className={`flex items-center gap-1 px-2 py-1 rounded text-[11px] font-medium transition-colors shrink-0 ${visible ? "text-green-500 hover:bg-green-500/10" : "text-muted-foreground hover:bg-accent"}`}
+            title={visible ? "Hide this section on the homepage" : "Show this section on the homepage"}
+          >
+            {visible ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+            {visible ? "Visible" : "Hidden"}
+          </button>
+        )}
+      </div>
       {children}
     </div>
   );
