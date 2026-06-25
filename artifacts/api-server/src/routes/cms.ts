@@ -1212,11 +1212,14 @@ router.put("/cms/homepage", requireCmsAuth, async (req, res) => {
   try {
     const [existing] = await db.select().from(cmsConfigsTable).where(eq(cmsConfigsTable.key, "homepage"));
     const currentConfig = (existing?.value ?? {}) as Record<string, Record<string, unknown> | unknown[] | unknown>;
-    const { masthead, ticker, sections, banners, newsletter, sectionStats, content } = req.body;
+    const { masthead, ticker, sections, banners, newsletter, sectionStats, content, sectionVisibility } = req.body;
 
     if (masthead) currentConfig.masthead = { ...(currentConfig.masthead as Record<string, unknown> ?? {}), ...masthead };
     if (ticker) currentConfig.ticker = { ...(currentConfig.ticker as Record<string, unknown> ?? {}), ...ticker };
     if (sections) currentConfig.sections = sections;
+    // Per-section show/hide flags for the public homepage (keyed by section id).
+    // Merge so a partial update never drops other sections' flags.
+    if (sectionVisibility) currentConfig.sectionVisibility = { ...(currentConfig.sectionVisibility as Record<string, unknown> ?? {}), ...sectionVisibility };
     if (banners) currentConfig.banners = banners;
     if (newsletter) currentConfig.newsletter = { ...(currentConfig.newsletter as Record<string, unknown> ?? {}), ...newsletter };
     if (sectionStats) currentConfig.sectionStats = { ...(currentConfig.sectionStats as Record<string, unknown> ?? {}), ...sectionStats };

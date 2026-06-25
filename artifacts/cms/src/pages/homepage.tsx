@@ -119,7 +119,25 @@ interface HomepageData {
   banners: Banner[];
   newsletter: { heading: string; subheading: string; buttonText: string; enabled: boolean };
   content?: Partial<HomeContent>;
+  sectionVisibility?: Record<string, boolean>;
 }
+
+// Canonical list of public homepage sections that can be shown/hidden. Keys are
+// kept in sync with the showSection() gates in tmh-platform/src/pages/home.tsx.
+const HOMEPAGE_VISIBILITY_SECTIONS: { key: string; label: string; hint?: string }[] = [
+  { key: "hero", label: "Hero / Masthead", hint: "Headline, CTAs, live population counter" },
+  { key: "ticker", label: "News Ticker", hint: "Scrolling debates / predictions strip" },
+  { key: "intro", label: "Intro — What is The Tribunal" },
+  { key: "cards", label: "Product Cards", hint: "Debates / Predictions / Pulse / Voices / Majlis" },
+  { key: "lead_debate", label: "Lead Debate + Sidebar" },
+  { key: "predictions", label: "Predictions" },
+  { key: "pulse", label: "The Pulse", hint: "Also needs the global Pulse feature toggle ON" },
+  { key: "voices", label: "The Voices", hint: "Also needs the global Voices feature toggle ON" },
+  { key: "about", label: "About Section" },
+  { key: "explore_topics", label: "Explore Topics" },
+  { key: "live_activity", label: "Live Activity Feed" },
+  { key: "newsletter", label: "Newsletter CTA" },
+];
 
 const SECTION_TYPE_LABELS: Record<string, string> = {
   lead_debate: "Lead Debate + Sidebar",
@@ -134,7 +152,7 @@ const SECTION_TYPE_LABELS: Record<string, string> = {
 export default function HomepagePage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<"content" | "sections" | "banners" | "newsletter" | "stats">("content");
+  const [activeTab, setActiveTab] = useState<"content" | "sections" | "visibility" | "banners" | "newsletter" | "stats">("content");
   const [data, setData] = useState<HomepageData | null>(null);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [expandedBanner, setExpandedBanner] = useState<string | null>(null);
@@ -179,6 +197,13 @@ export default function HomepagePage() {
   const updateSection = (id: string, field: string, value: unknown) => {
     if (!data) return;
     setData({ ...data, sections: data.sections.map(s => s.id === id ? { ...s, [field]: value } : s) });
+  };
+
+  // A section is shown unless explicitly set false (default-visible).
+  const isSectionVisible = (key: string) => data?.sectionVisibility?.[key] !== false;
+  const setSectionVisible = (key: string, visible: boolean) => {
+    if (!data) return;
+    setData({ ...data, sectionVisibility: { ...(data.sectionVisibility ?? {}), [key]: visible } });
   };
 
   const updateSectionConfig = (id: string, key: string, value: unknown) => {
@@ -318,7 +343,7 @@ export default function HomepagePage() {
       )}
 
       <div className="flex gap-1 border-b border-border">
-        {(["content", "sections", "banners", "newsletter", "stats"] as const).map(tab => (
+        {(["content", "sections", "visibility", "banners", "newsletter", "stats"] as const).map(tab => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -328,6 +353,34 @@ export default function HomepagePage() {
           </button>
         ))}
       </div>
+
+      {activeTab === "visibility" && (
+        <div className="space-y-2">
+          <p className="text-sm text-muted-foreground">Show or hide each homepage section. Useful for running experiments — changes go live on the public site after you Save. Sections are visible by default.</p>
+          {HOMEPAGE_VISIBILITY_SECTIONS.map(s => {
+            const visible = isSectionVisible(s.key);
+            return (
+              <div key={s.key} className="flex items-center gap-3 px-4 py-3 border border-border rounded-md bg-card">
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium">{s.label}</p>
+                  {s.hint && <p className="text-xs text-muted-foreground mt-0.5">{s.hint}</p>}
+                </div>
+                <span className={`text-xs font-medium ${visible ? "text-green-500" : "text-muted-foreground"}`}>
+                  {visible ? "Visible" : "Hidden"}
+                </span>
+                <button
+                  onClick={() => setSectionVisible(s.key, !visible)}
+                  className={`p-1.5 rounded transition-colors ${visible ? "text-green-500 hover:bg-green-500/10" : "text-muted-foreground hover:bg-accent"}`}
+                  title={visible ? "Hide section" : "Show section"}
+                  aria-label={visible ? `Hide ${s.label}` : `Show ${s.label}`}
+                >
+                  {visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                </button>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {activeTab === "sections" && (
         <div className="space-y-2">

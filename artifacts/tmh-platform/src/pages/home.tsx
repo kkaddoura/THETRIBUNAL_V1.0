@@ -1596,11 +1596,18 @@ export default function Home() {
       voices?: string;
     };
     sections?: Array<{ id: string; type: string; config: Record<string, unknown> }>;
+    sectionVisibility?: Record<string, boolean>;
     content?: Partial<HomeContent>;
   }>();
 
   // Resolved, CMS-overridable home-page copy (falls back to HOME_CONTENT_DEFAULTS)
   const C = resolveHomeContent(homepageConfig?.content);
+
+  // Per-section show/hide for experiments, driven by the CMS Homepage Manager
+  // (Section Visibility tab). A section is visible unless explicitly set false,
+  // so existing installs render exactly as before until a toggle is flipped.
+  const sectionVisibility = homepageConfig?.sectionVisibility ?? {};
+  const showSection = (key: string) => sectionVisibility[key] !== false;
 
   // Extract CMS-selected content IDs
   const cmsSelectedDebateId = homepageConfig?.sections?.find(s => s.type === "lead_debate")?.config?.selectedDebateId as number | undefined;
@@ -1764,6 +1771,7 @@ export default function Home() {
       `}</style>
 
       {/* ── MASTHEAD ── */}
+      {showSection("hero") && (
       <motion.div
         ref={mastheadRef}
         className="bg-background"
@@ -1918,9 +1926,10 @@ export default function Home() {
           </motion.div>
         </div>
       </motion.div>
+      )}
 
       {/* ── MIXED TICKER ── */}
-      {(trendingLoading || predictionsLoading || pulseLoading) && interleaved.length === 0 ? (
+      {showSection("ticker") && ((trendingLoading || predictionsLoading || pulseLoading) && interleaved.length === 0 ? (
         <TickerSkeleton />
       ) : interleaved.length > 0 ? (
       <div
@@ -2001,9 +2010,10 @@ export default function Home() {
           ))}
         </div>
       </div>
-      ) : null}
+      ) : null)}
 
       {/* ── WHAT IS THE TRIBUNAL? — Intro ── */}
+      {showSection("intro") && (
       <section className="py-20 bg-background border-b border-border">
         <FadeUp>
           <div className="max-w-3xl mx-auto px-4 sm:px-6">
@@ -2044,8 +2054,10 @@ export default function Home() {
           </div>
         </FadeUp>
       </section>
+      )}
 
       {/* ── PRODUCT CARDS ── */}
+      {showSection("cards") && (
       <section className="py-20 bg-secondary/20 border-b border-border">
         <FadeUp>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -2083,8 +2095,10 @@ export default function Home() {
           </div>
         </FadeUp>
       </section>
+      )}
 
       {/* ── FRONT PAGE: Lead Debate + Sidebar ── */}
+      {showSection("lead_debate") && (
       <section className="py-8 bg-background border-b border-border relative">
         <FadeUp>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -2158,8 +2172,10 @@ export default function Home() {
         </div>
         </FadeUp>
       </section>
+      )}
 
       {/* ── PREDICTIONS ── */}
+      {showSection("predictions") && (
       <section
         id="predictions"
         className="py-8 bg-background border-b border-border relative"
@@ -2281,9 +2297,10 @@ export default function Home() {
         </div>
         </FadeUp>
       </section>
+      )}
 
       {/* ── THE PULSE ── (hidden until Pulse toggle is ON) */}
-      {pulseEnabled && (
+      {pulseEnabled && showSection("pulse") && (
       <section
         id="pulse"
         className="py-8 bg-background border-b border-border relative"
@@ -2770,7 +2787,7 @@ export default function Home() {
       )}
 
       {/* ── THE VOICES ── */}
-      {voicesEnabled && (
+      {voicesEnabled && showSection("voices") && (
       <section className="bg-foreground text-background py-20 border-b border-border">
         <FadeUp>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -2847,12 +2864,14 @@ export default function Home() {
       )}
 
       {/* ── ABOUT ── */}
+      {showSection("about") && (
       <Suspense fallback={null}>
         <AboutSection />
       </Suspense>
+      )}
 
       {/* ── EXPLORE TOPICS ── */}
-      {categories?.categories && categories.categories.length > 0 && (
+      {categories?.categories && categories.categories.length > 0 && showSection("explore_topics") && (
         <section className="py-20 bg-background border-b border-border">
           <FadeUp>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -2883,9 +2902,10 @@ export default function Home() {
       )}
 
       {/* ── LIVE ACTIVITY ── */}
-      <LiveActivity />
+      {showSection("live_activity") && <LiveActivity />}
 
       {/* ── NEWSLETTER CTA ── */}
+      {showSection("newsletter") && (
       <section className="bg-foreground text-background py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-12 md:gap-16 items-center">
@@ -2959,6 +2979,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
     </Layout>
   );
 }
