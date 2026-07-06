@@ -1,137 +1,188 @@
-import { useState } from "react"
-import { useGetFeaturedPoll } from "@workspace/api-client-react"
-import { PollCard } from "@/components/poll/PollCard"
+import { useEffect, useState } from "react"
 import { Layout } from "@/components/layout/Layout"
-import { Link } from "wouter"
+import { Link, useLocation } from "wouter"
+import { ArrowRight, CheckCircle2, Mail, ShieldCheck, Vote } from "lucide-react"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { useSiteSettings } from "@/hooks/use-cms-data"
+import { useMe } from "@/hooks/use-auth"
+import { track } from "@/lib/analytics"
 
+const API_BASE = import.meta.env?.VITE_API_BASE_URL ?? ""
+
+/**
+ * Conversion page. Two paths in:
+ *  1. Create an account (recommended — primary CTA)
+ *  2. Newsletter-only (for QR / footer / apply-page traffic that's not ready
+ *     to make an account)
+ *
+ * Auto-redirects to home if the user is already logged in.
+ *
+ * The previous version of this page had:
+ *   - A bespoke top bar (broke the site nav)
+ *   - A featured poll (off-topic for a join page)
+ *   - QR-code landing copy ("you've unlocked something real")
+ * All replaced with a coherent join surface that uses the standard Layout
+ * and funnels into the new auth flow.
+ */
 export default function Join() {
   usePageTitle({
-    title: "Join",
-    description: "Join The Tribunal -- the anonymous platform for MENA's most important debates, predictions, and voices.",
-  });
-  const { data: poll, isLoading } = useGetFeaturedPoll()
-  const { data: siteSettings } = useSiteSettings()
-  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true
-  const [email, setEmail] = useState("")
-  const [joined, setJoined] = useState(() => !!localStorage.getItem("tmh_cta_joined"))
+    title: "Join The Tribunal",
+    description:
+      "Join The Tribunal — anonymous votes, predictions, and voices on the topics shaping the Middle East. Free.",
+  })
 
-  const handleJoin = (e: React.FormEvent) => {
+  const [, navigate] = useLocation()
+  const { data: me, isLoading: meLoading } = useMe()
+  const [email, setEmail] = useState("")
+  const [submitting, setSubmitting] = useState(false)
+  const [joined, setJoined] = useState(
+    () => typeof window !== "undefined" && !!localStorage.getItem("tmh_cta_joined"),
+  )
+
+  // If already logged in, this page has nothing to offer — send them home.
+  useEffect(() => {
+    if (!meLoading && me) {
+      navigate("/")
+    }
+  }, [me, meLoading, navigate])
+
+  const handleNewsletterJoin = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!email.trim()) return
-    localStorage.setItem("tmh_cta_joined", email)
-    fetch("/api/newsletter/subscribe", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, source: "qr_join" }),
-    }).catch((err) => {
-      console.error("Subscribe failed:", err)
-    })
-    setJoined(true)
+    setSubmitting(true)
+    try {
+      await fetch(`${API_BASE}/api/newsletter/subscribe`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim().toLowerCase(), source: "join_page" }),
+      })
+      localStorage.setItem("tmh_cta_joined", email.trim().toLowerCase())
+      track("newsletter_subscribed", { source: "join_page", optedIn: true })
+      setJoined(true)
+    } finally {
+      setSubmitting(false)
+    }
+  }
+
+  // Don't flash content for already-authed users mid-redirect
+  if (meLoading || me) {
+    return (
+      <Layout>
+        <div className="min-h-[60vh]" />
+      </Layout>
+    )
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Minimal top bar — no full navbar on mobile per PRD */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border md:hidden">
-        <Link href="/">
-          <span className="font-display font-black text-2xl uppercase tracking-tight text-foreground">
-            TMH<span className="text-primary">.</span>
-          </span>
-        </Link>
-        <span className="text-[9px] uppercase tracking-[0.3em] text-muted-foreground font-serif">
-          The Tribunal
-        </span>
-      </div>
-
-      {/* Desktop full navbar replacement */}
-      <div className="hidden md:flex items-center justify-between px-8 py-4 border-b border-border">
-        <Link href="/">
-          <span className="font-display font-black text-3xl uppercase tracking-tight text-foreground hover:text-primary transition-colors">
-            TMH<span className="text-primary">.</span>
-          </span>
-        </Link>
-        <div className="flex items-center gap-6">
-          <Link href="/debates" className="text-[11px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground font-serif">Debates</Link>
-          {voicesEnabled && (
-            <Link href="/voices" className="text-[11px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground font-serif">Voices</Link>
-          )}
-          <Link href="/about" className="text-[11px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground font-serif">About</Link>
-        </div>
-      </div>
-
+    <Layout>
       {/* Hero */}
-      <div className="bg-foreground text-background px-5 py-12 text-center">
-        <div className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
-          You've just unlocked something real.
-        </div>
-        <h1 className="font-display font-black text-4xl md:text-6xl uppercase tracking-tight leading-none mb-4">
-          Welcome to<br />The Tribunal<span className="text-primary">.</span>
-        </h1>
-        <p className="text-background/75 font-sans text-base max-w-md mx-auto">
-          The most honest conversation in the Middle East. Join the founders, operators, and change-makers already voting.
+      <section className="bg-foreground text-background px-5 py-20 md:py-28 text-center">
+        <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
+          By the Middle East Hustle
         </p>
-      </div>
+        <h1 className="font-display text-primary text-4xl md:text-6xl uppercase tracking-tight leading-none mb-5 max-w-3xl mx-auto">
+          Where the region<br />
+          actually speaks<span className="text-primary">.</span>
+        </h1>
+        <p className="text-background/75 font-sans text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+          Anonymous votes, weekly predictions, and the founders, operators, and voices
+          shaping MENA. Free, on the record, no spin.
+        </p>
+      </section>
 
-      {/* Featured Poll */}
-      <div className="flex-1 max-w-2xl mx-auto w-full px-4 py-10">
-        <div className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-4 flex items-center gap-2 font-serif">
-          <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-          Today's Debate — Cast Your Vote
-        </div>
-
-        {isLoading ? (
-          <div className="h-80 bg-secondary animate-pulse border border-border" />
-        ) : poll ? (
-          <PollCard poll={poll} />
-        ) : (
-          <div className="h-48 border border-border flex items-center justify-center text-muted-foreground text-sm font-sans">
-            Loading today's debate…
-          </div>
-        )}
-
-        {/* Email priority CTA */}
-        <div className="mt-8 border-2 border-foreground p-6 md:p-8">
-          <h2 className="font-display font-black uppercase text-2xl tracking-tight text-foreground mb-1">
-            Join the Weekly Pulse.
+      {/* Primary CTA — create account */}
+      <section className="max-w-2xl mx-auto w-full px-4 py-12 md:py-16">
+        <div className="border-2 border-foreground bg-card p-6 md:p-10">
+          <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-3 font-serif">
+            Create an account
+          </p>
+          <h2 className="font-display font-black uppercase text-3xl md:text-4xl tracking-tight text-foreground mb-3">
+            Vote with a name<span className="text-primary">.</span>
           </h2>
-          <p className="text-sm text-muted-foreground font-sans mb-5 leading-relaxed">
-            Every Tuesday: one debate breakdown, one country split, one Voice you need to know. Free.
+          <p className="text-sm md:text-base text-muted-foreground font-sans mb-6 leading-relaxed">
+            Build a journey on The Tribunal. Your votes, predictions, and history follow you across devices. We keep your individual votes private — your public profile shows totals only.
+          </p>
+
+          <ul className="space-y-2.5 mb-7">
+            <li className="flex items-start gap-2.5 text-sm">
+              <Vote className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <span className="text-foreground">Keep every vote, prediction, and streak across devices</span>
+            </li>
+            <li className="flex items-start gap-2.5 text-sm">
+              <ShieldCheck className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <span className="text-foreground">Hybrid privacy — public totals, private per-poll history</span>
+            </li>
+            <li className="flex items-start gap-2.5 text-sm">
+              <Mail className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+              <span className="text-foreground">Friday weekly digest, auto-included (unsubscribe anytime)</span>
+            </li>
+          </ul>
+
+          <Link
+            href="/signup"
+            className="w-full bg-primary text-white font-bold uppercase tracking-widest text-sm py-3.5 hover:bg-primary/90 transition-colors font-serif inline-flex items-center justify-center gap-2"
+          >
+            Create my account
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+          <p className="text-center text-xs text-muted-foreground mt-3">
+            Already have one?{" "}
+            <Link href="/login" className="text-foreground hover:text-primary font-bold">
+              Sign in
+            </Link>
+          </p>
+        </div>
+      </section>
+
+      {/* Secondary — newsletter only */}
+      <section className="max-w-2xl mx-auto w-full px-4 pb-16 md:pb-24">
+        <div className="border border-border bg-background p-6 md:p-8">
+          <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground mb-2 font-serif">
+            Or just the digest
+          </p>
+          <h3 className="font-display font-black uppercase text-xl md:text-2xl tracking-tight text-foreground mb-2">
+            Join the Weekly Pulse<span className="text-primary">.</span>
+          </h3>
+          <p className="text-xs md:text-sm text-muted-foreground font-sans mb-5 leading-relaxed">
+            Every Friday morning: top debates, predictions resolving soon, and the voice of the week. No spam, unsubscribe anytime.
           </p>
           {joined ? (
-            <div className="text-center py-6">
-              <p className="font-display font-black text-3xl text-foreground uppercase">You're In<span className="text-primary">.</span></p>
-              <p className="text-xs text-muted-foreground mt-1 font-serif uppercase tracking-widest">Watch your inbox Tuesday.</p>
+            <div className="flex items-center gap-3 px-4 py-3 border border-primary/40 bg-primary/5">
+              <CheckCircle2 className="w-5 h-5 text-primary flex-shrink-0" />
+              <div>
+                <p className="font-bold uppercase text-sm tracking-tight text-foreground">You're in.</p>
+                <p className="text-xs text-muted-foreground">Watch your inbox Friday morning Gulf time.</p>
+              </div>
             </div>
           ) : (
-            <form onSubmit={handleJoin} className="flex flex-col sm:flex-row gap-3">
+            <form onSubmit={handleNewsletterJoin} className="flex flex-col sm:flex-row gap-3">
               <input
                 type="email"
                 required
-                autoFocus
                 placeholder="your@email.com"
                 value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="flex-1 px-4 py-3 bg-background border border-border text-foreground text-sm font-sans focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/60"
+                onChange={(e) => setEmail(e.target.value)}
+                className="flex-1 px-4 py-3 bg-card border border-border text-foreground text-sm font-sans focus:outline-none focus:border-primary transition-colors placeholder:text-muted-foreground/60"
               />
               <button
                 type="submit"
-                className="px-6 py-3 bg-primary text-white font-black uppercase tracking-[0.15em] text-[11px] hover:bg-primary/90 transition-colors whitespace-nowrap"
+                disabled={submitting}
+                className="px-6 py-3 bg-foreground text-background font-bold uppercase tracking-[0.15em] text-[13px] hover:bg-foreground/90 transition-colors whitespace-nowrap disabled:opacity-60"
               >
-                Join The Tribunal
+                {submitting ? "Subscribing…" : "Get the digest"}
               </button>
             </form>
           )}
-          <p className="text-[9px] text-muted-foreground font-sans mt-3">No spam. Unsubscribe anytime.</p>
         </div>
 
-        <div className="mt-6 text-center border-t border-border pt-6">
-          <Link href="/debates" className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground transition-colors font-serif">
-            Browse All Debates →
+        <div className="mt-8 text-center">
+          <Link
+            href="/debates"
+            className="text-[12px] uppercase tracking-widest font-bold text-muted-foreground hover:text-foreground transition-colors font-serif"
+          >
+            Browse debates first →
           </Link>
         </div>
-      </div>
-    </div>
+      </section>
+    </Layout>
   )
 }

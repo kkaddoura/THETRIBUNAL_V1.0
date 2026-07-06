@@ -12,6 +12,8 @@ import {
 import { useToast } from "@/hooks/use-toast"
 import type { ShareContext, SharePlatform, ShareResult } from "@/lib/share"
 import { executeShare, canGenerateCard, buildShareText } from "@/lib/share"
+import { track } from "@/lib/analytics"
+import { useMe } from "@/hooks/use-auth"
 
 // ── Channel type for Majlis ────────────────────────────────────
 
@@ -63,6 +65,7 @@ export function ShareModal({
   const [majlisSent, setMajlisSent] = useState<string | null>(null)
 
   const { toast } = useToast()
+  const { data: me } = useMe()
 
   const hasEmail =
     typeof window !== "undefined" &&
@@ -70,12 +73,12 @@ export function ShareModal({
 
   const displayHeading =
     showEmailGate && !hasEmail
-      ? "Share to Unlock Full Results"
+      ? "Unlock full results"
       : "Share This"
 
   const displayBody =
     showEmailGate && !hasEmail
-      ? "We keep The Tribunal free by making opinion data shareable. Share this to see the full breakdown."
+      ? "Share the question or enter your email to see the full breakdown."
       : getShareBody()
 
   const isMobile =
@@ -113,8 +116,8 @@ export function ShareModal({
 
     if (o === "shared") {
       toast({
-        title: "Shared!",
-        description: "Thanks for spreading the word.",
+        title: "Thanks for sharing.",
+        description: "Full results unlocked.",
       })
       return
     }
@@ -184,6 +187,14 @@ export function ShareModal({
   // ── Platform handler ───────────────────────────────────────
 
   const handlePlatform = async (platform: SharePlatform) => {
+    track("share_clicked", {
+      contentType: context.contentType,
+      contentId: (context as { contentId?: number | string }).contentId,
+      channel: platform,
+      isLoggedIn: !!me,
+      userId: me?.id,
+    })
+
     // Only "download" (Save Card) needs a loading state — it generates
     // a client-side card image. All other platforms are instant.
     if (platform === "download") {
@@ -273,6 +284,7 @@ export function ShareModal({
         newsletterOptIn,
       }),
     }).catch(() => {})
+    track("newsletter_subscribed", { source: "share_modal", optedIn: newsletterOptIn })
     if (onUnlock) onUnlock()
     setTimeout(onClose, 800)
   }
@@ -380,7 +392,7 @@ export function ShareModal({
         {/* Close / Skip button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif cursor-pointer"
+          className="absolute top-4 right-4 text-[12px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif cursor-pointer"
         >
           Skip &rarr;
         </button>
@@ -480,7 +492,7 @@ export function ShareModal({
                         <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71" />
                       </svg>
                     )}
-                    <span className="text-[9px] uppercase tracking-[0.1em] font-bold text-muted-foreground font-serif">
+                    <span className="text-[10px] uppercase tracking-[0.1em] font-bold text-muted-foreground font-serif">
                       {linkCopied ? "Copied!" : "Copy Link"}
                     </span>
                   </button>
@@ -496,7 +508,7 @@ export function ShareModal({
                       ) : (
                         <Download className="w-4 h-4 text-muted-foreground" />
                       )}
-                      <span className="text-[9px] uppercase tracking-[0.1em] font-bold text-muted-foreground font-serif">
+                      <span className="text-[10px] uppercase tracking-[0.1em] font-bold text-muted-foreground font-serif">
                         Save Card
                       </span>
                     </button>
@@ -509,7 +521,7 @@ export function ShareModal({
                 <button
                   onClick={() => handlePlatform("whatsapp")}
                   disabled={isGeneratingAny}
-                  className="w-full flex items-center justify-center gap-3 px-5 py-4 font-black uppercase tracking-[0.15em] text-[11px] transition-colors duration-150 rounded-sm bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] cursor-pointer hover:bg-[#25D366]/20 disabled:opacity-50"
+                  className="w-full flex items-center justify-center gap-3 px-5 py-4 font-black uppercase tracking-[0.15em] text-[13px] transition-colors duration-150 rounded-sm bg-[#25D366]/10 border border-[#25D366]/30 text-[#25D366] cursor-pointer hover:bg-[#25D366]/20 disabled:opacity-50"
                 >
                   <svg
                     className="w-4 h-4 flex-shrink-0"
@@ -582,7 +594,7 @@ export function ShareModal({
                       className="flex flex-col items-center gap-1.5 px-2 py-3 border border-border hover:border-primary/40 hover:bg-primary/5 transition-all duration-150 rounded-sm cursor-pointer disabled:opacity-50"
                     >
                       {btn.icon}
-                      <span className="text-[9px] uppercase tracking-[0.1em] font-bold text-muted-foreground font-serif">
+                      <span className="text-[10px] uppercase tracking-[0.1em] font-bold text-muted-foreground font-serif">
                         {btn.label}
                       </span>
                     </button>
@@ -594,7 +606,7 @@ export function ShareModal({
                   <button
                     onClick={() => handlePlatform("download")}
                     disabled={isGeneratingAny}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest font-bold font-serif border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors rounded-sm cursor-pointer disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] uppercase tracking-widest font-bold font-serif border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors rounded-sm cursor-pointer disabled:opacity-50"
                   >
                     {generating === "download" ? (
                       <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -612,7 +624,7 @@ export function ShareModal({
               <button
                 onClick={() => setView("majlis")}
                 disabled={isGeneratingAny}
-                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[10px] uppercase tracking-widest font-bold font-serif border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors rounded-sm cursor-pointer disabled:opacity-50"
+                className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] uppercase tracking-widest font-bold font-serif border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors rounded-sm cursor-pointer disabled:opacity-50"
               >
                 <Hash className="w-3.5 h-3.5" />
                 Share to Majlis
@@ -624,14 +636,14 @@ export function ShareModal({
               <>
                 <div className="flex items-center gap-3">
                   <div className="flex-1 h-px bg-border" />
-                  <span className="text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-bold font-serif">
+                  <span className="text-[12px] uppercase tracking-[0.18em] text-muted-foreground font-bold font-serif">
                     or
                   </span>
                   <div className="flex-1 h-px bg-border" />
                 </div>
 
                 {emailSubmitted ? (
-                  <div className="flex items-center gap-2 text-[11px] font-bold text-primary uppercase tracking-widest">
+                  <div className="flex items-center gap-2 text-[13px] font-bold text-primary uppercase tracking-widest">
                     <CheckCircle2 className="w-4 h-4" />
                     Thanks!
                   </div>
@@ -647,7 +659,7 @@ export function ShareModal({
                     />
                     <button
                       type="submit"
-                      className="px-5 py-3 text-white font-black uppercase tracking-[0.1em] text-[11px] hover:opacity-90 transition-opacity whitespace-nowrap rounded-sm font-serif bg-primary cursor-pointer"
+                      className="px-5 py-3 text-white font-black uppercase tracking-[0.1em] text-[13px] hover:opacity-90 transition-opacity whitespace-nowrap rounded-sm font-serif bg-primary cursor-pointer"
                     >
                       Unlock Results
                     </button>
@@ -661,11 +673,11 @@ export function ShareModal({
                     onChange={(e) => setNewsletterOptIn(e.target.checked)}
                     className="w-3.5 h-3.5 rounded-sm accent-primary cursor-pointer"
                   />
-                  <span className="text-[10px] text-muted-foreground font-sans">
+                  <span className="text-[12px] text-muted-foreground font-sans">
                     Send me The Tribunal newsletter with insights &amp; results
                   </span>
                 </label>
-                <p className="text-[10px] text-muted-foreground font-sans">
+                <p className="text-[12px] text-muted-foreground font-sans">
                   No spam. Unsubscribe anytime.
                 </p>
               </>

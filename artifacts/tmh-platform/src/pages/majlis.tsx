@@ -125,20 +125,20 @@ function SharedCard({ shared }: { shared: SharedContent }) {
       >
         <div className="flex items-center gap-2 mb-1.5">
           <Icon className="w-3.5 h-3.5" style={{ color }} />
-          <span className="text-[8px] font-serif font-bold uppercase tracking-[0.2em]" style={{ color }}>
+          <span className="text-[9px] font-serif font-bold uppercase tracking-[0.2em]" style={{ color }}>
             {labelMap[shared.type]}
           </span>
           {shared.category && (
-            <span className="text-[8px] font-serif uppercase tracking-wider text-muted-foreground">
+            <span className="text-[9px] font-serif uppercase tracking-wider text-muted-foreground">
               · {shared.category}
             </span>
           )}
         </div>
-        <p className="font-serif font-black uppercase text-[12px] leading-tight text-foreground">
+        <p className="font-serif font-black uppercase text-[14px] leading-tight text-foreground">
           {shared.title}
         </p>
         {shared.stat && (
-          <p className="text-[10px] mt-1 font-serif" style={{ color }}>
+          <p className="text-[12px] mt-1 font-serif" style={{ color }}>
             {shared.stat}
           </p>
         )}
@@ -157,7 +157,7 @@ function MessageBubble({ message, isOwn, onReply, isDeleted }: { message: Messag
         {message.profileImage ? (
           <img src={message.profileImage} alt="" className="w-full h-full object-cover" />
         ) : (
-          <div className="w-full h-full bg-primary/20 flex items-center justify-center text-[10px] font-bold text-primary">
+          <div className="w-full h-full bg-primary/20 flex items-center justify-center text-[12px] font-bold text-primary">
             {initials}
           </div>
         )}
@@ -166,10 +166,10 @@ function MessageBubble({ message, isOwn, onReply, isDeleted }: { message: Messag
         <div className={cn("flex items-baseline gap-2 mb-0.5", isOwn && "flex-row-reverse")}>
           <span className="text-xs font-bold text-foreground">{message.profileName}</span>
           {message.profileVerified && <Shield className="w-3 h-3 text-primary flex-shrink-0" />}
-          <span className="text-[9px] text-muted-foreground font-serif uppercase tracking-wider">
+          <span className="text-[10px] text-muted-foreground font-serif uppercase tracking-wider">
             {message.profileRole}{message.profileCompany ? ` · ${message.profileCompany}` : ""}
           </span>
-          <span className="text-[9px] text-muted-foreground/50">
+          <span className="text-[10px] text-muted-foreground/50">
             {new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
           </span>
         </div>
@@ -187,7 +187,7 @@ function MessageBubble({ message, isOwn, onReply, isDeleted }: { message: Messag
             {shared && <SharedCard shared={shared} />}
             <button
               onClick={() => onReply(message)}
-              className="opacity-0 group-hover:opacity-100 text-[9px] text-muted-foreground hover:text-primary transition-all font-serif uppercase tracking-wider mt-0.5"
+              className="opacity-0 group-hover:opacity-100 text-[10px] text-muted-foreground hover:text-primary transition-all font-serif uppercase tracking-wider mt-0.5"
             >
               Reply
             </button>
@@ -222,7 +222,7 @@ function ChannelSidebar({
         show ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
       )}>
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <h3 className="text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground">
+          <h3 className="text-[12px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground">
             Channels
           </h3>
           <div className="flex items-center gap-2">
@@ -241,7 +241,7 @@ function ChannelSidebar({
         <div className="flex-1 overflow-y-auto">
           {groups.length > 0 && (
             <div className="py-2">
-              <p className="px-4 py-1 text-[9px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              <p className="px-4 py-1 text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 Groups
               </p>
               {groups.map(ch => (
@@ -251,7 +251,7 @@ function ChannelSidebar({
           )}
           {dms.length > 0 && (
             <div className="py-2">
-              <p className="px-4 py-1 text-[9px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground">
+              <p className="px-4 py-1 text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground">
                 Direct Messages
               </p>
               {dms.map(ch => (
@@ -292,13 +292,13 @@ function ChannelItem({ channel, active, onSelect }: { channel: Channel; active: 
             {channel.displayName}
           </span>
           {channel.unreadCount > 0 && (
-            <span className="flex-shrink-0 w-5 h-5 bg-primary text-white text-[9px] font-bold flex items-center justify-center rounded-full">
+            <span className="flex-shrink-0 w-5 h-5 bg-primary text-white text-[10px] font-bold flex items-center justify-center rounded-full">
               {channel.unreadCount > 9 ? "9+" : channel.unreadCount}
             </span>
           )}
         </div>
         {channel.lastMessage && (
-          <p className="text-[10px] text-muted-foreground truncate mt-0.5">
+          <p className="text-[12px] text-muted-foreground truncate mt-0.5">
             <span className="font-medium">{channel.lastMessage.userName}:</span> {channel.lastMessage.content}
           </p>
         )}
@@ -323,7 +323,7 @@ function MembersSidebar({ members, show, onClose, onDm, currentUserId }: {
       show ? "block" : "hidden lg:block"
     )}>
       <div className="p-4 border-b border-border flex items-center justify-between">
-        <h3 className="text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground">
+        <h3 className="text-[12px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground">
           Members ({members.length})
         </h3>
         <button onClick={onClose} className="lg:hidden text-muted-foreground hover:text-foreground">
@@ -333,7 +333,7 @@ function MembersSidebar({ members, show, onClose, onDm, currentUserId }: {
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
         {online.length > 0 && (
           <>
-            <p className="px-2 py-1 text-[9px] font-serif font-bold uppercase tracking-[0.2em] text-green-400">
+            <p className="px-2 py-1 text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-green-400">
               Online — {online.length}
             </p>
             {online.map(m => (
@@ -343,7 +343,7 @@ function MembersSidebar({ members, show, onClose, onDm, currentUserId }: {
         )}
         {offline.length > 0 && (
           <>
-            <p className="px-2 py-1 text-[9px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground mt-3">
+            <p className="px-2 py-1 text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground mt-3">
               Offline — {offline.length}
             </p>
             {offline.map(m => (
@@ -366,7 +366,7 @@ function MemberItem({ member, onDm, isCurrentUser }: { member: Member; onDm: (id
           {member.profileImage ? (
             <img src={member.profileImage} alt="" className="w-full h-full object-cover" />
           ) : (
-            <div className="w-full h-full bg-primary/20 flex items-center justify-center text-[8px] font-bold text-primary">
+            <div className="w-full h-full bg-primary/20 flex items-center justify-center text-[9px] font-bold text-primary">
               {initials}
             </div>
           )}
@@ -381,7 +381,7 @@ function MemberItem({ member, onDm, isCurrentUser }: { member: Member; onDm: (id
           <span className="text-xs font-medium text-foreground truncate">{member.profileName}</span>
           {member.profileVerified && <Shield className="w-2.5 h-2.5 text-primary flex-shrink-0" />}
         </div>
-        <span className="text-[9px] text-muted-foreground truncate block">
+        <span className="text-[10px] text-muted-foreground truncate block">
           {member.profileRole}{member.profileCountry ? ` · ${member.profileCountry}` : ""}
         </span>
       </div>
@@ -428,7 +428,7 @@ function CreateGroupModal({ members, onClose, onSubmit }: {
         </div>
         <div className="p-4 space-y-4 flex-1 overflow-y-auto">
           <div>
-            <label className="text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
+            <label className="text-[12px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
               Channel Name
             </label>
             <input
@@ -440,7 +440,7 @@ function CreateGroupModal({ members, onClose, onSubmit }: {
             />
           </div>
           <div>
-            <label className="text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
+            <label className="text-[12px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
               Add Members ({selected.size} selected)
             </label>
             <div className="space-y-1 max-h-48 overflow-y-auto border border-border p-2">
@@ -453,7 +453,7 @@ function CreateGroupModal({ members, onClose, onSubmit }: {
                     className="accent-primary"
                   />
                   <span className="text-xs text-foreground">{m.profileName}</span>
-                  <span className="text-[9px] text-muted-foreground">{m.profileRole}</span>
+                  <span className="text-[10px] text-muted-foreground">{m.profileRole}</span>
                 </label>
               ))}
             </div>
@@ -746,12 +746,15 @@ export default function Majlis() {
           <div className="inline-flex items-center justify-center w-14 h-14 border-2 border-primary/30 mb-6">
             <Lock className="w-6 h-6 text-primary" />
           </div>
+          <p className="text-[10px] font-serif uppercase tracking-[0.3em] text-muted-foreground mb-3">
+            THE MAJLIS
+          </p>
           <h2 className="font-display font-black text-2xl uppercase tracking-tight text-foreground mb-2">
-            The Majlis is Invite-Only
+            A private room for serious conversation.
           </h2>
           {hasApplied ? (
             <p className="text-sm text-muted-foreground">
-              Your application is being reviewed. You'll hear back within 48 hours.{" "}
+              Your access request is being reviewed.{" "}
               Need help?{" "}
               <a href="mailto:hello@themiddleeasthustle.com" className="text-primary underline">
                 Contact support
@@ -759,10 +762,13 @@ export default function Majlis() {
             </p>
           ) : (
             <p className="text-sm text-muted-foreground">
-              A private space for verified voices across MENA.{" "}
-              <a href="/apply?ref=majlis" className="text-primary underline">Apply to join</a>.
+              A members only space for selected participants to discuss the questions behind The Tribunal.{" "}
+              <a href="/apply?ref=majlis" className="text-primary underline">Request Access</a>.
             </p>
           )}
+          <p className="mt-3 text-xs italic text-muted-foreground/80">
+            No open comments. No algorithmic feed. No public performance.
+          </p>
 
           <div className="mt-8 pt-6 border-t border-border">
             <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground font-serif mb-3">Already a member?</p>
@@ -792,12 +798,12 @@ export default function Majlis() {
             <h1 className="font-display text-lg font-black uppercase tracking-tight text-foreground leading-none">
               The Majlis<span className="text-primary">.</span>
             </h1>
-            <span className="text-[9px] font-serif uppercase tracking-[0.2em] text-muted-foreground hidden sm:inline">
+            <span className="text-[10px] font-serif uppercase tracking-[0.2em] text-muted-foreground hidden sm:inline">
               المجلس
             </span>
             <div className="flex items-center gap-1.5 ml-2">
               <div className="w-1.5 h-1.5 rounded-full bg-green-400" />
-              <span className="text-[9px] font-serif text-muted-foreground">
+              <span className="text-[10px] font-serif text-muted-foreground">
                 {onlineCount} online
               </span>
             </div>
@@ -809,7 +815,7 @@ export default function Majlis() {
             >
               <Users className="w-4 h-4" />
             </button>
-            <span className="text-[9px] text-muted-foreground font-serif hidden sm:inline">{user.displayName}</span>
+            <span className="text-[10px] text-muted-foreground font-serif hidden sm:inline">{user.displayName}</span>
             <button
               onClick={handleLogout}
               className="p-2 text-muted-foreground hover:text-foreground transition-colors"
@@ -879,7 +885,7 @@ export default function Majlis() {
               <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10">
                 <button
                   onClick={scrollToBottom}
-                  className="flex items-center gap-1.5 bg-primary text-white text-[10px] font-serif font-bold uppercase tracking-wider px-3 py-1.5 shadow-lg hover:bg-primary/90 transition-colors"
+                  className="flex items-center gap-1.5 bg-primary text-white text-[12px] font-serif font-bold uppercase tracking-wider px-3 py-1.5 shadow-lg hover:bg-primary/90 transition-colors"
                 >
                   <ArrowDown className="w-3 h-3" />
                   {newMsgCount > 0 ? `${newMsgCount} new` : "Latest"}
@@ -895,7 +901,7 @@ export default function Majlis() {
               )}
               {replyTo && (
                 <div className="flex items-center gap-2 mb-2 px-2 py-1 bg-primary/5 border-l-2 border-primary">
-                  <span className="text-[10px] text-muted-foreground flex-1 truncate">
+                  <span className="text-[12px] text-muted-foreground flex-1 truncate">
                     Replying to <span className="text-foreground font-bold">{replyTo.profileName}</span>: {replyTo.content}
                   </span>
                   <button onClick={() => setReplyTo(null)} className="text-muted-foreground hover:text-foreground text-xs">
@@ -906,11 +912,11 @@ export default function Majlis() {
               {sharePreview && (
                 <div className="mb-2 flex items-start gap-2 px-2 py-2 bg-muted/30 border border-border rounded">
                   <div className="flex-1 min-w-0">
-                    <span className="text-[8px] font-serif font-bold uppercase tracking-[0.2em] text-primary">
+                    <span className="text-[9px] font-serif font-bold uppercase tracking-[0.2em] text-primary">
                       {sharePreview.type === "debate" ? "DEBATE" : "PREDICTION"}
                     </span>
                     <p className="text-xs font-serif font-bold text-foreground truncate">{sharePreview.title}</p>
-                    <span className="text-[10px] text-muted-foreground">{sharePreview.stat} · {sharePreview.category}</span>
+                    <span className="text-[12px] text-muted-foreground">{sharePreview.stat} · {sharePreview.category}</span>
                   </div>
                   <button onClick={clearSharePreview} className="text-muted-foreground hover:text-foreground text-xs flex-shrink-0 p-1">✕</button>
                 </div>

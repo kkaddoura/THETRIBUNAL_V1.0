@@ -93,7 +93,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
             onError={() => setImgError(true)}
           />
           {profile.isFeatured && (
-            <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-primary text-background text-[8px] sm:text-[9px] uppercase tracking-widest px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold">
+            <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-primary text-background text-[9px] sm:text-[10px] uppercase tracking-widest px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold">
               Featured Voice
             </span>
           )}
@@ -107,7 +107,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
             {getInitials(profile.name)}
           </span>
           {profile.isFeatured && (
-            <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-primary text-background text-[8px] sm:text-[9px] uppercase tracking-widest px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold">
+            <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-primary text-background text-[9px] sm:text-[10px] uppercase tracking-widest px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold">
               Featured Voice
             </span>
           )}
@@ -128,7 +128,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
           </p>
         )}
 
-        <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">
+        <p className="text-[10px] sm:text-[12px] uppercase tracking-widest text-muted-foreground mb-0.5 sm:mb-1">
           {profile.role}
           {profile.company && (
             <>
@@ -152,13 +152,13 @@ export function ProfileCard({ profile }: { profile: Profile }) {
         </p>
 
         {profile.city && (
-          <p className="text-[9px] sm:text-[10px] uppercase tracking-widest text-muted-foreground flex items-center gap-1 mb-2 sm:mb-4">
+          <p className="text-[10px] sm:text-[12px] uppercase tracking-widest text-muted-foreground flex items-center gap-1 mb-2 sm:mb-4">
             <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3 flex-shrink-0" /> {profile.city}
           </p>
         )}
 
         <div className="mt-auto">
-          <div className="w-full py-1.5 sm:py-2 border border-foreground text-foreground text-[9px] sm:text-[10px] uppercase tracking-widest font-bold hover:bg-foreground hover:text-background transition-colors text-center">
+          <div className="w-full py-1.5 sm:py-2 border border-foreground text-foreground text-[10px] sm:text-[12px] uppercase tracking-widest font-bold hover:bg-foreground hover:text-background transition-colors text-center">
             Read Their Story →
           </div>
         </div>

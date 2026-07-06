@@ -3,8 +3,10 @@ import multer from "multer";
 import path from "path";
 import { supabaseAdmin, isSupabaseStorageAvailable, STORAGE_BUCKET, getPublicUrl } from "../utils/supabase-storage";
 import crypto from "crypto";
-import { db, pollsTable, pollOptionsTable, votesTable, newsletterSubscribersTable, hustlerApplicationsTable, profilesTable, predictionsTable, pulseTopicsTable, cmsConfigsTable, designTokensTable, majlisInvitesTable, cmsSessionsTable } from "@workspace/db";
-import { eq, desc, sql, count, like, or, inArray, and, asc, gt } from "drizzle-orm";
+import { db, pollsTable, pollOptionsTable, votesTable, predictionVotesTable, newsletterSubscribersTable, hustlerApplicationsTable, profilesTable, predictionsTable, pulseTopicsTable, cmsConfigsTable, designTokensTable, majlisInvitesTable, cmsSessionsTable } from "@workspace/db";
+import { eq, desc, sql, count, like, or, inArray, notInArray, and, asc, gt, gte } from "drizzle-orm";
+import { sendEmail } from "../lib/email.js";
+import { getDisabledCategories, setDisabledCategories, getCustomCategories, getCategorySettings, saveCategorySettings, categorySlug } from "../lib/category-settings";
 
 const router = Router();
 
@@ -247,8 +249,11 @@ router.get("/cms/taxonomy", requireCmsAuth, async (_req, res) => {
       }
     }
 
+    const customCategories = await getCustomCategories();
+
     const debateCategories = [...new Set([
       ...dbCategories.map(r => r.category),
+      ...customCategories,
       "Technology & AI", "Politics", "Economy", "Finance", "Startups", "Society", "Lifestyle", "Culture", "Energy", "Climate", "Diplomacy", "Healthcare", "Education", "Real Estate",
     ])].sort();
 
@@ -259,6 +264,7 @@ router.get("/cms/taxonomy", requireCmsAuth, async (_req, res) => {
 
     const predictionCategories = [...new Set([
       ...dbPredCategories.map(r => r.category),
+      ...customCategories,
       "Economy & Finance", "Technology & AI", "Energy & Climate", "Culture & Society", "Business & Startups", "Geopolitics & Governance", "Education & Workforce", "Infrastructure & Cities", "Sports & Entertainment", "Health & Demographics",
     ])].sort();
 
@@ -273,6 +279,110 @@ router.get("/cms/taxonomy", requireCmsAuth, async (_req, res) => {
   } catch (err) {
     console.error("Taxonomy error:", err);
     return res.status(500).json({ error: "Taxonomy failed" });
+  }
+});
+
+// ── Category enable/disable (admin) ──────────────────────────────
+// Lists every category that has content, with how many debates/predictions use
+// it and whether it is currently disabled. Disabling hides the category and all
+// of its content from the public site.
+router.get("/cms/categories", requireCmsAuth, async (_req, res) => {
+  try {
+    const debateRows = await db
+      .select({ category: pollsTable.category, count: sql<number>`count(*)` })
+      .from(pollsTable)
+      .groupBy(pollsTable.category);
+    const predRows = await db
+      .select({ category: predictionsTable.category, count: sql<number>`count(*)` })
+      .from(predictionsTable)
+      .groupBy(predictionsTable.category);
+
+    const map = new Map<string, { name: string; debateCount: number; predictionCount: number }>();
+    for (const r of debateRows) {
+      if (!r.category) continue;
+      const e = map.get(r.category) ?? { name: r.category, debateCount: 0, predictionCount: 0 };
+      e.debateCount += Number(r.count);
+      map.set(r.category, e);
+    }
+    for (const r of predRows) {
+      if (!r.category) continue;
+      const e = map.get(r.category) ?? { name: r.category, debateCount: 0, predictionCount: 0 };
+      e.predictionCount += Number(r.count);
+      map.set(r.category, e);
+    }
+
+    const { disabled: disabledList, custom } = await getCategorySettings();
+    // Include custom (added-but-not-yet-used) categories so they're manageable.
+    for (const name of custom) {
+      if (!map.has(name)) map.set(name, { name, debateCount: 0, predictionCount: 0 });
+    }
+
+    const disabled = new Set(disabledList);
+    const categories = [...map.values()]
+      .map((c) => ({ ...c, disabled: disabled.has(c.name) }))
+      .sort((a, b) => a.name.localeCompare(b.name));
+
+    return res.json({ categories });
+  } catch (err) {
+    console.error("CMS categories error:", err);
+    return res.status(500).json({ error: "Failed to list categories" });
+  }
+});
+
+router.put("/cms/categories", requireCmsAuth, async (req, res) => {
+  try {
+    const disabled = Array.isArray(req.body?.disabled) ? req.body.disabled : [];
+    await setDisabledCategories(disabled);
+    return res.json({ success: true, disabled: await getDisabledCategories() });
+  } catch (err) {
+    console.error("CMS update categories error:", err);
+    return res.status(500).json({ error: "Failed to update categories" });
+  }
+});
+
+// Add a new category name. It has no content yet, so it's stored in the
+// `custom` list and becomes selectable in the Debate/Prediction editors.
+router.post("/cms/categories/add", requireCmsAuth, async (req, res) => {
+  try {
+    const name = typeof req.body?.name === "string" ? req.body.name.trim() : "";
+    if (!name) return res.status(400).json({ error: "Category name required" });
+    const settings = await getCategorySettings();
+    if (!settings.custom.includes(name)) settings.custom.push(name);
+    await saveCategorySettings(settings);
+    return res.json({ success: true, name });
+  } catch (err) {
+    console.error("CMS add category error:", err);
+    return res.status(500).json({ error: "Failed to add category" });
+  }
+});
+
+// Rename a category everywhere: bulk-update all debates + predictions using the
+// old name, and carry the name over in the custom/disabled lists.
+router.post("/cms/categories/rename", requireCmsAuth, async (req, res) => {
+  try {
+    const from = typeof req.body?.from === "string" ? req.body.from.trim() : "";
+    const to = typeof req.body?.to === "string" ? req.body.to.trim() : "";
+    if (!from || !to) return res.status(400).json({ error: "Both 'from' and 'to' are required" });
+    if (from === to) return res.json({ success: true, from, to, updated: 0 });
+
+    const slug = categorySlug(to);
+    const d = await db.update(pollsTable).set({ category: to, categorySlug: slug }).where(eq(pollsTable.category, from)).returning({ id: pollsTable.id });
+    const p = await db.update(predictionsTable).set({ category: to, categorySlug: slug }).where(eq(predictionsTable.category, from)).returning({ id: predictionsTable.id });
+
+    // Carry the name over in custom + disabled lists.
+    const settings = await getCategorySettings();
+    const swap = (list: string[]) => {
+      const next = list.map((n) => (n === from ? to : n));
+      return Array.from(new Set(next));
+    };
+    settings.custom = swap(settings.custom).filter((n) => n !== from);
+    settings.disabled = swap(settings.disabled);
+    await saveCategorySettings(settings);
+
+    return res.json({ success: true, from, to, updated: d.length + p.length });
+  } catch (err) {
+    console.error("CMS rename category error:", err);
+    return res.status(500).json({ error: "Failed to rename category" });
   }
 });
 
@@ -1102,14 +1212,18 @@ router.put("/cms/homepage", requireCmsAuth, async (req, res) => {
   try {
     const [existing] = await db.select().from(cmsConfigsTable).where(eq(cmsConfigsTable.key, "homepage"));
     const currentConfig = (existing?.value ?? {}) as Record<string, Record<string, unknown> | unknown[] | unknown>;
-    const { masthead, ticker, sections, banners, newsletter, sectionStats } = req.body;
+    const { masthead, ticker, sections, banners, newsletter, sectionStats, content, sectionVisibility } = req.body;
 
     if (masthead) currentConfig.masthead = { ...(currentConfig.masthead as Record<string, unknown> ?? {}), ...masthead };
     if (ticker) currentConfig.ticker = { ...(currentConfig.ticker as Record<string, unknown> ?? {}), ...ticker };
     if (sections) currentConfig.sections = sections;
+    // Per-section show/hide flags for the public homepage (keyed by section id).
+    // Merge so a partial update never drops other sections' flags.
+    if (sectionVisibility) currentConfig.sectionVisibility = { ...(currentConfig.sectionVisibility as Record<string, unknown> ?? {}), ...sectionVisibility };
     if (banners) currentConfig.banners = banners;
     if (newsletter) currentConfig.newsletter = { ...(currentConfig.newsletter as Record<string, unknown> ?? {}), ...newsletter };
     if (sectionStats) currentConfig.sectionStats = { ...(currentConfig.sectionStats as Record<string, unknown> ?? {}), ...sectionStats };
+    if (content) currentConfig.content = { ...(currentConfig.content as Record<string, unknown> ?? {}), ...content };
 
     if (existing) {
       await db.update(cmsConfigsTable).set({ value: currentConfig, updatedAt: new Date() }).where(eq(cmsConfigsTable.key, "homepage"));
@@ -1345,27 +1459,14 @@ router.post("/cms/applications/:id/invite-majlis", requireCmsAuth, async (req, r
       expiresAt,
     });
 
-    // Send invite email via Resend
-    let emailSent = false;
-    const RESEND_API_KEY = process.env.RESEND_API_KEY;
-    if (RESEND_API_KEY) {
-      try {
-        const emailRes = await fetch("https://api.resend.com/emails", {
-          method: "POST",
-          headers: { "Authorization": `Bearer ${RESEND_API_KEY}`, "Content-Type": "application/json" },
-          body: JSON.stringify({
-            from: "The Tribunal <noreply@themiddleeasthustle.com>",
-            to: app.email,
-            subject: "You're invited to The Majlis",
-            text: `Hi ${app.name},\n\nYou've been approved to join The Majlis — our private chat room for verified voices across MENA.\n\nYour invite code: ${token}\n\nUse it to register at: https://themiddleeasthustle.com/majlis/register\n\nThis code expires in 30 days.\n\nThe Tribunal, by The Middle East Hustle`,
-          }),
-        });
-        emailSent = emailRes.ok;
-        console.log(`[CMS] Majlis invite email sent to ${app.email} | Code: ${token}`);
-      } catch (err) {
-        console.error("[CMS] Majlis invite email failed:", err);
-      }
-    }
+    // Send invite email via shared helper (writes to uploads/dev-emails/ when no key).
+    const emailResult = await sendEmail({
+      label: "majlis-invite",
+      to: app.email,
+      subject: "You're invited to The Majlis",
+      text: `Hi ${app.name},\n\nYou've been approved to join The Majlis — our private chat room for verified voices across MENA.\n\nYour invite code: ${token}\n\nUse it to register at: https://themiddleeasthustle.com/majlis/register\n\nThis code expires in 30 days.\n\nThe Tribunal, by The Middle East Hustle`,
+    });
+    const emailSent = emailResult.ok;
 
     console.log(`[CMS] Majlis invite created for ${app.email} | Code: ${token} | ProfileId: ${profile.id}`);
     return res.json({ success: true, token, profileId: profile.id, emailSent });
@@ -1482,6 +1583,8 @@ router.get("/public/predictions", async (req, res) => {
     const offset = Math.max(0, Number(req.query.offset) || 0);
 
     const conditions: any[] = [eq(predictionsTable.editorialStatus, "approved")];
+    const disabledCats = await getDisabledCategories();
+    if (disabledCats.length) conditions.push(notInArray(predictionsTable.category, disabledCats));
     if (category) conditions.push(eq(predictionsTable.category, category));
     if (search?.trim()) {
       const term = `%${search.trim().toLowerCase()}%`;
@@ -1523,6 +1626,94 @@ router.get("/public/predictions/:id", async (req, res) => {
   }
 });
 
+// ── Top post of the day ──────────────────────────────────────────
+// On-demand (no cron): the top debate AND the top prediction, each by the most
+// votes cast in the trailing 24h. Excludes hidden categories and non-approved
+// items. Always returns an item per type: if nothing was voted on in the last
+// 24h, it falls back to the most-voted approved item of that type overall.
+interface TopItem {
+  type: "debate" | "prediction";
+  id: number;
+  question: string;
+  category: string;
+  votes: number;
+  window: "24h" | "all-time";
+  href: string;
+}
+
+function toTopItem(type: "debate" | "prediction", row: { id: number; question: string; category: string; votes: number }, window: "24h" | "all-time"): TopItem {
+  return {
+    type,
+    id: row.id,
+    question: row.question,
+    category: row.category,
+    votes: Number(row.votes),
+    window,
+    href: type === "debate" ? `/debates/${row.id}` : `/predictions/${row.id}`,
+  };
+}
+
+router.get("/public/top-post", async (_req, res) => {
+  try {
+    const disabled = await getDisabledCategories();
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000);
+    const pollNotHidden = disabled.length ? notInArray(pollsTable.category, disabled) : undefined;
+    const predNotHidden = disabled.length ? notInArray(predictionsTable.category, disabled) : undefined;
+
+    // ── Top debate: most poll votes in the last 24h, else most-voted overall.
+    const [poll24] = await db
+      .select({ id: pollsTable.id, question: pollsTable.question, category: pollsTable.category, votes: sql<number>`count(*)` })
+      .from(votesTable)
+      .innerJoin(pollsTable, eq(pollsTable.id, votesTable.pollId))
+      .where(and(gte(votesTable.createdAt, since), eq(pollsTable.editorialStatus, "approved"), pollNotHidden))
+      .groupBy(pollsTable.id, pollsTable.question, pollsTable.category)
+      .orderBy(desc(sql`count(*)`))
+      .limit(1);
+
+    let topDebate: TopItem | null = poll24 && Number(poll24.votes) > 0 ? toTopItem("debate", poll24, "24h") : null;
+    if (!topDebate) {
+      const pollTotal = sql<number>`COALESCE((SELECT SUM(vote_count + COALESCE(dummy_vote_count, 0)) FROM poll_options WHERE poll_id = ${pollsTable.id}), 0)`;
+      const [pollAll] = await db
+        .select({ id: pollsTable.id, question: pollsTable.question, category: pollsTable.category, votes: pollTotal })
+        .from(pollsTable)
+        .where(and(eq(pollsTable.editorialStatus, "approved"), pollNotHidden))
+        .orderBy(desc(pollTotal))
+        .limit(1);
+      topDebate = pollAll ? toTopItem("debate", pollAll, "all-time") : null;
+    }
+
+    // ── Top prediction: most prediction votes in the last 24h, else overall.
+    const [pred24] = await db
+      .select({ id: predictionsTable.id, question: predictionsTable.question, category: predictionsTable.category, votes: sql<number>`count(*)` })
+      .from(predictionVotesTable)
+      .innerJoin(predictionsTable, eq(predictionsTable.id, predictionVotesTable.predictionId))
+      .where(and(gte(predictionVotesTable.createdAt, since), eq(predictionsTable.editorialStatus, "approved"), predNotHidden))
+      .groupBy(predictionsTable.id, predictionsTable.question, predictionsTable.category)
+      .orderBy(desc(sql`count(*)`))
+      .limit(1);
+
+    let topPrediction: TopItem | null = pred24 && Number(pred24.votes) > 0 ? toTopItem("prediction", pred24, "24h") : null;
+    if (!topPrediction) {
+      const predTotal = sql<number>`(${predictionsTable.totalCount} + ${predictionsTable.dummyTotalCount})`;
+      const [predAll] = await db
+        .select({ id: predictionsTable.id, question: predictionsTable.question, category: predictionsTable.category, votes: predTotal })
+        .from(predictionsTable)
+        .where(and(eq(predictionsTable.editorialStatus, "approved"), predNotHidden))
+        .orderBy(desc(predTotal))
+        .limit(1);
+      topPrediction = predAll ? toTopItem("prediction", predAll, "all-time") : null;
+    }
+
+    // `topPost` = the higher-voted of the two, for callers that want a single item.
+    const topPost = [topDebate, topPrediction].filter((x): x is TopItem => !!x).sort((a, b) => b.votes - a.votes)[0] ?? null;
+
+    return res.json({ topDebate, topPrediction, topPost });
+  } catch (err) {
+    console.error("Top post error:", err);
+    return res.status(500).json({ error: "Failed to fetch top post" });
+  }
+});
+
 router.get("/public/pulse-topics", async (_req, res) => {
   try {
     const items = await db
@@ -1548,11 +1739,46 @@ router.get("/public/homepage", async (_req, res) => {
   }
 });
 
+const DEBATES_MAX_SECTIONS = 12;
+const DEBATES_MAX_CARD_LIMIT = 20;
+
+function normalizeDebatesSections(value: any): any {
+  if (!value || typeof value !== "object") return value;
+  const sections = Array.isArray(value.sections) ? value.sections : null;
+  if (!sections) return value;
+  const cleaned = sections
+    .filter((s: any) => s && typeof s === "object")
+    .map((s: any) => {
+      const mode = s.mode === "tag" ? "tag" : s.mode === "category" ? "category" : "manual";
+      return {
+        id: typeof s.id === "string" ? s.id : String(s.id ?? ""),
+        enabled: s.enabled !== false,
+        order: typeof s.order === "number" ? s.order : 0,
+        title: typeof s.title === "string" ? s.title : "",
+        subtitle: typeof s.subtitle === "string" ? s.subtitle : "",
+        mode,
+        manualPostIds: Array.isArray(s.manualPostIds)
+          ? s.manualPostIds.filter((n: any) => Number.isFinite(n) && n > 0)
+          : [],
+        tag: typeof s.tag === "string" ? s.tag : "",
+        categorySlug: typeof s.categorySlug === "string" ? s.categorySlug : "",
+        cardLimit: Math.max(1, Math.min(Number(s.cardLimit) || 8, DEBATES_MAX_CARD_LIMIT)),
+        showSeeAll: s.showSeeAll === true,
+      };
+    })
+    .sort((a: any, b: any) => a.order - b.order)
+    .slice(0, DEBATES_MAX_SECTIONS);
+  return { ...value, sections: cleaned };
+}
+
 router.get("/public/page-config/:page", async (req, res) => {
   try {
     const [row] = await db.select().from(cmsConfigsTable).where(eq(cmsConfigsTable.key, `page_${req.params.page}`));
     if (!row) return res.status(404).json({ error: "Page not found" });
-    return res.json(row.value);
+    const value = req.params.page === "polls" || req.params.page === "debates"
+      ? normalizeDebatesSections(row.value)
+      : row.value;
+    return res.json(value);
   } catch (err) {
     console.error("Public page config error:", err);
     return res.status(500).json({ error: "Failed to fetch page config" });

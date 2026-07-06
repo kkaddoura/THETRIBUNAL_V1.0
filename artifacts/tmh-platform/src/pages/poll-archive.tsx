@@ -38,7 +38,7 @@ export default function PollArchive() {
       {/* Header */}
       <div className="bg-foreground text-background py-16 border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
+          <div className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
             The Archive
           </div>
           <h1 className="font-display font-black text-5xl md:text-6xl uppercase tracking-tight text-background leading-none">
@@ -61,7 +61,7 @@ export default function PollArchive() {
                   key={opt.value}
                   onClick={() => { setSort(opt.value); setPage(0) }}
                   className={cn(
-                    "px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] font-bold transition-all font-serif",
+                    "px-3 py-1.5 text-[12px] uppercase tracking-[0.2em] font-bold transition-all font-serif",
                     sort === opt.value
                       ? "bg-foreground text-background"
                       : "text-muted-foreground hover:text-foreground border border-border"
@@ -79,7 +79,7 @@ export default function PollArchive() {
               <button
                 onClick={() => { setCategory(""); setPage(0) }}
                 className={cn(
-                  "px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] font-bold transition-all font-serif",
+                  "px-3 py-1.5 text-[12px] uppercase tracking-[0.2em] font-bold transition-all font-serif",
                   !category
                     ? "bg-primary text-white"
                     : "text-muted-foreground hover:text-foreground border border-border"
@@ -92,7 +92,7 @@ export default function PollArchive() {
                   key={cat.slug}
                   onClick={() => { setCategory(cat.slug); setPage(0) }}
                   className={cn(
-                    "px-3 py-1.5 text-[10px] uppercase tracking-[0.2em] font-bold transition-all font-serif",
+                    "px-3 py-1.5 text-[12px] uppercase tracking-[0.2em] font-bold transition-all font-serif",
                     category === cat.slug
                       ? "bg-primary text-white"
                       : "text-muted-foreground hover:text-foreground border border-border"
@@ -132,17 +132,17 @@ export default function PollArchive() {
             <button
               onClick={() => setPage(p => Math.max(0, p - 1))}
               disabled={page === 0}
-              className="px-6 py-2 border border-border text-[10px] uppercase tracking-widest font-bold font-serif text-foreground disabled:opacity-30 hover:bg-foreground hover:text-background transition-colors"
+              className="px-6 py-2 border border-border text-[12px] uppercase tracking-widest font-bold font-serif text-foreground disabled:opacity-30 hover:bg-foreground hover:text-background transition-colors"
             >
               ← Prev
             </button>
-            <span className="text-[11px] text-muted-foreground font-serif uppercase tracking-widest">
+            <span className="text-[13px] text-muted-foreground font-serif uppercase tracking-widest">
               {page + 1} / {totalPages}
             </span>
             <button
               onClick={() => setPage(p => Math.min(totalPages - 1, p + 1))}
               disabled={page >= totalPages - 1}
-              className="px-6 py-2 border border-border text-[10px] uppercase tracking-widest font-bold font-serif text-foreground disabled:opacity-30 hover:bg-foreground hover:text-background transition-colors"
+              className="px-6 py-2 border border-border text-[12px] uppercase tracking-widest font-bold font-serif text-foreground disabled:opacity-30 hover:bg-foreground hover:text-background transition-colors"
             >
               Next →
             </button>

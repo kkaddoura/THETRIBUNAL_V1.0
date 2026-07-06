@@ -170,6 +170,14 @@ export interface WeeklyPulse {
 export type ListPollsParams = {
   filter?: ListPollsFilter;
   category?: string;
+  /**
+   * When set, returns polls whose tags array contains this tag (case-insensitive). Sort is forced to newest-first.
+   */
+  tag?: string;
+  /**
+   * Comma-separated list of poll IDs (e.g. "12,7,33"). Returns polls in the requested order. Mutually exclusive with filter/category/tag.
+   */
+  ids?: string;
   limit?: number;
   offset?: number;
 };

@@ -129,6 +129,11 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
               })
             )
             setLocalTotal(data.totalVotes)
+            toast({
+              title: isChangeVote ? "Vote updated" : "Vote recorded",
+              description: isChangeVote ? "Your pick has been updated." : "Thanks — your vote is in.",
+              duration: 2500,
+            })
           }
         },
         onError: () => {
@@ -173,7 +178,7 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
                 {poll.category}
               </span>
               {isLive && (
-                <span className="flex items-center gap-1.5 text-[10px] font-bold text-primary uppercase tracking-[0.25em]">
+                <span className="flex items-center gap-1.5 text-[12px] font-bold text-primary uppercase tracking-[0.25em]">
                   <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
                   LIVE
                 </span>
@@ -183,14 +188,14 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
             <div className="relative flex items-center gap-2">
               {/* "You haven't weighed in" subtle dot when not voted */}
               {!isVoted && (
-                <span className="hidden sm:flex items-center gap-1 text-[9px] uppercase tracking-widest text-muted-foreground font-serif">
+                <span className="hidden sm:flex items-center gap-1 text-[10px] uppercase tracking-widest text-muted-foreground font-serif">
                   <span className="w-1.5 h-1.5 rounded-full bg-primary/60 animate-pulse" />
                   Weigh in
                 </span>
               )}
               {/* "You voted" when voted */}
               {isVoted && (
-                <span className="hidden sm:flex items-center gap-1 text-[9px] uppercase tracking-widest text-primary font-serif font-bold">
+                <span className="hidden sm:flex items-center gap-1 text-[10px] uppercase tracking-widest text-primary font-serif font-bold">
                   <CheckCircle2 className="w-3 h-3" />
                   Voted
                 </span>
@@ -220,7 +225,7 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
             </p>
           )}
 
-          <div className="mt-auto pt-6 border-t border-border flex items-center justify-between text-[10px] uppercase tracking-widest text-muted-foreground">
+          <div className="mt-auto pt-6 border-t border-border flex items-center justify-between text-[12px] uppercase tracking-widest text-muted-foreground">
             <div className="flex items-center gap-4">
               {isVoted && votedOption ? (
                 <span className="text-primary font-bold">
@@ -257,7 +262,7 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
               return (
               <motion.div key="voting" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
                 <div className="flex items-center gap-3 mb-4 border-l-4 border-primary pl-3">
-                  <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">
+                  <span className="text-[12px] uppercase tracking-widest font-bold text-muted-foreground">
                     {ptype === "scale" ? "Rate This" : "Cast Your Vote"}
                   </span>
                 </div>
@@ -345,7 +350,7 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
                     </div>
                   ))}
                 </div>
-                <div className="mt-4 flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-primary">
+                <div className="mt-4 flex items-center gap-2 text-[12px] uppercase tracking-widest font-bold text-primary">
                   <Lock className="w-3.5 h-3.5" />
                   {shareGate?.heading || "Share to unlock full breakdown"}
                 </div>
@@ -371,12 +376,12 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
                     <p className="font-serif font-black uppercase text-sm text-primary tracking-tight mb-1">
                       Welcome to The Tribunal<span className="text-primary">.</span>
                     </p>
-                    <p className="text-[11px] text-foreground/70 font-sans leading-relaxed">
+                    <p className="text-[13px] text-foreground/70 font-sans leading-relaxed">
                       You just joined {localTotal.toLocaleString()} people shaping the region's most honest conversation.
                     </p>
                     <button
                       onClick={handleWelcomeCTA}
-                      className="mt-3 text-[10px] font-black uppercase tracking-widest text-primary hover:text-foreground transition-colors border-b border-primary/40 hover:border-foreground pb-0.5 cursor-pointer"
+                      className="mt-3 text-[12px] font-black uppercase tracking-widest text-primary hover:text-foreground transition-colors border-b border-primary/40 hover:border-foreground pb-0.5 cursor-pointer"
                     >
                       Keep Voting →
                     </button>
@@ -392,7 +397,7 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
                     className="flex items-center gap-2"
                   >
                     <Flame className="w-4 h-4 text-primary" />
-                    <span className="text-[10px] font-bold uppercase tracking-widest text-primary font-serif">
+                    <span className="text-[12px] font-bold uppercase tracking-widest text-primary font-serif">
                       {currentStreak}-day streak
                     </span>
                   </motion.div>
@@ -402,7 +407,7 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
                     initial={{ opacity: 0, x: -8 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground font-serif"
+                    className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground font-serif"
                   >
                     Day 1 — come back tomorrow.
                   </motion.div>
@@ -419,15 +424,15 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
                       transition={{ delay: 0.4 }}
                       className="bg-secondary/60 border border-border p-4"
                     >
-                      <p className="text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-2 font-serif">
+                      <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground mb-2 font-serif">
                         Your Result
                       </p>
                       <p className="font-serif font-black uppercase text-sm text-foreground tracking-tight leading-snug">
                         {insight}
                       </p>
                       <div className="mt-3 pt-3 border-t border-border/60 flex items-center gap-2">
-                        <span className="text-[10px] text-primary font-bold font-sans">"{votedOption.text}"</span>
-                        <span className="text-[10px] text-muted-foreground font-sans">— your vote</span>
+                        <span className="text-[12px] text-primary font-bold font-sans">"{votedOption.text}"</span>
+                        <span className="text-[12px] text-muted-foreground font-sans">— your vote</span>
                       </div>
                     </motion.div>
                   )
@@ -483,7 +488,7 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
                     onClick={() => setShowShareModal(true)}
                     className={cn(
                       "w-full flex items-center justify-center gap-2.5 px-5 py-3.5",
-                      "bg-foreground text-background text-[11px] font-black uppercase tracking-[0.2em]",
+                      "bg-foreground text-background text-[13px] font-black uppercase tracking-[0.2em]",
                       "hover:bg-primary hover:text-white transition-colors duration-150",
                     )}
                   >

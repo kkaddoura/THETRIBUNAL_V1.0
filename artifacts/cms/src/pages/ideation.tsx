@@ -5,12 +5,20 @@ import {
   ChevronRight, X, Plus, RotateCcw, Save, Download,
   AlertTriangle, AlertCircle, CheckCircle2, Clock, Loader2,
   MessageSquare, TrendingUp, Activity, Trash2, History, BookX,
-  Settings, SlidersHorizontal, ChevronDown, ChevronsUpDown, Check
+  Settings, SlidersHorizontal, ChevronDown, ChevronsUpDown, Check, Pencil
 } from "lucide-react";
 
 type Mode = "explore" | "focused";
 type PillarType = "debates" | "predictions" | "pulse";
 type ViewTab = "generate" | "prompts" | "exclusions" | "history" | "rejections";
+type Recency = "day" | "week" | "month" | "year";
+
+const RECENCY_OPTIONS: { value: Recency; label: string; hint: string }[] = [
+  { value: "day", label: "Latest", hint: "Past 24 hours" },
+  { value: "week", label: "Week", hint: "Past 7 days" },
+  { value: "month", label: "Month", hint: "Past 30 days" },
+  { value: "year", label: "Year", hint: "Past 12 months" },
+];
 
 interface Idea {
   id: number;
@@ -133,6 +141,7 @@ interface IdeationPersistedState {
   selectedCategories: string[];
   selectedTags: string[];
   selectedRegions: string[];
+  recency: Recency;
   guardrails: string[];
   currentStep: number;
   session: Session | null;
@@ -162,12 +171,14 @@ export default function IdeationPage() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>(() => loadPersistedState()?.selectedCategories ?? []);
   const [selectedTags, setSelectedTags] = useState<string[]>(() => loadPersistedState()?.selectedTags ?? []);
   const [selectedRegions, setSelectedRegions] = useState<string[]>(() => loadPersistedState()?.selectedRegions ?? []);
+  const [recency, setRecency] = useState<Recency>(() => loadPersistedState()?.recency ?? "week");
   const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
   const [guardrails, setGuardrails] = useState<string[]>(() => loadPersistedState()?.guardrails ?? DEFAULT_GUARDRAILS);
   const [showGuardrails, setShowGuardrails] = useState(false);
 
   const [currentStep, setCurrentStep] = useState<number>(() => loadPersistedState()?.currentStep ?? -1);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
   const [session, setSession] = useState<Session | null>(() => loadPersistedState()?.session ?? null);
   const [ideas, setIdeas] = useState<Idea[]>(() => loadPersistedState()?.ideas ?? []);
   const [researchData, setResearchData] = useState<Record<string, unknown> | null>(() => loadPersistedState()?.researchData ?? null);
@@ -198,12 +209,12 @@ export default function IdeationPage() {
       data: {
         activeTab, mode, focusedPillar, batchSize, pillarCounts,
         usePillarCounts, selectedCategories, selectedTags, selectedRegions,
-        guardrails, currentStep, session, ideas, researchData,
+        recency, guardrails, currentStep, session, ideas, researchData,
       },
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
   }, [activeTab, mode, focusedPillar, batchSize, pillarCounts, usePillarCounts,
-      selectedCategories, selectedTags, selectedRegions, guardrails,
+      selectedCategories, selectedTags, selectedRegions, recency, guardrails,
       currentStep, session, ideas, researchData]);
 
   useEffect(() => {
@@ -223,12 +234,14 @@ export default function IdeationPage() {
     setCurrentStep(0);
     setIdeas([]);
     setResearchData(null);
+    setWorkflowError(null);
 
     try {
       const config: Record<string, unknown> = {
         categories: selectedCategories,
         tags: selectedTags,
         regions: selectedRegions,
+        recency,
         batchSize: mode === "explore" && usePillarCounts
           ? pillarCounts.debates + pillarCounts.predictions + pillarCounts.pulse
           : batchSize,
@@ -260,10 +273,11 @@ export default function IdeationPage() {
       setCurrentStep(3);
     } catch (err) {
       console.error("Workflow error:", err);
+      setWorkflowError(err instanceof Error ? err.message : "The ideation workflow failed. Check the api-server logs.");
     } finally {
       setIsProcessing(false);
     }
-  }, [mode, focusedPillar, batchSize, pillarCounts, usePillarCounts, selectedCategories, selectedTags, selectedRegions, exclusionList, guardrails]);
+  }, [mode, focusedPillar, batchSize, pillarCounts, usePillarCounts, selectedCategories, selectedTags, selectedRegions, recency, exclusionList, guardrails]);
 
   const handleCherryPick = async (ideaId: number, action: string, tag?: string) => {
     try {
@@ -336,6 +350,27 @@ export default function IdeationPage() {
       }
     }
   }, [session]);
+
+  const handleResetIdeation = () => {
+    if (!window.confirm(
+      "Reset the Ideation Engine? This clears your search, filters, generated ideas, and current session."
+    )) return;
+    localStorage.removeItem(STORAGE_KEY);
+    setActiveTab("generate");
+    setMode("explore");
+    setFocusedPillar("debates");
+    setBatchSize(15);
+    setPillarCounts({ debates: 5, predictions: 5, pulse: 5 });
+    setUsePillarCounts(false);
+    setSelectedCategories([]);
+    setSelectedTags([]);
+    setSelectedRegions([]);
+    setGuardrails(DEFAULT_GUARDRAILS);
+    setCurrentStep(-1);
+    setSession(null);
+    setIdeas([]);
+    setResearchData(null);
+  };
 
   const handleSavePrompt = async (pillar: string) => {
     try {
@@ -457,16 +492,26 @@ export default function IdeationPage() {
               regions={taxonomy?.countries || []}
               selectedRegions={selectedRegions}
               setSelectedRegions={setSelectedRegions}
+              recency={recency}
+              setRecency={setRecency}
               guardrails={guardrails}
               setGuardrails={setGuardrails}
               showGuardrails={showGuardrails}
               setShowGuardrails={setShowGuardrails}
               onStart={startWorkflow}
               isProcessing={isProcessing}
+              onReset={handleResetIdeation}
             />
 
             <div className="space-y-4">
               <WorkflowStepper currentStep={currentStep} isProcessing={isProcessing} />
+
+              {workflowError && !isProcessing && (
+                <div className="bg-red-500/10 border border-red-500/40 text-red-300 p-4 text-sm">
+                  <p className="font-semibold mb-1">Generation failed</p>
+                  <p className="text-red-300/90 break-words">{workflowError}</p>
+                </div>
+              )}
 
               {currentStep === 0 && isProcessing && (
                 <div className="bg-card border border-border p-6 text-center">
@@ -667,8 +712,9 @@ function ConfigPanel({
   categories, selectedCategories, setSelectedCategories,
   tags, selectedTags, setSelectedTags,
   regions, selectedRegions, setSelectedRegions,
+  recency, setRecency,
   guardrails, setGuardrails, showGuardrails, setShowGuardrails,
-  onStart, isProcessing,
+  onStart, isProcessing, onReset,
 }: {
   mode: Mode; setMode: (m: Mode) => void;
   focusedPillar: PillarType; setFocusedPillar: (p: PillarType) => void;
@@ -679,11 +725,25 @@ function ConfigPanel({
   categories: string[]; selectedCategories: string[]; setSelectedCategories: (c: string[]) => void;
   tags: string[]; selectedTags: string[]; setSelectedTags: (t: string[]) => void;
   regions: string[]; selectedRegions: string[]; setSelectedRegions: (r: string[]) => void;
+  recency: Recency; setRecency: (r: Recency) => void;
   guardrails: string[]; setGuardrails: (g: string[]) => void;
   showGuardrails: boolean; setShowGuardrails: (b: boolean) => void;
   onStart: () => void; isProcessing: boolean;
+  onReset: () => void;
 }) {
   const [newGuardrail, setNewGuardrail] = useState("");
+  const [editingGuardrailIndex, setEditingGuardrailIndex] = useState<number | null>(null);
+  const [editingGuardrailValue, setEditingGuardrailValue] = useState("");
+
+  const commitGuardrailEdit = () => {
+    if (editingGuardrailIndex === null) return;
+    const trimmed = editingGuardrailValue.trim();
+    if (trimmed) {
+      setGuardrails(guardrails.map((g, idx) => (idx === editingGuardrailIndex ? trimmed : g)));
+    }
+    setEditingGuardrailIndex(null);
+    setEditingGuardrailValue("");
+  };
 
   const totalPillarCount = pillarCounts.debates + pillarCounts.predictions + pillarCounts.pulse;
 
@@ -786,6 +846,25 @@ function ConfigPanel({
       <MultiSelectDropdown label="Regions" items={regions} selected={selectedRegions} setSelected={setSelectedRegions} placeholder="Filter by regions..." />
 
       <div>
+        <label className="text-xs text-muted-foreground uppercase tracking-wider block mb-1.5" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>News recency</label>
+        <div className="grid grid-cols-4 gap-1">
+          {RECENCY_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => setRecency(opt.value)}
+              title={opt.hint}
+              className={`px-2 py-1.5 text-xs transition-colors ${recency === opt.value ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground hover:text-foreground"}`}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-muted-foreground mt-1">
+          {RECENCY_OPTIONS.find(o => o.value === recency)?.hint} — how far back research pulls news.
+        </p>
+      </div>
+
+      <div>
         <button
           onClick={() => setShowGuardrails(!showGuardrails)}
           className="w-full flex items-center justify-between text-xs text-muted-foreground uppercase tracking-wider py-1" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}
@@ -803,13 +882,57 @@ function ConfigPanel({
               {guardrails.map((g, i) => (
                 <div key={i} className="flex items-start gap-1.5 group">
                   <Shield className="w-3 h-3 text-yellow-400/60 mt-0.5 shrink-0" />
-                  <span className="text-[11px] text-muted-foreground flex-1">{g}</span>
-                  <button
-                    onClick={() => setGuardrails(guardrails.filter((_, idx) => idx !== i))}
-                    className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 shrink-0"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
+                  {editingGuardrailIndex === i ? (
+                    <input
+                      autoFocus
+                      type="text"
+                      value={editingGuardrailValue}
+                      onChange={e => setEditingGuardrailValue(e.target.value)}
+                      onBlur={commitGuardrailEdit}
+                      onKeyDown={e => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          commitGuardrailEdit();
+                        } else if (e.key === "Escape") {
+                          setEditingGuardrailIndex(null);
+                          setEditingGuardrailValue("");
+                        }
+                      }}
+                      className="flex-1 bg-secondary border border-border px-1.5 py-0.5 text-[11px] text-foreground"
+                    />
+                  ) : (
+                    <span
+                      onClick={() => {
+                        setEditingGuardrailIndex(i);
+                        setEditingGuardrailValue(g);
+                      }}
+                      className="text-[11px] text-muted-foreground flex-1 cursor-text hover:text-foreground"
+                      title="Click to edit"
+                    >
+                      {g}
+                    </span>
+                  )}
+                  {editingGuardrailIndex !== i && (
+                    <>
+                      <button
+                        onClick={() => {
+                          setEditingGuardrailIndex(i);
+                          setEditingGuardrailValue(g);
+                        }}
+                        className="opacity-0 group-hover:opacity-100 text-muted-foreground hover:text-foreground shrink-0"
+                        title="Edit guardrail"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => setGuardrails(guardrails.filter((_, idx) => idx !== i))}
+                        className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 shrink-0"
+                        title="Remove guardrail"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
                 </div>
               ))}
             </div>
@@ -848,6 +971,15 @@ function ConfigPanel({
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={onReset}
+        disabled={isProcessing}
+        className="w-full flex items-center justify-center gap-2 border border-border text-muted-foreground py-2 text-xs font-semibold hover:text-foreground hover:border-primary/50 disabled:opacity-50 transition-colors mb-2"
+      >
+        <RotateCcw className="w-3.5 h-3.5" /> Reset search &amp; state
+      </button>
 
       <button
         onClick={onStart}
@@ -924,7 +1056,6 @@ function ResearchPanel({ data }: { data: Record<string, unknown> }) {
                 <div key={i} className="bg-secondary/30 p-2">
                   <p className="text-sm font-medium">{t.title}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{t.summary}</p>
-                  <p className="text-[10px] text-primary mt-0.5">{t.source}</p>
                 </div>
               ))}
             </div>

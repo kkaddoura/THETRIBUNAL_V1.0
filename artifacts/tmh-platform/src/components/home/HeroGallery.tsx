@@ -139,7 +139,7 @@ export function HeroGallery({ posters = DEFAULT_POSTERS }: HeroGalleryProps) {
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/85 via-black/20 to-black/40" />
 
       {/* Top label */}
-      <div className="absolute top-3 left-3 right-3 flex items-center justify-between text-[10px] uppercase tracking-[0.22em] font-bold font-serif text-white/80">
+      <div className="absolute top-3 left-3 right-3 flex items-center justify-between text-[12px] uppercase tracking-[0.22em] font-bold font-serif text-white/80">
         <AnimatePresence mode="wait">
           <motion.span
             key={`topic-${currentIdx}`}
@@ -172,7 +172,7 @@ export function HeroGallery({ posters = DEFAULT_POSTERS }: HeroGalleryProps) {
             {current.question}
           </motion.p>
         </AnimatePresence>
-        <span className="inline-flex items-center gap-1.5 text-[10px] uppercase tracking-[0.22em] font-bold font-serif text-primary group-hover:text-white transition-colors">
+        <span className="inline-flex items-center gap-1.5 text-[12px] uppercase tracking-[0.22em] font-bold font-serif text-primary group-hover:text-white transition-colors">
           Where do you stand? →
         </span>
       </div>

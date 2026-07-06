@@ -6,3 +6,6 @@ export * from "./prediction-votes";
 export * from "./pulse";
 export * from "./cms";
 export * from "./ideation";
+export * from "./users";
+export * from "./press-kit";
+export * from "./newsletter-digests";

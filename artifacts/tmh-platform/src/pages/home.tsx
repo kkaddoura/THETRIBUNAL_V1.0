@@ -10,7 +10,6 @@ import { Layout } from "@/components/layout/Layout";
 import { PollCard } from "@/components/poll/PollCard";
 import { ProfileCard } from "@/components/profile/ProfileCard";
 import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
-import { HeroGallery } from "@/components/home/HeroGallery";
 const AboutSection = lazy(() => import("@/components/home/AboutSection"));
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -24,6 +23,9 @@ import {
   useTransform,
   useReducedMotion,
 } from "motion/react";
+import { track } from "@/lib/analytics";
+
+const API_BASE_HOME = import.meta.env?.VITE_API_BASE_URL ?? "";
 
 // ── Animation utilities ──────────────────────────────────────────────────────
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
@@ -184,6 +186,139 @@ function CountUp({
   );
 }
 
+// Dummy live ticker — keeps the number changing every few seconds to convey
+// active product usage. `mode="increment"` only goes up (e.g. cumulative votes);
+// `mode="drift"` random-walks ± with optional upward bias (e.g. people online).
+function LiveTicker({
+  start,
+  mode = "increment",
+  minDelta = 1,
+  maxDelta = 4,
+  intervalMs = 2000,
+  jitterMs = 1200,
+  upBias = 0.5,
+  min,
+  max,
+  lastDigitAccent = false,
+  animation = "slide",
+  className,
+  style,
+}: {
+  start: number;
+  mode?: "increment" | "drift";
+  minDelta?: number;
+  maxDelta?: number;
+  intervalMs?: number;
+  jitterMs?: number;
+  upBias?: number; // drift mode only — probability of an up step (0..1)
+  min?: number;
+  max?: number;
+  lastDigitAccent?: boolean;
+  animation?: "slide" | "fade"; // slide = last-char slide; fade = whole-number cross-fade
+  className?: string;
+  style?: React.CSSProperties;
+}) {
+  const prefersReduced = useReducedMotion();
+  const [n, setN] = useState(start);
+
+  useEffect(() => {
+    if (prefersReduced) return;
+    let timeoutId: number;
+    const schedule = () => {
+      const delay = intervalMs + Math.random() * jitterMs;
+      timeoutId = window.setTimeout(() => {
+        setN((prev) => {
+          const delta =
+            minDelta + Math.floor(Math.random() * (maxDelta - minDelta + 1));
+          let next: number;
+          if (mode === "increment") {
+            next = prev + delta;
+          } else {
+            const up = Math.random() < upBias;
+            next = prev + (up ? delta : -delta);
+          }
+          if (typeof min === "number" && next < min) next = min + delta;
+          if (typeof max === "number" && next > max) next = max - delta;
+          return next;
+        });
+        schedule();
+      }, delay);
+    };
+    schedule();
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [mode, minDelta, maxDelta, intervalMs, jitterMs, upBias, min, max, prefersReduced]);
+
+  const display = n.toLocaleString();
+  const prefix = display.length > 0 ? display.slice(0, -1) : "";
+  const lastChar = display.length > 0 ? display.slice(-1) : "";
+  const lastClass = lastDigitAccent ? "text-primary" : undefined;
+
+  // Reduced-motion: no animation, just instant updates.
+  if (prefersReduced) {
+    return (
+      <span className={className} style={style}>
+        {prefix}
+        <span className={lastClass}>{lastChar}</span>
+      </span>
+    );
+  }
+
+  // Fade mode: cross-fade the entire number on each tick.
+  if (animation === "fade") {
+    return (
+      <span
+        className={className}
+        style={{ ...style, display: "inline-block", position: "relative" }}
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={display}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            style={{ display: "inline-block" }}
+          >
+            {prefix}
+            <span className={lastClass}>{lastChar}</span>
+          </motion.span>
+        </AnimatePresence>
+      </span>
+    );
+  }
+
+  // Slide mode (default): only the last char slides up on change.
+  return (
+    <span className={className} style={style}>
+      {prefix}
+      <span
+        style={{
+          display: "inline-block",
+          position: "relative",
+          overflow: "hidden",
+          verticalAlign: "baseline",
+        }}
+      >
+        <AnimatePresence mode="popLayout" initial={false}>
+          <motion.span
+            key={lastChar}
+            initial={{ y: "0.55em", opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: "-0.55em", opacity: 0 }}
+            transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
+            className={lastClass}
+            style={{ display: "inline-block" }}
+          >
+            {lastChar}
+          </motion.span>
+        </AnimatePresence>
+      </span>
+    </span>
+  );
+}
+
 function FadeIn({
   children,
   delay = 0,
@@ -236,6 +371,7 @@ import {
   useHomepageConfig,
   useLiveCounts,
   useSiteSettings,
+  useTopPost,
   type ApiPrediction,
 } from "@/hooks/use-cms-data";
 import { usePageTitle } from "@/hooks/use-page-title";
@@ -338,7 +474,7 @@ function ShareMenu({
                 `https://wa.me/?text=${encodeURIComponent(`${title} — ${shareUrl}`)}`,
               )
             }
-            className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+            className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
           >
             <span className="text-[#25D366]">●</span> WhatsApp
           </button>
@@ -348,7 +484,7 @@ function ShareMenu({
                 `https://x.com/intent/tweet?text=${encodeURIComponent(`"${title}" — The Tribunal`)}&url=${encodeURIComponent(shareUrl)}`,
               )
             }
-            className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+            className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
           >
             <span className="text-foreground">●</span> X / Twitter
           </button>
@@ -358,7 +494,7 @@ function ShareMenu({
                 `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(shareUrl)}`,
               )
             }
-            className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+            className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
           >
             <span className="text-[#0A66C2]">●</span> LinkedIn
           </button>
@@ -368,7 +504,7 @@ function ShareMenu({
                 `https://www.instagram.com/`,
               )
             }
-            className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+            className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
           >
             <span className="text-[#E4405F]">●</span> Instagram
           </button>
@@ -383,7 +519,7 @@ function ShareMenu({
                   setOpen(false);
                 }, 1500);
               }}
-              className="w-full text-left px-3 py-2 text-[11px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
+              className="w-full text-left px-3 py-2 text-[13px] font-serif uppercase tracking-wider hover:bg-white/5 rounded-sm flex items-center gap-2"
             >
               {copied ? (
                 <>
@@ -422,6 +558,93 @@ function getPredVote(predId: number): "yes" | "no" | null {
 const MENA_POP_BASE_DEFAULT = 541_000_000;
 const MENA_POP_BASE_DATE = new Date("2026-01-01T00:00:00Z").getTime();
 const MENA_GROWTH_RATE_DEFAULT = 0.0156;
+
+// ── Editable home-page copy (CMS-overridable via homepageConfig.content) ──────
+// Every visible copy block below can be overridden from the CMS Homepage Manager.
+// These objects are the source of truth for fallbacks; the CMS seeds matching keys.
+export interface HomeContent {
+  hero: {
+    eyebrow: string; headline: string; subcopy: string; trustLine: string; accountMicrocopy: string;
+    primaryCtaLabel: string; primaryCtaHref: string; secondaryCtaLabel: string; secondaryCtaHref: string;
+    stats: Array<{ value: string; label: string }>;
+  };
+  intro: {
+    heading: string; lead: string; body: string; statement: string; negations: string[];
+    closing: string; trust: string; quote: string; quoteAuthor: string;
+  };
+  cards: { heading: string; items: Array<{ key: string; title: string; subtitle: string; body: string; cta: string }> };
+  voices: { heading: string; subcopy: string };
+  exploreTopics: { heading: string };
+  newsletter: { eyebrow: string; heading: string; body: string; bullets: string[]; ctaLabel: string; disclaimer: string };
+}
+
+const HOME_CONTENT_DEFAULTS: HomeContent = {
+  hero: {
+    eyebrow: "The Region, On Record",
+    headline: "The questions people avoid in public",
+    subcopy: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
+    trustLine: "Your vote is private. The result is public.",
+    accountMicrocopy: "Sign up only if you want to save your activity and continue later.",
+    primaryCtaLabel: "Cast Your Vote",
+    primaryCtaHref: "/debates",
+    secondaryCtaLabel: "How It Works",
+    secondaryCtaHref: "/about#how-it-works",
+    stats: [
+      { value: "100+", label: "Live Questions" },
+      { value: "19", label: "Countries Covered" },
+      { value: "Private", label: "Votes" },
+      { value: "Public", label: "Results" },
+    ],
+  },
+  intro: {
+    heading: "What is The Tribunal?",
+    lead: "The sharpest read on what the region really thinks.",
+    body: "The Tribunal asks direct questions about the Middle East and North Africa, then shows how people answer.",
+    statement: "People vote privately. The result is public.",
+    negations: ["It is not a news site.", "It is not a think tank.", "It is not a comment section."],
+    closing: "It is a cleaner way to see what people are willing to say when their names are not attached.",
+    trust: "Private does not mean fake. If it is not human, it does not count.",
+    quote: "People do not lack opinions. They lack a place to say them honestly.",
+    quoteAuthor: "— Kareem Kaddoura, Founder",
+  },
+  cards: {
+    heading: "What you'll find here",
+    items: [
+      { key: "debates", title: "Debates", subtitle: "What people believe.", body: "Direct questions about work, money, identity, media, culture, power and the future. Vote privately. See where you stand.", cta: "Enter the Debates" },
+      { key: "predictions", title: "Predictions", subtitle: "What people think will happen.", body: "Not what should happen. What people expect will happen. Track how confidence shifts over time. Sign up if you want to save your calls and come back to them later.", cta: "Make a Prediction" },
+      { key: "pulse", title: "Pulse", subtitle: "What is actually happening.", body: "Sourced public signals that give context to the questions people are voting on.", cta: "Read The Pulse" },
+      { key: "voices", title: "Voices", subtitle: "People with something to say.", body: "Curated profiles of people connected to the region through their work, choices and positions.", cta: "Explore Voices" },
+      { key: "majlis", title: "The Majlis", subtitle: "A private room for serious conversation.", body: "A members only space for selected participants. No open comments. No algorithmic noise. No public performance.", cta: "Enter The Majlis" },
+    ],
+  },
+  voices: {
+    heading: "The Voices",
+    subcopy: "Curated profiles of people with a clear connection to the region and a body of work we can verify.",
+  },
+  exploreTopics: { heading: "Explore Topics" },
+  newsletter: {
+    eyebrow: "The Weekly Brief",
+    heading: "The sharpest questions and shifts from the week.",
+    body: "A short weekly note from The Tribunal. New questions, live results, prediction shifts and the signals behind them.",
+    bullets: ["New questions from the week", "Results worth paying attention to", "Prediction shifts as views change"],
+    ctaLabel: "Get Updates",
+    disclaimer: "No spam. Unsubscribe anytime.",
+  },
+};
+
+// Shallow-merge each group; arrays are replaced wholesale when the CMS provides them.
+function resolveHomeContent(cfg?: Partial<HomeContent>): HomeContent {
+  const d = HOME_CONTENT_DEFAULTS;
+  const c = (cfg ?? {}) as any;
+  return {
+    hero: { ...d.hero, ...c.hero, stats: c.hero?.stats?.length ? c.hero.stats : d.hero.stats },
+    intro: { ...d.intro, ...c.intro, negations: c.intro?.negations?.length ? c.intro.negations : d.intro.negations },
+    cards: { ...d.cards, ...c.cards, items: c.cards?.items?.length ? c.cards.items : d.cards.items },
+    voices: { ...d.voices, ...c.voices },
+    exploreTopics: { ...d.exploreTopics, ...c.exploreTopics },
+    newsletter: { ...d.newsletter, ...c.newsletter, bullets: c.newsletter?.bullets?.length ? c.newsletter.bullets : d.newsletter.bullets },
+  };
+}
 
 function usePopulationCounter(
   basePopulation?: number,
@@ -521,7 +744,7 @@ function LiveActivity() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3 mb-4">
           <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse flex-shrink-0" />
-          <p className="text-[9px] uppercase tracking-[0.3em] font-bold text-muted-foreground font-serif">
+          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-muted-foreground font-serif">
             {t("Live Activity")}
           </p>
         </div>
@@ -546,7 +769,7 @@ function LiveActivity() {
                 <span className="text-primary font-bold group-hover:underline">
                   "{item.questionSnippet}"
                 </span>
-                <span className="text-muted-foreground text-[11px] ml-2">
+                <span className="text-muted-foreground text-[13px] ml-2">
                   · {formatSecondsAgo(item.secondsAgo)}
                 </span>
               </p>
@@ -669,11 +892,14 @@ function FeaturedPredictionCard({
     if (!email.trim()) return;
     setEmailDone(true);
     localStorage.setItem("tmh_email_submitted", "true");
-    fetch("/api/email-subscribe", {
+    // Use the canonical newsletter endpoint (the legacy /api/email-subscribe
+    // path didn't exist on the server, so submissions were silently lost).
+    fetch(`${API_BASE_HOME}/api/newsletter/subscribe`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email: email.trim(), source: "prediction_gate", newsletterOptIn }),
     }).catch(() => {});
+    track("newsletter_subscribed", { source: "prediction_gate", optedIn: newsletterOptIn });
     setTimeout(unlock, 800);
   };
 
@@ -685,7 +911,7 @@ function FeaturedPredictionCard({
       style={{ borderWidth: "1.5px" }}
     >
       <div className="flex-1 p-5">
-        <p className="text-[9px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
+        <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
           Confidence Over Time — Yes %
         </p>
         <svg
@@ -887,7 +1113,7 @@ function FeaturedPredictionCard({
               );
             })()}
         </svg>
-        <p className="text-[9px] font-serif mt-2" style={{ color: "#10B981" }}>
+        <p className="text-[10px] font-serif mt-2" style={{ color: "#10B981" }}>
           {featured.up ? "▲" : "▼"} Confidence moved {featured.up ? "+" : "-"}
           {featured.momentum}% in the last 30 days
         </p>
@@ -899,7 +1125,7 @@ function FeaturedPredictionCard({
               {featured.category}
             </span>
             <span
-              className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-[0.1em] font-serif rounded-sm"
+              className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] font-serif rounded-sm"
               style={{
                 background: "rgba(59,130,246,0.15)",
                 border: "1px solid rgba(59,130,246,0.3)",
@@ -923,7 +1149,7 @@ function FeaturedPredictionCard({
               {featured.question}
             </p>
           </Link>
-          <p className="text-[10px] text-muted-foreground font-serif mt-2">
+          <p className="text-[12px] text-muted-foreground font-serif mt-2">
             {featured.count} predictions locked in
           </p>
         </div>
@@ -940,13 +1166,13 @@ function FeaturedPredictionCard({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span
-                      className="text-[10px] uppercase tracking-[0.15em] font-bold font-serif"
+                      className="text-[12px] uppercase tracking-[0.15em] font-bold font-serif"
                       style={{ color: "#10B981" }}
                     >
                       Yes
                     </span>
                     <span
-                      className="text-[10px] font-bold font-serif"
+                      className="text-[12px] font-bold font-serif"
                       style={{ color: "#10B981" }}
                     >
                       {featured.yes}%
@@ -968,13 +1194,13 @@ function FeaturedPredictionCard({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span
-                      className="text-[10px] uppercase tracking-[0.15em] font-bold font-serif"
+                      className="text-[12px] uppercase tracking-[0.15em] font-bold font-serif"
                       style={{ color: "#DC143C" }}
                     >
                       No
                     </span>
                     <span
-                      className="text-[10px] font-bold font-serif"
+                      className="text-[12px] font-bold font-serif"
                       style={{ color: "#DC143C" }}
                     >
                       {featured.no}%
@@ -994,14 +1220,14 @@ function FeaturedPredictionCard({
                   </div>
                 </div>
               </div>
-              <p className="text-[9px] uppercase tracking-widest text-muted-foreground font-serif mb-2 font-bold">
+              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-serif mb-2 font-bold">
                 Lock your prediction
               </p>
               <div className="flex gap-2">
                 <motion.button
                   onClick={() => handleVote("yes")}
                   whileTap={{ scale: 0.97 }}
-                  className="flex-1 py-2.5 border font-bold text-[11px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#10B981] hover:border-[#10B981]"
+                  className="flex-1 py-2.5 border font-bold text-[13px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#10B981] hover:border-[#10B981]"
                   style={{ borderColor: "#10B981", color: "#10B981" }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = "#10B981"; }}
@@ -1011,7 +1237,7 @@ function FeaturedPredictionCard({
                 <motion.button
                   onClick={() => handleVote("no")}
                   whileTap={{ scale: 0.97 }}
-                  className="flex-1 py-2.5 border font-bold text-[11px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#DC143C] hover:border-[#DC143C]"
+                  className="flex-1 py-2.5 border font-bold text-[13px] uppercase tracking-[0.12em] font-serif transition-colors duration-150 hover:bg-[#DC143C] hover:border-[#DC143C]"
                   style={{ borderColor: "#DC143C", color: "#DC143C" }}
                   onMouseEnter={(e) => { e.currentTarget.style.color = "#fff"; }}
                   onMouseLeave={(e) => { e.currentTarget.style.color = "#DC143C"; }}
@@ -1031,11 +1257,11 @@ function FeaturedPredictionCard({
               className="tmh-gate-card"
             >
               <div className="bg-background/50 border border-border p-4 rounded-sm space-y-3">
-                <div className="flex items-center gap-2 text-[10px] uppercase tracking-widest font-bold text-[#3B82F6] font-serif">
+                <div className="flex items-center gap-2 text-[12px] uppercase tracking-widest font-bold text-[#3B82F6] font-serif">
                   <Lock className="w-3.5 h-3.5" />
                   Prediction locked — {vote?.toUpperCase()}
                 </div>
-                <p className="text-[10px] text-muted-foreground font-serif">
+                <p className="text-[12px] text-muted-foreground font-serif">
                   Share to see full confidence breakdown, or enter your email:
                 </p>
                 <div className="flex gap-2">
@@ -1047,7 +1273,7 @@ function FeaturedPredictionCard({
                       );
                       setTimeout(unlock, 800);
                     }}
-                    className="flex-1 py-2 bg-[#25D366] text-white text-[10px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
+                    className="flex-1 py-2 bg-[#25D366] text-white text-[12px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
                   >
                     WhatsApp
                   </button>
@@ -1059,7 +1285,7 @@ function FeaturedPredictionCard({
                       );
                       setTimeout(unlock, 800);
                     }}
-                    className="flex-1 py-2 bg-foreground text-background text-[10px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
+                    className="flex-1 py-2 bg-foreground text-background text-[12px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
                   >
                     X
                   </button>
@@ -1071,7 +1297,7 @@ function FeaturedPredictionCard({
                       );
                       setTimeout(unlock, 800);
                     }}
-                    className="flex-1 py-2 bg-[#0A66C2] text-white text-[10px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
+                    className="flex-1 py-2 bg-[#0A66C2] text-white text-[12px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
                   >
                     LinkedIn
                   </button>
@@ -1085,12 +1311,12 @@ function FeaturedPredictionCard({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="your@email.com"
-                        className="bg-transparent text-[11px] font-sans text-foreground outline-none flex-1 placeholder:text-muted-foreground/50"
+                        className="bg-transparent text-[13px] font-sans text-foreground outline-none flex-1 placeholder:text-muted-foreground/50"
                       />
                     </div>
                     <button
                       type="submit"
-                      className="px-3 py-2 bg-[#3B82F6] text-white text-[10px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
+                      className="px-3 py-2 bg-[#3B82F6] text-white text-[12px] font-bold uppercase tracking-wider font-serif rounded-sm hover:opacity-90 transition-opacity"
                     >
                       {emailDone ? (
                         <CheckCircle2 className="w-4 h-4" />
@@ -1106,7 +1332,7 @@ function FeaturedPredictionCard({
                       onChange={e => setNewsletterOptIn(e.target.checked)}
                       className="w-3 h-3 rounded-sm accent-[#3B82F6] cursor-pointer"
                     />
-                    <span className="text-[9px] text-muted-foreground font-sans">
+                    <span className="text-[10px] text-muted-foreground font-sans">
                       Send me The Tribunal newsletter
                     </span>
                   </label>
@@ -1126,13 +1352,13 @@ function FeaturedPredictionCard({
                 <div>
                   <div className="flex justify-between mb-1">
                     <span
-                      className="text-[10px] uppercase tracking-[0.15em] font-bold font-serif"
+                      className="text-[12px] uppercase tracking-[0.15em] font-bold font-serif"
                       style={{ color: "#10B981" }}
                     >
                       Yes
                     </span>
                     <span
-                      className="text-[10px] font-bold font-serif"
+                      className="text-[12px] font-bold font-serif"
                       style={{ color: "#10B981" }}
                     >
                       {featured.yes}%
@@ -1150,20 +1376,20 @@ function FeaturedPredictionCard({
                       style={{ background: "#10B981" }}
                     />
                   </div>
-                  <p className="text-[8px] text-muted-foreground font-serif mt-0.5">
+                  <p className="text-[9px] text-muted-foreground font-serif mt-0.5">
                     {featured.up ? "▲" : "▼"} Up {featured.momentum}% this week
                   </p>
                 </div>
                 <div>
                   <div className="flex justify-between mb-1">
                     <span
-                      className="text-[10px] uppercase tracking-[0.15em] font-bold font-serif"
+                      className="text-[12px] uppercase tracking-[0.15em] font-bold font-serif"
                       style={{ color: "#DC143C" }}
                     >
                       No
                     </span>
                     <span
-                      className="text-[10px] font-bold font-serif"
+                      className="text-[12px] font-bold font-serif"
                       style={{ color: "#DC143C" }}
                     >
                       {featured.no}%
@@ -1185,7 +1411,7 @@ function FeaturedPredictionCard({
               </div>
               <div className="flex items-center gap-2 pt-2 border-t border-border">
                 <span className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-[#3B82F6] font-serif">
+                <span className="text-[12px] font-bold uppercase tracking-widest text-[#3B82F6] font-serif">
                   ✓ You predicted {vote?.toUpperCase()} — Locked until{" "}
                   {featured.resolves}
                 </span>
@@ -1193,7 +1419,7 @@ function FeaturedPredictionCard({
               <div className="mt-3 flex items-center justify-between">
                 <Link
                   href="/predictions"
-                  className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors flex items-center gap-1"
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors flex items-center gap-1"
                 >
                   More Predictions <ArrowRight className="w-3 h-3" />
                 </Link>
@@ -1266,10 +1492,10 @@ function SidebarPredictionItem({
       >
         <div className="flex items-center justify-between gap-2">
           <div className="flex-1 min-w-0">
-            <p className="text-[11px] uppercase tracking-widest text-[#3B82F6] font-serif font-bold">
+            <p className="text-[14px] uppercase tracking-widest text-[#3B82F6] font-serif font-bold">
               {pred.category}
             </p>
-            <p className="font-serif font-black uppercase text-[12px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
+            <p className="font-serif font-black uppercase text-[15px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
               {pred.question.length > 70
                 ? pred.question.slice(0, 70) + "…"
                 : pred.question}
@@ -1314,19 +1540,19 @@ function SidebarPredictionItem({
         </div>
         <div className="flex items-center gap-3 mt-1.5">
           <span
-            className="text-[9px] font-bold font-serif"
+            className="text-[11px] font-bold font-serif"
             style={{ color: "#10B981" }}
           >
             Yes {pred.yes}%
           </span>
           <span
-            className="text-[9px] font-bold font-serif"
+            className="text-[11px] font-bold font-serif"
             style={{ color: "#DC143C" }}
           >
             No {pred.no}%
           </span>
           {vote ? (
-            <span className="text-[8px] font-bold font-serif ml-auto text-[#3B82F6]">
+            <span className="text-[9px] font-bold font-serif ml-auto text-[#3B82F6]">
               ✓ {vote.toUpperCase()}
             </span>
           ) : (
@@ -1334,14 +1560,14 @@ function SidebarPredictionItem({
               <motion.button
                 onClick={(e) => handleQuickVote("yes", e)}
                 whileTap={{ scale: 0.93 }}
-                className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider font-serif border border-[#10B981]/40 text-[#10B981] hover:bg-[#10B981] hover:text-white transition-colors rounded-sm"
+                className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider font-serif border border-[#10B981]/40 text-[#10B981] hover:bg-[#10B981] hover:text-white transition-colors rounded-sm"
               >
                 Y
               </motion.button>
               <motion.button
                 onClick={(e) => handleQuickVote("no", e)}
                 whileTap={{ scale: 0.93 }}
-                className="px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider font-serif border border-[#DC143C]/40 text-[#DC143C] hover:bg-[#DC143C] hover:text-white transition-colors rounded-sm"
+                className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider font-serif border border-[#DC143C]/40 text-[#DC143C] hover:bg-[#DC143C] hover:text-white transition-colors rounded-sm"
               >
                 N
               </motion.button>
@@ -1355,10 +1581,10 @@ function SidebarPredictionItem({
 
 export default function Home() {
   usePageTitle({
-    description: "The voice of 541 million. Real debates, predictions, and voices from across MENA.",
+    description: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
   });
   // Fetch homepage CMS config first (needed for content selection)
-  const { data: homepageConfig } = useHomepageConfig<{
+  const { data: homepageConfig, isLoading: homeConfigLoading } = useHomepageConfig<{
     masthead?: { basePopulation?: number; growthRate?: number; countries?: string[] };
     populationBase?: number;
     populationBaseDate?: string;
@@ -1370,20 +1596,41 @@ export default function Home() {
       voices?: string;
     };
     sections?: Array<{ id: string; type: string; config: Record<string, unknown> }>;
+    sectionVisibility?: Record<string, boolean>;
+    content?: Partial<HomeContent>;
   }>();
+
+  // Resolved, CMS-overridable home-page copy (falls back to HOME_CONTENT_DEFAULTS)
+  const C = resolveHomeContent(homepageConfig?.content);
+
+  // Per-section show/hide for experiments, driven by the CMS Homepage Manager
+  // (Section Visibility tab). A section is visible unless explicitly set false,
+  // so existing installs render exactly as before until a toggle is flipped.
+  const sectionVisibility = homepageConfig?.sectionVisibility ?? {};
+  const showSection = (key: string) => sectionVisibility[key] !== false;
+
+  // Hold the hero copy hidden until the CMS config resolves, so the hardcoded
+  // fallback text never flashes before the real (CMS) values load on first paint.
+  // Falls back to true on error/cache hit, so defaults still show if there's no CMS value.
+  const heroReady = !homeConfigLoading;
 
   // Extract CMS-selected content IDs
   const cmsSelectedDebateId = homepageConfig?.sections?.find(s => s.type === "lead_debate")?.config?.selectedDebateId as number | undefined;
 
-  // Lead debate: use CMS-selected debate if set, otherwise fall back to featured
+  // Top debate/prediction of the day (auto). A CMS-pinned lead debate wins;
+  // otherwise the lead debate auto-replaces with the day's top debate.
+  const { data: topPost } = useTopPost();
+  const effectiveDebateId = cmsSelectedDebateId ?? topPost?.topDebate?.id;
+
+  // Lead debate: CMS pin → top debate of the day → generic featured poll.
   const { data: defaultFeaturedPoll, isLoading: defaultFeaturedLoading } =
     useGetFeaturedPoll();
-  const { data: cmsSelectedPoll, isLoading: cmsSelectedLoading } = useGetPoll(
-    cmsSelectedDebateId ?? 0,
-    { query: { enabled: !!cmsSelectedDebateId } as any },
+  const { data: selectedPoll, isLoading: selectedPollLoading } = useGetPoll(
+    effectiveDebateId ?? 0,
+    { query: { enabled: !!effectiveDebateId } as any },
   );
-  const featuredPoll = cmsSelectedPoll ?? defaultFeaturedPoll;
-  const featuredLoading = cmsSelectedDebateId ? cmsSelectedLoading : defaultFeaturedLoading;
+  const featuredPoll = selectedPoll ?? defaultFeaturedPoll;
+  const featuredLoading = effectiveDebateId ? selectedPollLoading : defaultFeaturedLoading;
 
   const { data: trendingPolls, isLoading: trendingLoading } = useListPolls({
     filter: "trending",
@@ -1397,7 +1644,8 @@ export default function Home() {
   const { data: liveCounts } = useLiveCounts();
   const { data: siteSettings } = useSiteSettings();
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false;
-  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true;
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false;
+  const pulseEnabled = siteSettings?.featureToggles?.pulse?.enabled ?? false;
   const [ctaEmail, setCtaEmail] = useState("");
   const [ctaJoined, setCtaJoined] = useState(
     () => !!localStorage.getItem("tmh_cta_joined"),
@@ -1433,11 +1681,27 @@ export default function Home() {
     return FALLBACK_PREDICTIONS;
   }, [apiPredictions]);
 
+  // Featured prediction: the day's top prediction if it's in the list, else the
+  // first one. (Predictions have no separate CMS pin today.)
+  const featuredPrediction = useMemo(() => {
+    const topId = topPost?.topPrediction?.id;
+    return (topId != null && PREDICTIONS.find((p) => p.id === topId)) || PREDICTIONS[0];
+  }, [PREDICTIONS, topPost]);
+
   const handleCtaSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!ctaEmail.trim()) return;
-    localStorage.setItem("tmh_cta_joined", ctaEmail);
+    const cleaned = ctaEmail.trim().toLowerCase();
+    if (!cleaned) return;
+    localStorage.setItem("tmh_cta_joined", cleaned);
     setCtaJoined(true);
+    // The previous version only saved to localStorage and never actually
+    // subscribed the user — fixing the silent drop here.
+    fetch(`${API_BASE_HOME}/api/newsletter/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: cleaned, source: "home_cta", newsletterOptIn: true }),
+    }).catch(() => {});
+    track("newsletter_subscribed", { source: "home_cta", optedIn: true });
   };
 
   const tickerPolls = trendingPolls?.polls ?? [];
@@ -1463,6 +1727,7 @@ export default function Home() {
     }));
   }, [apiPredictions]);
   const pulseItems = useMemo(() => {
+    if (!pulseEnabled) return [];
     if (!apiPulseTopics?.items?.length) return [];
     return apiPulseTopics.items.slice(0, 8).map((t) => ({
       topic: t.title.length > 35 ? t.title.substring(0, 33) + "…" : t.title,
@@ -1470,7 +1735,7 @@ export default function Home() {
       stat: `${t.deltaUp ? "↑" : "↓"} ${t.delta}`,
       href: `/pulse?shared=${encodeURIComponent(t.topicId)}`,
     }));
-  }, [apiPulseTopics]);
+  }, [apiPulseTopics, pulseEnabled]);
   const maxLen = Math.max(
     debateItems.length,
     predictionItems.length,
@@ -1490,13 +1755,6 @@ export default function Home() {
     month: "long",
     day: "numeric",
   });
-
-  const issueNumber = (() => {
-    const now = new Date()
-    const start = new Date(2026, 0, 1)
-    const months = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth()) + 1
-    return String(Math.max(1, months)).padStart(3, "0")
-  })()
 
   return (
     <Layout>
@@ -1518,6 +1776,7 @@ export default function Home() {
       `}</style>
 
       {/* ── MASTHEAD ── */}
+      {showSection("hero") && (
       <motion.div
         ref={mastheadRef}
         className="bg-background"
@@ -1528,8 +1787,7 @@ export default function Home() {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-2 text-[9px] uppercase tracking-[0.18em] text-muted-foreground font-serif">
-            <span>{t(`EST. 2026 · ISSUE NO. ${issueNumber}`)}</span>
+          <div className="flex items-center justify-between py-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-serif">
             <span className="hidden sm:block">{issueDate}</span>
             <span className="text-primary font-bold font-mono tabular-nums">
               {astTime} AST
@@ -1546,184 +1804,140 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
           >
-            <div className="flex flex-col lg:flex-row items-center lg:items-stretch gap-8 lg:gap-12">
-              {/* Left: hero copy */}
-              <div className="flex flex-col items-center lg:items-start justify-center flex-1 text-center lg:text-left">
-                <motion.p
-                  className="text-[10px] font-serif font-bold tracking-[0.28em] uppercase text-primary mb-3"
+            <div className="flex flex-col items-center gap-8">
+              {/* Hero copy */}
+              <div
+                className="flex flex-col items-center justify-center w-full text-center"
+                style={{ opacity: heroReady ? 1 : 0, transition: "opacity 0.35s ease" }}
+              >
+                {/* Eyebrow */}
+                <motion.div
+                  className="flex items-center gap-2.5 mb-5"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.2 }}
+                  transition={{ duration: 0.5, delay: 0.15 }}
                 >
-                  {t("The questions you can't ask out loud.")}
-                </motion.p>
+                  <span className="relative flex w-2 h-2">
+                    <span className="absolute inline-flex w-full h-full rounded-full bg-[#10B981] opacity-60 animate-ping" />
+                    <span className="relative inline-flex w-2 h-2 rounded-full bg-[#10B981]" />
+                  </span>
+                  <span className="font-serif font-bold text-[12px] tracking-[0.32em] uppercase text-[#10B981]">
+                    {t(C.hero.eyebrow)}
+                  </span>
+                </motion.div>
+
+                {/* Headline */}
                 <motion.h1
-                  className="font-display font-black uppercase tracking-tight text-foreground leading-none"
-                  style={{ fontSize: "clamp(2.5rem, 6vw, 5rem)", lineHeight: 0.92 }}
+                  className="font-serif font-black uppercase tracking-[-0.01em] text-foreground text-center max-w-5xl"
+                  style={{ fontSize: "clamp(2.2rem, 6vw, 4.5rem)", lineHeight: 0.95 }}
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
+                  transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.1 }}
                 >
-                  {t("The Middle East,")}{" "}
-                  <span className="italic font-display text-primary">{t("unfiltered.")}</span>
+                  {t(C.hero.headline)}
+                  <span className="text-primary">.</span>
                 </motion.h1>
+
+                {/* Underline accent */}
+                <motion.div
+                  className="h-[3px] bg-primary mt-4"
+                  initial={{ width: 0 }}
+                  animate={{ width: "5rem" }}
+                  transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.45 }}
+                />
+
+                {/* Body */}
                 <motion.p
                   className="text-base sm:text-[17px] text-foreground/80 font-sans mt-5 max-w-xl leading-relaxed"
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.4 }}
                 >
-                  {t("Anonymous votes, predictions, and trends on the topics nobody else will touch. Politics, religion, identity, money, power. From inside the region and watched by the world. 541 million people. One place where the truth is on record.")}
+                  {t(C.hero.subcopy)}
                 </motion.p>
+
+                {/* Trust line */}
+                <motion.p
+                  className="text-[13px] sm:text-[14px] text-foreground/65 font-sans mt-3 italic"
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.5 }}
+                >
+                  {t(C.hero.trustLine)}
+                </motion.p>
+
+                {/* Account microcopy */}
+                {C.hero.accountMicrocopy?.trim() && (
+                  <motion.p
+                    className="text-[12px] sm:text-[13px] text-foreground/55 font-sans mt-2"
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.55 }}
+                  >
+                    {t(C.hero.accountMicrocopy)}
+                  </motion.p>
+                )}
+
+                {/* CTAs */}
                 <motion.div
-                  className="mt-7 flex items-center gap-4 flex-wrap justify-center lg:justify-start"
+                  className="mt-7 flex items-center gap-4 flex-wrap justify-center"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.7 }}
+                  transition={{ duration: 0.5, delay: 0.6 }}
                 >
                   <Link
-                    href="/debates"
+                    href={C.hero.primaryCtaHref}
+                    onClick={() => track("cta_clicked", { label: "cast_your_vote", surface: "home_hero" })}
                     className="inline-flex items-center gap-2 bg-primary text-white font-bold uppercase tracking-widest text-xs px-7 py-3 hover:bg-primary/90 transition-colors font-serif"
                   >
-                    {t("See Today's Debate")} <ArrowRight className="w-3 h-3" />
+                    {t(C.hero.primaryCtaLabel)} <ArrowRight className="w-3 h-3" />
                   </Link>
                   <Link
-                    href="/about"
+                    href={C.hero.secondaryCtaHref}
+                    onClick={() => track("cta_clicked", { label: "how_it_works", surface: "home_hero" })}
                     className="inline-flex items-center gap-2 text-foreground/70 hover:text-foreground font-bold uppercase tracking-widest text-xs px-2 py-3 transition-colors font-serif underline underline-offset-4 decoration-primary/40"
                   >
-                    {t("What is this?")}
+                    {t(C.hero.secondaryCtaLabel)}
                   </Link>
+                </motion.div>
+
+                {/* Stats row */}
+                <motion.div
+                  className="mt-9 pt-7 border-t border-border/60 grid grid-cols-2 sm:grid-cols-4 gap-5 w-full max-w-[560px]"
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.8 }}
+                >
+                  {C.hero.stats.map((stat, i) => {
+                    const isNumeric = /[0-9]/.test(stat.value);
+                    return (
+                      <div key={i}>
+                        <div
+                          className={
+                            isNumeric
+                              ? "font-display font-black text-[26px] sm:text-[28px] text-foreground tabular-nums leading-none"
+                              : "font-display font-black text-[18px] sm:text-[20px] text-foreground leading-none pt-1.5"
+                          }
+                        >
+                          {isNumeric ? stat.value : t(stat.value)}
+                        </div>
+                        <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
+                          {t(stat.label)}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </motion.div>
               </div>
 
-              {/* Right: HeroGallery */}
-              <motion.div
-                className="flex-shrink-0 w-full max-w-[280px] sm:max-w-[320px] lg:max-w-[360px] mx-auto lg:mx-0"
-                initial={{ opacity: 0, scale: 0.94 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.9, ease: EASE_OUT_EXPO, delay: 0.2 }}
-              >
-                <HeroGallery />
-              </motion.div>
             </div>
           </motion.div>
         </div>
       </motion.div>
-
-      {/* ── SECTION HOOKS ── */}
-      <section className="bg-background border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <StaggerGrid className="grid grid-cols-2 md:grid-cols-4 gap-0">
-            {[
-              {
-                href: "/debates",
-                label: t("Debates"),
-                desc: "Vote on the questions shaping MENA",
-                count: String(
-                  homepageConfig?.sectionStats?.debates ??
-                    liveCounts?.debates ??
-                    "422",
-                ),
-                accent: "#DC143C",
-              },
-              {
-                href: "/predictions",
-                label: t("Predictions"),
-                desc: "Bet on what actually happens next",
-                count: String(
-                  homepageConfig?.sectionStats?.predictions ??
-                    liveCounts?.predictions ??
-                    apiPredictions?.total ??
-                    "230",
-                ),
-                accent: "#3B82F6",
-              },
-              {
-                href: "/pulse",
-                label: t("The Pulse"),
-                desc: "Real trends backed by real data",
-                count: String(
-                  homepageConfig?.sectionStats?.pulse ??
-                    liveCounts?.pulseTopics ??
-                    "78",
-                ),
-                accent: "#10B981",
-              },
-              ...(voicesEnabled ? [{
-                href: "/voices",
-                label: t("Voices"),
-                desc: "The people shaping the region",
-                count: String(
-                  homepageConfig?.sectionStats?.voices ??
-                    liveCounts?.voices ??
-                    "103",
-                ),
-                accent: "#A855F7",
-              }] : []),
-            ].map((item, i) => (
-              <motion.div
-                key={item.href}
-                variants={staggerItem}
-                className={`${i % 2 !== 0 ? "border-l border-border" : ""} ${i >= 2 ? "border-t border-border md:border-t-0" : ""} ${i > 0 ? "md:border-l md:border-border" : ""}`}
-              >
-                <Link
-                  href={item.href}
-                  className="group flex flex-col items-center justify-center gap-1 py-3 px-2 md:px-4 hover:bg-secondary/30 transition-colors min-w-0"
-                >
-                  <div className="flex items-center gap-1.5 md:gap-3 min-w-0">
-                    <span
-                      style={{
-                        width: 3,
-                        height: 20,
-                        background: item.accent,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <span
-                      className="truncate"
-                      style={{
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontWeight: 800,
-                        fontSize: "0.75rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.12em",
-                        color: "var(--foreground)",
-                      }}
-                    >
-                      {item.label}
-                    </span>
-                    <CountUp
-                      value={item.count}
-                      style={{
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontWeight: 900,
-                        fontSize: "0.85rem",
-                        color: item.accent,
-                        flexShrink: 0,
-                      }}
-                    />
-                    <ArrowRight className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity -ml-1 shrink-0" />
-                  </div>
-                  <span
-                    className="truncate max-w-full"
-                    style={{
-                      fontFamily: "DM Sans, sans-serif",
-                      fontSize: "0.6rem",
-                      color: "var(--muted-foreground)",
-                      letterSpacing: "0.02em",
-                    }}
-                  >
-                    {item.desc}
-                  </span>
-                </Link>
-              </motion.div>
-            ))}
-          </StaggerGrid>
-        </div>
-      </section>
+      )}
 
       {/* ── MIXED TICKER ── */}
-      {(trendingLoading || predictionsLoading || pulseLoading) && interleaved.length === 0 ? (
+      {showSection("ticker") && ((trendingLoading || predictionsLoading || pulseLoading) && interleaved.length === 0 ? (
         <TickerSkeleton />
       ) : interleaved.length > 0 ? (
       <div
@@ -1754,7 +1968,7 @@ export default function Home() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 800,
-                  fontSize: "0.55rem",
+                  fontSize: "0.63rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.12em",
                   whiteSpace: "nowrap",
@@ -1780,7 +1994,7 @@ export default function Home() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 700,
-                  fontSize: "0.7rem",
+                  fontSize: "0.80rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.08em",
                   color: "rgba(250,250,250,0.75)",
@@ -1793,7 +2007,7 @@ export default function Home() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 700,
-                  fontSize: "0.78rem",
+                  fontSize: "0.90rem",
                   color: "#fff",
                   whiteSpace: "nowrap",
                 }}
@@ -1804,14 +2018,95 @@ export default function Home() {
           ))}
         </div>
       </div>
-      ) : null}
+      ) : null)}
 
-      {/* ── ABOUT ── */}
-      <Suspense fallback={<div className="py-20" />}>
-        <AboutSection />
-      </Suspense>
+      {/* ── WHAT IS THE TRIBUNAL? — Intro ── */}
+      {showSection("intro") && (
+      <section className="py-20 bg-background border-b border-border">
+        <FadeUp>
+          <div className="max-w-3xl mx-auto px-4 sm:px-6">
+            <h2 className="font-serif font-black uppercase text-3xl text-foreground mb-3 border-l-4 border-primary pl-4">
+              {t(C.intro.heading)}
+            </h2>
+            <p className="text-xl font-sans text-foreground/80 mb-8 pl-5">
+              {t(C.intro.lead)}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-4">
+              {t(C.intro.body)}
+            </p>
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-4">
+              {t(C.intro.statement)}
+            </p>
+            {C.intro.negations.map((line, i) => (
+              <p
+                key={line}
+                className={`text-base text-muted-foreground font-sans leading-relaxed ${
+                  i === C.intro.negations.length - 1 ? "mb-6" : "mb-2"
+                }`}
+              >
+                {t(line)}
+              </p>
+            ))}
+            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-8">
+              {t(C.intro.closing)}
+            </p>
+            <p className="text-sm font-serif italic text-foreground/70 leading-relaxed border-l-2 border-primary/60 pl-4 mb-10">
+              {t(C.intro.trust)}
+            </p>
+            <blockquote className="font-display text-2xl md:text-3xl border-l-4 border-primary pl-6 py-4 text-foreground leading-snug">
+              {t(C.intro.quote)}
+            </blockquote>
+            <p className="text-sm font-sans text-foreground/70 mt-4 pl-6">
+              {t(C.intro.quoteAuthor)}
+            </p>
+          </div>
+        </FadeUp>
+      </section>
+      )}
+
+      {/* ── PRODUCT CARDS ── */}
+      {showSection("cards") && (
+      <section className="py-20 bg-secondary/20 border-b border-border">
+        <FadeUp>
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-12 border-l-4 border-primary pl-4">
+              {t(C.cards.heading)}
+            </h2>
+            <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[
+                { key: "debates", num: "01", href: "/debates", enabled: true },
+                { key: "predictions", num: "02", href: "/predictions", enabled: true },
+                { key: "pulse", num: "03", href: "/pulse", enabled: pulseEnabled },
+                { key: "voices", num: "04", href: "/voices", enabled: voicesEnabled },
+                { key: "majlis", num: "05", href: "/majlis", enabled: majlisEnabled },
+              ].filter(c => c.enabled).map(card => {
+                const copy = C.cards.items.find(i => i.key === card.key);
+                if (!copy) return null;
+                return (
+                <motion.div key={card.key} variants={staggerItem}>
+                  <div className="bg-card border border-border p-6 h-full flex flex-col">
+                    <span className="font-display font-black text-5xl text-foreground/20 leading-none">{card.num}</span>
+                    <h3 className="font-serif font-black uppercase text-lg text-foreground mt-3 tracking-wide">{t(copy.title)}</h3>
+                    <p className="text-sm font-serif font-bold uppercase tracking-[0.15em] text-primary mt-2">{t(copy.subtitle)}</p>
+                    <p className="text-sm text-muted-foreground font-sans leading-relaxed mt-3 flex-1">{t(copy.body)}</p>
+                    <Link
+                      href={card.href}
+                      className="inline-block text-[12px] font-serif font-bold uppercase tracking-widest text-primary hover:text-foreground transition-colors border-b border-primary pb-0.5 mt-4 self-start"
+                    >
+                      {t(copy.cta)} {isAr ? "←" : "→"}
+                    </Link>
+                  </div>
+                </motion.div>
+                );
+              })}
+            </StaggerGrid>
+          </div>
+        </FadeUp>
+      </section>
+      )}
 
       {/* ── FRONT PAGE: Lead Debate + Sidebar ── */}
+      {showSection("lead_debate") && (
       <section className="py-8 bg-background border-b border-border relative">
         <FadeUp>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -1835,12 +2130,12 @@ export default function Home() {
             <div className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border">
               <FadeIn delay={0.15}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
+                <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
                   {t("Latest Debates")}
                 </p>
                 <Link
                   href="/debates"
-                  className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
                 >
                   {t("View All")}
                 </Link>
@@ -1863,15 +2158,15 @@ export default function Home() {
                         whileHover={{ x: 4 }}
                         transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
                       >
-                        <p className="text-[11px] uppercase tracking-widest text-primary font-serif font-bold">
+                        <p className="text-[14px] uppercase tracking-widest text-primary font-serif font-bold">
                           {poll.category}
                         </p>
-                        <p className="font-serif font-black uppercase text-[13px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
+                        <p className="font-serif font-black uppercase text-[15px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
                           {poll.question.length > 90
                             ? poll.question.slice(0, 90) + "…"
                             : poll.question}
                         </p>
-                        <p className="text-[10px] text-muted-foreground mt-1 font-serif">
+                        <p className="text-[13px] text-muted-foreground mt-1 font-serif">
                           {(poll.totalVotes ?? 0).toLocaleString()} votes
                         </p>
                       </motion.div>
@@ -1885,8 +2180,10 @@ export default function Home() {
         </div>
         </FadeUp>
       </section>
+      )}
 
       {/* ── PREDICTIONS ── */}
+      {showSection("predictions") && (
       <section
         id="predictions"
         className="py-8 bg-background border-b border-border relative"
@@ -1903,7 +2200,7 @@ export default function Home() {
               </div>
               </FadeIn>
               {(() => {
-                const featured = PREDICTIONS[0];
+                const featured = featuredPrediction;
                 const noData = featured.data.map((v) => 100 - v);
                 const months = [
                   "Jan",
@@ -1963,12 +2260,12 @@ export default function Home() {
             <div className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border">
               <FadeIn delay={0.15}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
+                <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
                   {t("Latest Predictions")}
                 </p>
                 <Link
                   href="/predictions"
-                  className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
                 >
                   {t("View All")}
                 </Link>
@@ -1978,10 +2275,11 @@ export default function Home() {
               <StaggerGrid>
                 {(() => {
                   const seen = new Set<string>();
-                  seen.add(PREDICTIONS[0].category);
+                  seen.add(featuredPrediction.category);
                   const mixed: typeof PREDICTIONS = [];
                   for (const p of PREDICTIONS) {
                     if (mixed.length >= 3) break;
+                    if (p.id === featuredPrediction.id) continue;
                     if (!seen.has(p.category)) {
                       seen.add(p.category);
                       mixed.push(p);
@@ -2007,8 +2305,10 @@ export default function Home() {
         </div>
         </FadeUp>
       </section>
+      )}
 
-      {/* ── THE PULSE ── */}
+      {/* ── THE PULSE ── (hidden until Pulse toggle is ON) */}
+      {pulseEnabled && showSection("pulse") && (
       <section
         id="pulse"
         className="py-8 bg-background border-b border-border relative"
@@ -2095,7 +2395,7 @@ export default function Home() {
                     style={{ borderWidth: "1.5px" }}
                   >
                     <div className="flex-1 p-5">
-                      <p className="text-[9px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
+                      <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
                         Trend Over 12 Months
                       </p>
                       <svg
@@ -2274,7 +2574,7 @@ export default function Home() {
                           })()}
                       </svg>
                       <p
-                        className="text-[9px] font-serif mt-2"
+                        className="text-[10px] font-serif mt-2"
                         style={{ color: topic.tagColor }}
                       >
                         {topic.deltaUp ? "▲" : "▼"} {topic.delta} year-over-year
@@ -2283,7 +2583,7 @@ export default function Home() {
                     <div className="flex-1 p-5 border-t lg:border-t-0 lg:border-l border-border flex flex-col justify-center gap-3">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
-                          className="px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.18em] font-serif"
+                          className="px-2.5 py-1 text-[13px] font-bold uppercase tracking-[0.18em] font-serif"
                           style={{
                             background: `${topic.tagColor}20`,
                             border: `1px solid ${topic.tagColor}40`,
@@ -2315,23 +2615,23 @@ export default function Home() {
                         </span>
                         <span
                           className={cn(
-                            "text-[10px] font-bold font-serif",
+                            "text-[12px] font-bold font-serif",
                             topic.deltaUp ? "text-[#10B981]" : "text-[#DC143C]",
                           )}
                         >
                           {topic.deltaUp ? "▲" : "▼"} {topic.delta}
                         </span>
                       </div>
-                      <p className="text-[11px] text-muted-foreground font-sans leading-relaxed">
+                      <p className="text-[13px] text-muted-foreground font-sans leading-relaxed">
                         {topic.blurb}
                       </p>
                       <div className="flex items-center justify-between">
-                        <p className="text-[8px] text-muted-foreground/60 font-serif uppercase tracking-widest">
+                        <p className="text-[9px] text-muted-foreground/60 font-serif uppercase tracking-widest">
                           Source: {topic.source}
                         </p>
                         <Link
                           href="/pulse"
-                          className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-[#10B981] font-serif transition-colors flex items-center gap-1"
+                          className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-[#10B981] font-serif transition-colors flex items-center gap-1"
                         >
                           Explore <ArrowRight className="w-3 h-3" />
                         </Link>
@@ -2346,12 +2646,12 @@ export default function Home() {
             <div className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border">
               <FadeIn delay={0.15}>
               <div className="flex items-center justify-between mb-4">
-                <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
+                <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
                   {t("Latest Trends")}
                 </p>
                 <Link
                   href="/pulse"
-                  className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
+                  className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
                 >
                   {t("View All")}
                 </Link>
@@ -2428,12 +2728,12 @@ export default function Home() {
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex-1 min-w-0">
                           <p
-                            className="text-[9px] uppercase tracking-widest font-serif font-bold"
+                            className="text-[10px] uppercase tracking-widest font-serif font-bold"
                             style={{ color: t2.tagColor }}
                           >
                             {t2.tag}
                           </p>
-                          <p className="font-serif font-black uppercase text-[12px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
+                          <p className="font-serif font-black uppercase text-[14px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
                             {t2.title}
                           </p>
                         </div>
@@ -2467,14 +2767,14 @@ export default function Home() {
                       </div>
                       <div className="flex items-center gap-3 mt-1.5">
                         <span
-                          className="text-[9px] font-bold font-serif"
+                          className="text-[10px] font-bold font-serif"
                           style={{ color: t2.tagColor }}
                         >
                           {t2.stat}
                         </span>
                         <span
                           className={cn(
-                            "text-[8px] font-bold font-serif ml-auto",
+                            "text-[9px] font-bold font-serif ml-auto",
                             t2.deltaUp ? "text-[#10B981]" : "text-[#DC143C]",
                           )}
                         >
@@ -2492,31 +2792,30 @@ export default function Home() {
         </div>
         </FadeUp>
       </section>
+      )}
 
       {/* ── THE VOICES ── */}
-      {voicesEnabled && (
+      {voicesEnabled && showSection("voices") && (
       <section className="bg-foreground text-background py-20 border-b border-border">
         <FadeUp>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-4">
             <div>
               <h2 className="font-display font-black text-4xl md:text-5xl uppercase tracking-tight text-background leading-none">
-                {t("The Voices")}
+                {t(C.voices.heading)}
               </h2>
               <SlideReveal color="#DC143C" height={4} className="mt-3" delay={0.3} />
             </div>
             <Link
               href="/voices"
-              className="hidden sm:inline-block text-[10px] font-bold uppercase tracking-widest text-background/70 hover:text-background font-serif"
+              className="hidden sm:inline-block text-[12px] font-bold uppercase tracking-widest text-background/70 hover:text-background font-serif"
             >
               {t("View All →")}
             </Link>
           </div>
           <FadeIn delay={0.15}>
           <p className="text-background/75 font-sans text-base mt-4 mb-10 max-w-xl">
-            {t(
-              "The founders, operators, and change-makers shaping the Middle East. Real people. Real stories.",
-            )}
+            {t(C.voices.subcopy)}
           </p>
           </FadeIn>
 
@@ -2572,14 +2871,21 @@ export default function Home() {
       </section>
       )}
 
+      {/* ── ABOUT ── */}
+      {showSection("about") && (
+      <Suspense fallback={null}>
+        <AboutSection />
+      </Suspense>
+      )}
+
       {/* ── EXPLORE TOPICS ── */}
-      {categories?.categories && categories.categories.length > 0 && (
+      {categories?.categories && categories.categories.length > 0 && showSection("explore_topics") && (
         <section className="py-20 bg-background border-b border-border">
           <FadeUp>
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="mb-12 border-l-4 border-primary pl-4">
               <h2 className="font-serif font-black uppercase text-2xl text-foreground">
-                {t("Explore Topics")}
+                {t(C.exploreTopics.heading)}
               </h2>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -2592,7 +2898,7 @@ export default function Home() {
                   <span className="font-serif font-bold uppercase tracking-wider text-base mb-3 leading-tight">
                     {cat.name}
                   </span>
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-background/75">
+                  <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-background/75">
                     {cat.pollCount} Debates
                   </span>
                 </Link>
@@ -2604,44 +2910,29 @@ export default function Home() {
       )}
 
       {/* ── LIVE ACTIVITY ── */}
-      <LiveActivity />
+      {showSection("live_activity") && <LiveActivity />}
 
       {/* ── NEWSLETTER CTA ── */}
+      {showSection("newsletter") && (
       <section className="bg-foreground text-background py-16 md:py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-12 md:gap-16 items-center">
             <FadeUp className="flex-1 md:basis-2/3">
-              <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
-                {t("The Weekly Newsletter")}
+              <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
+                {t(C.newsletter.eyebrow)}
               </p>
               <h2 className="font-display font-black text-4xl md:text-5xl uppercase leading-none tracking-tight text-background mb-4">
-                {t("The Region's Opinion.")}
-                <br />
-                {t("Unfiltered.")}
+                {t(C.newsletter.heading)}
               </h2>
               <p className="text-background/75 font-sans text-base leading-relaxed max-w-xl mb-3">
-                Every week: the sharpest debates, the most controversial
-                predictions, and the data MENA doesn't want you to see. No
-                fluff. No PR. Just the raw pulse of{" "}
-                <LiveNumber
-                  value={menaPop}
-                  className="tabular-nums relative top-1.5"
-                />{" "}
-                people.
+                {t(C.newsletter.body)}
               </p>
               <ul className="text-background/60 font-sans text-sm space-y-1.5 max-w-xl">
-                <li className="flex items-center gap-2">
-                  <span className="text-primary font-bold">→</span> Unlimited
-                  voting on all debates & predictions
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-primary font-bold">→</span> Weekly
-                  results breakdown — who voted what, and why it matters
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="text-primary font-bold">→</span> Early access
-                  to new Voices and Pulse data drops
-                </li>
+                {C.newsletter.bullets.map((b, i) => (
+                  <li key={i} className="flex items-center gap-2">
+                    <span className="text-primary font-bold">→</span> {t(b)}
+                  </li>
+                ))}
               </ul>
             </FadeUp>
             <FadeIn direction="right" delay={0.15} className="w-full md:basis-1/3">
@@ -2655,11 +2946,11 @@ export default function Home() {
                   className="border-2 border-primary p-8 text-center"
                 >
                   <p className="font-display font-black text-3xl uppercase text-background tracking-tight">
-                    {t("You're In")}
+                    {t("You're in")}
                     <span className="text-primary">.</span>
                   </p>
-                  <p className="text-[10px] uppercase tracking-widest text-background/70 mt-2 font-serif">
-                    {t("Welcome to the conversation.")}
+                  <p className="text-[12px] uppercase tracking-widest text-background/70 mt-2 font-serif">
+                    {t("Welcome to The Tribunal.")}
                   </p>
                 </motion.div>
               ) : (
@@ -2683,10 +2974,10 @@ export default function Home() {
                     transition={{ duration: 0.15 }}
                     className="bg-primary text-white font-bold uppercase tracking-widest px-6 py-3 text-xs hover:bg-primary/90 font-serif"
                   >
-                    {t("Join The Hustle")}
+                    {t(C.newsletter.ctaLabel)}
                   </motion.button>
-                  <p className="text-[9px] text-background/60 font-sans">
-                    {t("No spam. Unsubscribe anytime.")}
+                  <p className="text-[10px] text-background/60 font-sans">
+                    {t(C.newsletter.disclaimer)}
                   </p>
                 </form>
                 </motion.div>
@@ -2696,6 +2987,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      )}
     </Layout>
   );
 }

@@ -3784,6 +3784,58 @@ const DESIGN_TOKENS_SEED = [
     category: "ui",
     tokenType: "color",
   },
+  // OG / press-kit / newsletter renderer tokens. Names match
+  // design-tokens-cache.ts. Editing these in the CMS updates all generated
+  // social cards and email hero images.
+  {
+    name: "og-bg",
+    label: "OG Background",
+    value: "#0A0A0A",
+    category: "og",
+    tokenType: "color",
+  },
+  {
+    name: "og-fg",
+    label: "OG Text",
+    value: "#F2EDE4",
+    category: "og",
+    tokenType: "color",
+  },
+  {
+    name: "og-accent",
+    label: "OG Accent",
+    value: "#DC143C",
+    category: "og",
+    tokenType: "color",
+  },
+  {
+    name: "og-muted",
+    label: "OG Muted",
+    value: "#9A9690",
+    category: "og",
+    tokenType: "color",
+  },
+  {
+    name: "og-border",
+    label: "OG Border",
+    value: "#2A2A2A",
+    category: "og",
+    tokenType: "color",
+  },
+  {
+    name: "og-heading-font",
+    label: "OG Heading Font",
+    value: "Barlow Condensed",
+    category: "og",
+    tokenType: "font",
+  },
+  {
+    name: "og-body-font",
+    label: "OG Body Font",
+    value: "Barlow",
+    category: "og",
+    tokenType: "font",
+  },
 ];
 
 const HOMEPAGE_CONFIG_SEED = {
@@ -3939,7 +3991,7 @@ const HOMEPAGE_CONFIG_SEED = {
   },
 };
 
-const PAGE_CONFIGS_SEED: Record<string, unknown> = {
+export const PAGE_CONFIGS_SEED: Record<string, unknown> = {
   about: {
     hero: {
       tagline: "Est. 2026 \u00B7 Founded by Kareem Kaddoura",
@@ -4538,12 +4590,16 @@ export async function seedCmsData() {
     );
   }
 
-  const [tokenCount] = await db
-    .select({ count: count() })
+  const existingTokens = await db
+    .select({ name: designTokensTable.name })
     .from(designTokensTable);
-  if (tokenCount.count === 0) {
-    console.log("Seeding design tokens...");
-    for (const t of DESIGN_TOKENS_SEED) {
+  const existingTokenNames = new Set(existingTokens.map((t) => t.name));
+  const missingTokens = DESIGN_TOKENS_SEED.filter(
+    (t) => !existingTokenNames.has(t.name),
+  );
+  if (missingTokens.length > 0) {
+    console.log(`Seeding ${missingTokens.length} design tokens...`);
+    for (const t of missingTokens) {
       await db.insert(designTokensTable).values(t);
     }
     console.log("Design tokens seeded.");

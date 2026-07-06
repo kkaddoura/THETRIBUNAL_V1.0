@@ -1,4 +1,5 @@
 import { useRoute, Link } from "wouter"
+import { useEffect } from "react"
 import { useGetPoll, useListPolls, useGetPollTrends } from "@workspace/api-client-react"
 import { Layout } from "@/components/layout/Layout"
 import { PollCard } from "@/components/poll/PollCard"
@@ -8,6 +9,7 @@ import { useVoter } from "@/hooks/use-voter"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LoadingDots } from "@/components/ui/loading-dots"
+import { track } from "@/lib/analytics"
 
 function PollDetailSkeleton() {
   return (
@@ -46,6 +48,17 @@ export default function PollDetail() {
 
   const { data: poll, isLoading, error } = useGetPoll(id)
   usePageTitle(poll?.question)
+
+  useEffect(() => {
+    if (poll?.id) {
+      track("poll_viewed", {
+        pollId: poll.id,
+        category: poll.categorySlug,
+        source: "detail",
+        isLoggedIn: false,
+      })
+    }
+  }, [poll?.id, poll?.categorySlug])
 
   const { data: relatedData } = useListPolls(
     { category: poll?.categorySlug, limit: 8 },
@@ -128,7 +141,7 @@ export default function PollDetail() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 lg:py-16">
-        <Link href="/debates" className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
+        <Link href="/debates" className="inline-flex items-center gap-2 text-[12px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
           <ArrowLeft className="w-3 h-3" /> Back to All Debates
         </Link>
 
@@ -161,7 +174,7 @@ export default function PollDetail() {
                 {poll.tags && poll.tags.length > 0 && (
                   <div className="flex flex-wrap gap-2 mt-8 pt-6 border-t border-border">
                     {poll.tags.map(tag => (
-                      <span key={tag} className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-secondary text-foreground border border-border">
+                      <span key={tag} className="text-[12px] font-bold uppercase tracking-widest px-3 py-1 bg-secondary text-foreground border border-border">
                         #{tag}
                       </span>
                     ))}
@@ -177,7 +190,7 @@ export default function PollDetail() {
                   <h3 className="font-serif font-black uppercase text-3xl tracking-tight">Keep Voting</h3>
                 </div>
                 {categoryVoted > 0 && categoryTotal > 0 && (
-                  <p className="text-[11px] uppercase tracking-widest text-muted-foreground font-serif mb-8">
+                  <p className="text-[13px] uppercase tracking-widest text-muted-foreground font-serif mb-8">
                     You've voted on {categoryVoted} of {categoryTotal} debates in {poll.category}.
                     {categoryLeft > 0 && <span className="text-primary font-bold"> {categoryLeft} left.</span>}
                   </p>
@@ -206,7 +219,7 @@ export default function PollDetail() {
             {sidebarRelated.length > 0 && (
               <div className="space-y-0">
                 <div className="border-l-4 border-primary pl-3 mb-6">
-                  <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground">
+                  <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground">
                     Related in
                   </p>
                   <h4 className="font-serif font-black uppercase text-lg tracking-tight text-foreground">
@@ -221,17 +234,17 @@ export default function PollDetail() {
                       href={`/debates/${related.id}`}
                       className="group block border border-border bg-card hover:border-primary/40 transition-all duration-200 p-5"
                     >
-                      <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground">
+                      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">
                         {related.category}
                       </span>
                       <h5 className="font-serif font-black uppercase text-sm tracking-tight text-foreground group-hover:text-primary transition-colors mt-1.5 leading-snug line-clamp-3">
                         {related.question}
                       </h5>
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                        <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                           {(related.totalVotes ?? 0).toLocaleString()} votes
                         </span>
-                        <span className="text-[9px] uppercase tracking-widest text-primary font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[10px] uppercase tracking-widest text-primary font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           Vote <ArrowRight className="w-2.5 h-2.5" />
                         </span>
                       </div>
@@ -242,7 +255,7 @@ export default function PollDetail() {
                 {categoryTotal > sidebarRelated.length && (
                   <Link
                     href={`/debates?category=${poll.categorySlug}`}
-                    className="block text-center mt-6 text-[10px] uppercase tracking-widest font-bold text-primary hover:text-foreground transition-colors border border-border hover:border-primary/40 py-3"
+                    className="block text-center mt-6 text-[12px] uppercase tracking-widest font-bold text-primary hover:text-foreground transition-colors border border-border hover:border-primary/40 py-3"
                   >
                     View all {poll.category} debates ({categoryTotal})
                   </Link>

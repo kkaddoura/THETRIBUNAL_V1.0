@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useRoute, Link } from "wouter"
 import { Layout } from "@/components/layout/Layout"
 import { ShareModal } from "@/components/ShareModal"
@@ -9,6 +9,7 @@ import { usePageTitle } from "@/hooks/use-page-title"
 import { Skeleton } from "@/components/ui/skeleton"
 import { LoadingDots } from "@/components/ui/loading-dots"
 import { usePrediction, usePredictions, type ApiPrediction } from "@/hooks/use-cms-data"
+import { track } from "@/lib/analytics"
 import {
   ComposedChart,
   Area,
@@ -148,11 +149,11 @@ function ConfidenceChart({ data, momentum, up }: { data: number[]; momentum: num
       <div className="flex items-center gap-5 mt-4 pt-4 border-t border-border">
         <div className="flex items-center gap-2">
           <div className="w-5 h-0.5 rounded-full" style={{ background: lineColor }} />
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">Yes Confidence</span>
+          <span className="text-[12px] text-muted-foreground uppercase tracking-wider font-bold">Yes Confidence</span>
         </div>
         <div className="flex items-center gap-2">
           <div className="w-5 h-0 border-t-2 border-dashed" style={{ borderColor: maColor }} />
-          <span className="text-[10px] text-muted-foreground uppercase tracking-wider font-bold">3-Month Avg</span>
+          <span className="text-[12px] text-muted-foreground uppercase tracking-wider font-bold">3-Month Avg</span>
         </div>
       </div>
     </div>
@@ -375,6 +376,16 @@ export default function PredictionDetail() {
     description: `${prediction.yesPercentage}% say yes. ${prediction.totalCount.toLocaleString()} votes. Resolves ${prediction.resolvesAt ?? "TBD"}.`,
   } : { title: "Prediction" })
 
+  useEffect(() => {
+    if (prediction?.id) {
+      track("prediction_viewed", {
+        predictionId: prediction.id,
+        category: prediction.category,
+        isLoggedIn: false,
+      })
+    }
+  }, [prediction?.id, prediction?.category])
+
   if (isLoading) {
     return (
       <Layout>
@@ -420,7 +431,7 @@ export default function PredictionDetail() {
   return (
     <Layout>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 lg:py-16">
-        <Link href="/predictions" className="inline-flex items-center gap-2 text-[10px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
+        <Link href="/predictions" className="inline-flex items-center gap-2 text-[12px] uppercase tracking-widest text-muted-foreground hover:text-foreground font-bold mb-8 transition-colors">
           <ArrowLeft className="w-3 h-3" /> Back to All Predictions
         </Link>
 
@@ -430,7 +441,7 @@ export default function PredictionDetail() {
             {/* Header card */}
             <div className="border border-border bg-card p-8 md:p-10">
               <div className="flex flex-wrap items-center gap-3 mb-4">
-                <span className="text-[10px] font-bold uppercase tracking-widest px-3 py-1 bg-primary/10 text-primary border border-primary/20">
+                <span className="text-[12px] font-bold uppercase tracking-widest px-3 py-1 bg-primary/10 text-primary border border-primary/20">
                   {prediction.category}
                 </span>
                 <span className="flex items-center gap-1.5 text-sm font-semibold text-muted-foreground">
@@ -438,7 +449,7 @@ export default function PredictionDetail() {
                   {formatResolvesText(prediction.resolvesAt)}
                 </span>
                 {prediction.tags?.length > 0 && prediction.tags.map(tag => (
-                  <span key={tag} className="text-[9px] uppercase tracking-widest px-2 py-0.5 border border-border text-muted-foreground font-bold">
+                  <span key={tag} className="text-[10px] uppercase tracking-widest px-2 py-0.5 border border-border text-muted-foreground font-bold">
                     #{tag}
                   </span>
                 ))}
@@ -486,7 +497,7 @@ export default function PredictionDetail() {
               <div className="mt-4">
                 <div className="border-l-4 border-primary pl-4 mb-6">
                   <h3 className="font-serif font-black uppercase text-2xl tracking-tight">People Also Voted On</h3>
-                  <p className="text-[11px] uppercase tracking-widest text-muted-foreground mt-1">Popular predictions across categories</p>
+                  <p className="text-[13px] uppercase tracking-widest text-muted-foreground mt-1">Popular predictions across categories</p>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   {bottomCards.map(card => (
@@ -496,10 +507,10 @@ export default function PredictionDetail() {
                       className="group border border-border bg-card hover:border-primary/40 transition-all duration-200 p-6 flex flex-col"
                     >
                       <div className="flex items-center gap-2 mb-3">
-                        <span className="text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 bg-primary/10 text-primary border border-primary/20">
+                        <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 bg-primary/10 text-primary border border-primary/20">
                           {card.category}
                         </span>
-                        <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold ml-auto">
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold ml-auto">
                           Resolves {card.resolvesAt ?? "TBD"}
                         </span>
                       </div>
@@ -508,7 +519,7 @@ export default function PredictionDetail() {
                       </h4>
                       <div className="space-y-2 mb-3">
                         <div>
-                          <div className="flex justify-between text-[10px] mb-0.5">
+                          <div className="flex justify-between text-[12px] mb-0.5">
                             <span className="font-bold uppercase">Yes</span>
                             <span className="text-emerald-500 font-bold">{card.yesPercentage}%</span>
                           </div>
@@ -517,7 +528,7 @@ export default function PredictionDetail() {
                           </div>
                         </div>
                         <div>
-                          <div className="flex justify-between text-[10px] mb-0.5">
+                          <div className="flex justify-between text-[12px] mb-0.5">
                             <span className="font-bold uppercase">No</span>
                             <span className="text-red-500 font-bold">{card.noPercentage}%</span>
                           </div>
@@ -527,10 +538,10 @@ export default function PredictionDetail() {
                         </div>
                       </div>
                       <div className="flex items-center justify-between pt-3 border-t border-border">
-                        <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                           {card.totalCount.toLocaleString()} votes
                         </span>
-                        <span className="text-[9px] uppercase tracking-widest text-primary font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[10px] uppercase tracking-widest text-primary font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           Vote <ArrowRight className="w-2.5 h-2.5" />
                         </span>
                       </div>
@@ -546,7 +557,7 @@ export default function PredictionDetail() {
             {related.length > 0 && (
               <>
                 <div className="border-l-4 border-primary pl-3">
-                  <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-muted-foreground">Related in</p>
+                  <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground">Related in</p>
                   <h4 className="font-serif font-black uppercase text-lg tracking-tight">{prediction.category}</h4>
                 </div>
 
@@ -557,17 +568,17 @@ export default function PredictionDetail() {
                       href={`/predictions/${r.id}`}
                       className="group block border border-border bg-card hover:border-primary/40 transition-all duration-200 p-5"
                     >
-                      <span className="text-[9px] uppercase tracking-[0.2em] font-bold text-muted-foreground">
+                      <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground">
                         {r.category}
                       </span>
                       <h5 className="font-serif font-black uppercase text-sm tracking-tight mt-1.5 leading-snug line-clamp-3 group-hover:text-primary transition-colors">
                         {r.question}
                       </h5>
                       <div className="flex items-center justify-between mt-3 pt-3 border-t border-border">
-                        <span className="text-[9px] uppercase tracking-widest text-muted-foreground font-bold">
+                        <span className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold">
                           {r.totalCount.toLocaleString()} votes
                         </span>
-                        <span className="text-[9px] uppercase tracking-widest text-primary font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <span className="text-[10px] uppercase tracking-widest text-primary font-bold flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           View <ArrowRight className="w-2.5 h-2.5" />
                         </span>
                       </div>

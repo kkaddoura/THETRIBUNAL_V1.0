@@ -1,5 +1,7 @@
+import { useEffect } from "react";
 import { Switch, Route, Router as WouterRouter, Redirect } from "wouter";
 import { AuthProvider, useAuth } from "@/lib/auth";
+import { init as initCmsAnalytics } from "@/lib/analytics";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import Layout from "@/components/layout";
 import LoginPage from "@/pages/login";
@@ -25,9 +27,13 @@ import PageVoices from "@/pages/page-voices";
 import PagePolls from "@/pages/page-polls";
 import PageApply from "@/pages/page-apply";
 import PageSiteSettings from "@/pages/page-site-settings";
+import PageCategories from "@/pages/page-categories";
 import DesignTokensPage from "@/pages/design-tokens";
 import IdeationPage from "@/pages/ideation";
 import MajlisPage from "@/pages/majlis";
+import PressKitPage from "@/pages/press-kit";
+import StudioPage from "@/pages/studio";
+import NewsletterDigestPage from "@/pages/newsletter-digest";
 import { Toaster } from "sonner";
 
 function ProtectedRoutes() {
@@ -68,9 +74,16 @@ function ProtectedRoutes() {
         <Route path="/pages/polls" component={PagePolls} />
         <Route path="/pages/apply" component={PageApply} />
         <Route path="/site-settings" component={PageSiteSettings} />
+        <Route path="/categories" component={PageCategories} />
         <Route path="/subscribers" component={SubscribersPage} />
         <Route path="/applications" component={ApplicationsPage} />
         <Route path="/majlis" component={MajlisPage} />
+        <Route path="/studio" component={StudioPage} />
+        <Route path="/press-kit">
+          <Redirect to="/studio" />
+        </Route>
+        <Route path="/press-kit/legacy" component={PressKitPage} />
+        <Route path="/newsletter" component={NewsletterDigestPage} />
         <Route path="/">
           <Redirect to="/dashboard" />
         </Route>
@@ -83,6 +96,10 @@ function ProtectedRoutes() {
 }
 
 function App() {
+  useEffect(() => {
+    initCmsAnalytics();
+  }, []);
+
   return (
     <ErrorBoundary>
       <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>

@@ -147,11 +147,31 @@ function projectPoint(
 interface GlobeConnectionsProps {
   className?: string;
   speed?: number;
+  /**
+   * When true, the globe oscillates around the MENA region instead of
+   * continuously rotating around the world. Communicates the platform's
+   * regional focus visually. Default: false (legacy continuous rotation).
+   */
+  oscillate?: boolean;
+  /**
+   * Visual zoom multiplier applied to the canvas. 1.0 = natural size; values
+   * above 1 scale the globe slightly past the container so its edges crop
+   * cleanly into the surrounding frame. Default: 1.0.
+   */
+  zoom?: number;
 }
+
+// MENA-oscillation constants. Centred on the same phi the globe initialises at,
+// which already faces the MENA region (~33°E meridian on the visible side).
+const MENA_BASE_PHI = 3.72;
+const OSC_AMPLITUDE = 0.55; // ±0.55 rad ≈ ±31° lateral swing → still inside MENA
+const OSC_FREQUENCY = 0.005; // rad / frame ≈ ~12s full oscillation period at 60fps
 
 export function GlobeConnections({
   className = "",
   speed = 0.0018,
+  oscillate = false,
+  zoom = 1,
 }: GlobeConnectionsProps) {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const overlayRef = useRef<HTMLCanvasElement>(null);
@@ -210,7 +230,10 @@ export function GlobeConnections({
     if (!canvas || !overlay) return;
 
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let phi   = 3.72; // start slightly east of Middle East so rotation sweeps it through center
+    // In oscillate mode, phi is recomputed each frame from a sine wave around
+    // MENA_BASE_PHI; in continuous mode, phi is the running rotation accumulator.
+    let phi   = oscillate ? MENA_BASE_PHI : 3.72;
+    let oscFrame = 0;
     let width = 0;
 
     const onResize = () => {
@@ -344,7 +367,7 @@ export function GlobeConnections({
           ctx.globalAlpha = 0.95;
           ctx.fillStyle   = labelBg;
           ctx.beginPath();
-          ctx.roundRect(lx, ly, lw, lh, 2);
+          ctx.roundRect(lx, ly, lw, lh, lh / 2);
           ctx.fill();
 
           // MENA border accent
@@ -492,7 +515,14 @@ export function GlobeConnections({
         size:     m.isMena ? 0.011 : 0.007,
       })),
       onRender: (state) => {
-        if (!isPausedRef.current) phi += speed;
+        if (!isPausedRef.current) {
+          if (oscillate) {
+            oscFrame++;
+            phi = MENA_BASE_PHI + Math.sin(oscFrame * OSC_FREQUENCY) * OSC_AMPLITUDE;
+          } else {
+            phi += speed;
+          }
+        }
         const currentPhi   = phi + phiOffsetRef.current + dragOffset.current.phi;
         const currentTheta = 0.25 + thetaOffsetRef.current + dragOffset.current.theta;
         state.phi    = currentPhi;
@@ -518,11 +548,16 @@ export function GlobeConnections({
       globe.destroy();
       window.removeEventListener("resize", onResize);
     };
-  }, [speed]);
+  }, [speed, oscillate]);
+
+  // Optional CSS zoom — scales the canvas slightly past the container so the
+  // globe edges crop into the frame, giving a "filled" feel without changing
+  // the cobe render resolution.
+  const transform = zoom !== 1 ? `scale(${zoom})` : undefined;
 
   return (
     <div
-      className={`relative aspect-square select-none ${className}`}
+      className={`relative aspect-square select-none overflow-hidden ${className}`}
       style={{ touchAction: "none", cursor: "grab" }}
       onPointerDown={(e) => {
         pointerInteracting.current = { x: e.clientX, y: e.clientY };
@@ -539,6 +574,8 @@ export function GlobeConnections({
           transition: "opacity 1.2s ease",
           borderRadius: "50%",
           display: "block",
+          transform,
+          transformOrigin: "center",
         }}
       />
       <canvas
@@ -550,6 +587,8 @@ export function GlobeConnections({
           height:        "100%",
           pointerEvents: "none",
           borderRadius:  "50%",
+          transform,
+          transformOrigin: "center",
         }}
       />
     </div>

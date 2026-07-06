@@ -6,7 +6,11 @@ import { useLocation } from "wouter";
 import { Plus, Upload, Trash2, Check, X, Flag, Eye, Archive, RotateCcw } from "lucide-react";
 import PreviewPanel from "./preview-panel";
 
-const STATUS_TABS = ["all", "draft", "in_review", "approved", "rejected", "flagged", "archived"];
+// Filter chips deliberately exclude in_review/flagged/archived — those
+// statuses still exist on existing rows and remain editable from the detail
+// pages, but the list page sticks to the core lifecycle (drafts → live →
+// rejected). Use the "All" tab to surface anything in a deprecated status.
+const STATUS_TABS = ["all", "draft", "approved", "rejected"];
 const STATUS_LABELS: Record<string, string> = {
   all: "All", draft: "Drafts", in_review: "In Review", approved: "Live",
   rejected: "Rejected", flagged: "Flagged", archived: "Archived",

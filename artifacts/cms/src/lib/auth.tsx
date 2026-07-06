@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
 import { api, setToken, getToken } from "./api";
+import { identify as identifyAnalytics, reset as resetAnalytics, track } from "./analytics";
 
 interface AuthContextType {
   isAuthenticated: boolean;
@@ -20,8 +21,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = getToken();
     if (token) {
       api.verify().then(() => {
+        const restored = localStorage.getItem("cms_username") || "admin";
         setIsAuthenticated(true);
-        setUsername(localStorage.getItem("cms_username") || "admin");
+        setUsername(restored);
+        identifyAnalytics(restored);
       }).catch(() => {
         setToken(null);
       }).finally(() => setIsLoading(false));
@@ -36,13 +39,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("cms_username", res.username);
     setUsername(res.username);
     setIsAuthenticated(true);
+    identifyAnalytics(res.username);
+    track("cms_admin_logged_in", { username: res.username });
   };
 
   const logout = () => {
+    track("cms_admin_logged_out", { username });
     setToken(null);
     localStorage.removeItem("cms_username");
     setUsername(null);
     setIsAuthenticated(false);
+    resetAnalytics();
   };
 
   return (

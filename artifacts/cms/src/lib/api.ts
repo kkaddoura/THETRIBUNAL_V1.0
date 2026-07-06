@@ -51,6 +51,10 @@ export const api = {
 
   getStats: () => request("/stats"),
   getTaxonomy: () => request("/taxonomy"),
+  getCategories: () => request("/categories"),
+  updateCategories: (disabled: string[]) => request("/categories", { method: "PUT", body: JSON.stringify({ disabled }) }),
+  addCategory: (name: string) => request("/categories/add", { method: "POST", body: JSON.stringify({ name }) }),
+  renameCategory: (from: string, to: string) => request("/categories/rename", { method: "POST", body: JSON.stringify({ from, to }) }),
 
   getBoostCategories: () => request("/boost/categories"),
   boostVotes: (data: { scope: "all" | "category"; category?: string }) => request("/boost", { method: "POST", body: JSON.stringify(data) }),
@@ -200,6 +204,130 @@ export const api = {
     request(`/majlis/messages/${id}`, { method: "DELETE" }),
   createMajlisInvite: (data: { profileId: number; email: string }) =>
     request("/majlis/invites", { method: "POST", body: JSON.stringify(data) }),
+
+  // Newsletter send history
+  listDigests: () => request("/digest"),
+
+  // Weekly editorial newsletter (Resend delivery)
+  previewNewsletter: () => request("/newsletter/preview", { method: "POST" }),
+  sendTestNewsletter: (to: string) =>
+    request("/newsletter/send-test", { method: "POST", body: JSON.stringify({ to }) }),
+  sendAllNewsletter: () =>
+    request("/newsletter/send-all", { method: "POST", body: JSON.stringify({}) }),
+  getNewsletterSchedule: () => request("/newsletter/schedule"),
+  updateNewsletterSchedule: (schedule: {
+    enabled: boolean;
+    dayOfWeek: number;
+    hour: number;
+    minute: number;
+    timezone: string;
+  }) => request("/newsletter/schedule", { method: "PUT", body: JSON.stringify(schedule) }),
+
+  // Press kit
+  generatePressKit: (data: {
+    contentType: "poll" | "prediction" | "voice" | "pulse"
+    contentId: number
+    templates?: string[]
+    sizes?: string[]
+  }) => request("/press-kit/generate", { method: "POST", body: JSON.stringify(data) }),
+  getPressKitAssets: (contentType: string, contentId: number) =>
+    request(`/press-kit/${contentType}/${contentId}`),
+  regeneratePressKitCaption: (assetId: number) =>
+    request(`/press-kit/${assetId}/regenerate-caption`, { method: "POST" }),
+
+  // Studio (v2)
+  studioGenerate: (data: {
+    postType: string
+    sourceId?: number
+    style?: string
+    sizes?: string[]
+    toneHint?: "punchy" | "analytical" | "warm" | null
+  }) => request("/studio/generate", { method: "POST", body: JSON.stringify(data) }),
+  studioListAssets: (params: { postType: string; sourceId?: number; style?: string }) => {
+    const q = new URLSearchParams()
+    q.set("postType", params.postType)
+    if (params.sourceId != null) q.set("sourceId", String(params.sourceId))
+    if (params.style) q.set("style", params.style)
+    return request(`/studio/assets?${q.toString()}`)
+  },
+  studioRegenerateCaptions: (data: {
+    postType: string
+    sourceId?: number
+    platform?: "x" | "ig" | "linkedin"
+    toneHint?: "punchy" | "analytical" | "warm" | null
+  }) => request("/studio/captions", { method: "POST", body: JSON.stringify(data) }),
+  studioSaveCaption: (data: {
+    postType: string
+    sourceId?: number
+    platform: "x" | "ig" | "linkedin"
+    text: string
+  }) => request("/studio/captions/save", { method: "POST", body: JSON.stringify(data) }),
+  studioDownloadUrl: (assetId: number) => `${API_BASE}/studio/download/${assetId}`,
+  studioZipUrl: (params: { postType: string; sourceId?: number; style?: string; assetIds?: number[] }) => {
+    const q = new URLSearchParams()
+    q.set("postType", params.postType)
+    if (params.sourceId != null) q.set("sourceId", String(params.sourceId))
+    if (params.style) q.set("style", params.style)
+    if (params.assetIds && params.assetIds.length) q.set("assetIds", params.assetIds.join(","))
+    return `${API_BASE}/studio/zip?${q.toString()}`
+  },
+  studioCompose: (data: {
+    layout: string
+    slots: Array<{ atomType: string; atomId: number }>
+    style?: string
+    toneHint?: "punchy" | "analytical" | "warm" | null
+    useAiImage?: boolean
+  }) => request("/studio/compose", { method: "POST", body: JSON.stringify(data) }),
+  // Re-render an existing kit's slides in a new visual style (same kitId, no
+  // caption regeneration). Powers the post-generation style switcher.
+  studioRestyle: (data: { kitId: string; style: string }) =>
+    request("/studio/restyle", { method: "POST", body: JSON.stringify(data) }),
+  studioGetKit: (kitId: string) => request(`/studio/kit?kitId=${encodeURIComponent(kitId)}`),
+  studioListSources: (postType: string) => request(`/studio/sources/${postType}`),
+  studioPortraitStreamUrl: (postType: string, sourceId: number) => {
+    const q = new URLSearchParams()
+    q.set("postType", postType)
+    q.set("sourceId", String(sourceId))
+    if (authToken) q.set("token", authToken)
+    return `${API_BASE}/studio/portrait/stream?${q.toString()}`
+  },
+  studioPortraitSelect: (data: {
+    sourceId: number
+    chosenIndex: number
+    storagePaths: string[]
+    urls: string[]
+  }) => request("/studio/portrait/select", { method: "POST", body: JSON.stringify(data) }),
+  studioDownloadAsset: async (assetId: number, filename: string) => {
+    const headers: Record<string, string> = {}
+    if (authToken) headers["x-cms-token"] = authToken
+    const res = await fetch(`${API_BASE}/studio/download/${assetId}`, { headers })
+    if (!res.ok) throw new Error("Download failed")
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = filename
+    a.click()
+    URL.revokeObjectURL(url)
+  },
+  studioDownloadZip: async (params: { postType: string; sourceId?: number; style?: string; assetIds?: number[]; filename: string }) => {
+    const headers: Record<string, string> = {}
+    if (authToken) headers["x-cms-token"] = authToken
+    const q = new URLSearchParams()
+    q.set("postType", params.postType)
+    if (params.sourceId != null) q.set("sourceId", String(params.sourceId))
+    if (params.style) q.set("style", params.style)
+    if (params.assetIds && params.assetIds.length) q.set("assetIds", params.assetIds.join(","))
+    const res = await fetch(`${API_BASE}/studio/zip?${q.toString()}`, { headers })
+    if (!res.ok) throw new Error("ZIP download failed")
+    const blob = await res.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = params.filename
+    a.click()
+    URL.revokeObjectURL(url)
+  },
 
   getRejectionLog: () => request("/ideation/rejection-log"),
   deleteRejectionLogEntry: (id: number) => request(`/ideation/rejection-log/${id}`, { method: "DELETE" }),

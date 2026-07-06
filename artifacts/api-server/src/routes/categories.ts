@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { db, pollsTable } from "@workspace/db";
 import { eq, sql } from "drizzle-orm";
+import { getDisabledCategories } from "../lib/category-settings";
 
 const router: IRouter = Router();
 
@@ -62,7 +63,10 @@ router.get("/categories", async (_req, res) => {
       }
     }
 
+    const disabled = new Set(await getDisabledCategories());
+
     const categories = Object.entries(nameMap)
+      .filter(([name]) => !disabled.has(name))
       .map(([name, { slug, totalCount }]) => ({
         name,
         slug,

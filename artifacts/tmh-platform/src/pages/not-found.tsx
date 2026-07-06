@@ -17,13 +17,13 @@ export default function NotFound() {
     <Layout>
       <div className="bg-foreground text-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
             {t("Error 404")}
           </p>
-          <h1 style={{ fontFamily: isAr ? "'IBM Plex Sans Arabic', sans-serif" : "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
+          <h1 style={{ fontFamily: isAr ? "'IBM Plex Sans Arabic', sans-serif" : "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "hsl(var(--background))", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
             {t("Page Not Found")}<span style={{ color: "#DC143C" }}>.</span>
           </h1>
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(250,250,250,0.65)" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.90rem", textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(250,250,250,0.65)" }}>
             {t("We're still building. This page doesn't exist yet.")}
           </p>
         </div>
@@ -62,25 +62,25 @@ export default function NotFound() {
         </div>
 
         <div className="border-t border-border pt-10">
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
+          <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
             {t("Explore")}
           </p>
           <div className="flex flex-wrap gap-6 justify-center">
-            <Link href="/pulse" className="text-[10px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/pulse" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
               {t("Pulse")} {isAr ? "←" : "→"}
             </Link>
-            <Link href="/predictions" className="text-[10px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/predictions" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
               {t("Predictions")} {isAr ? "←" : "→"}
             </Link>
             {voicesEnabled && (
-              <Link href="/voices" className="text-[10px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
+              <Link href="/voices" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
                 {t("Voices")} {isAr ? "←" : "→"}
               </Link>
             )}
-            <Link href="/faq" className="text-[10px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/faq" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
               {t("FAQ")} {isAr ? "←" : "→"}
             </Link>
-            <Link href="/contact" className="text-[10px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
+            <Link href="/contact" className="text-[12px] uppercase tracking-widest font-bold font-serif text-muted-foreground hover:text-foreground transition-colors">
               {t("Contact")} {isAr ? "←" : "→"}
             </Link>
           </div>

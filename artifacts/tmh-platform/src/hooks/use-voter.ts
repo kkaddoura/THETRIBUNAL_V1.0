@@ -1,5 +1,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { useQueryClient } from '@tanstack/react-query';
+import { track } from '@/lib/analytics';
+import type { AuthUser } from '@/hooks/use-auth';
 
 export interface VoterProfile {
   visitorId: string;
@@ -69,11 +72,20 @@ function loadProfile(token: string): VoterProfile {
   return defaultProfile(token);
 }
 
+// Multiple useVoter() instances need to stay in sync across the tree (for
+// example, PollCard saving a vote should trigger LoginPromptBanner to
+// re-evaluate its threshold). React state is per-instance, so we broadcast a
+// custom event after each save and every instance re-reads from localStorage.
+const VOTER_CHANGED_EVENT = 'tmh:voter-changed';
+
 export function useVoter() {
   const [token, setToken] = useState<string>('');
   const [votes, setVotes] = useState<Record<number, number>>({});
   const [profile, setProfile] = useState<VoterProfile | null>(null);
   const profileRef = useRef<VoterProfile | null>(null);
+  // Read the cached `me` query without subscribing — voter shouldn't re-render
+  // on auth changes, but events should reflect login state.
+  const qc = useQueryClient();
 
   useEffect(() => {
     let t = localStorage.getItem('tmh_voter_token');
@@ -91,12 +103,39 @@ export function useVoter() {
     const p = loadProfile(t);
     profileRef.current = p;
     setProfile(p);
+
+    // Cross-instance sync: when ANY useVoter() saves, every other instance
+    // re-reads from localStorage and rerenders. Same-tab and cross-tab.
+    const refresh = () => {
+      try {
+        const raw = localStorage.getItem('tmh_voter');
+        const next = raw ? JSON.parse(raw) as VoterProfile : null;
+        if (next) {
+          profileRef.current = next;
+          setProfile(next);
+        }
+        const vRaw = localStorage.getItem('tmh_votes');
+        if (vRaw) {
+          try { setVotes(JSON.parse(vRaw)); } catch {}
+        }
+      } catch {}
+    };
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === 'tmh_voter' || e.key === 'tmh_votes') refresh();
+    };
+    window.addEventListener(VOTER_CHANGED_EVENT, refresh);
+    window.addEventListener('storage', onStorage);
+    return () => {
+      window.removeEventListener(VOTER_CHANGED_EVENT, refresh);
+      window.removeEventListener('storage', onStorage);
+    };
   }, []);
 
   const saveProfile = useCallback((updated: VoterProfile) => {
     profileRef.current = updated;
     setProfile(updated);
     localStorage.setItem('tmh_voter', JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent(VOTER_CHANGED_EVENT));
   }, []);
 
   const recordVote = useCallback((pollId: number, optionId: number, categorySlug?: string) => {
@@ -109,6 +148,18 @@ export function useVoter() {
 
     // If already voted on this poll, just update the optionId (already done above), skip stats
     const alreadyVotedThisPoll = current.pollsVoted.includes(pollId) || !!votes[pollId];
+
+    const me = qc.getQueryData<AuthUser | null>(['auth', 'me']);
+    track('vote_recorded', {
+      pollId,
+      optionId,
+      category: categorySlug,
+      isLoggedIn: !!me,
+      userId: me?.id,
+      userTotalVotes: current.totalVotes + (alreadyVotedThisPoll ? 0 : 1),
+      isChange: alreadyVotedThisPoll,
+    });
+
     if (alreadyVotedThisPoll) {
       saveProfile(current);
       return;
@@ -142,8 +193,15 @@ export function useVoter() {
         : current.categories,
     };
 
+    if (current.totalVotes === 0) {
+      track('first_vote_ever', { fromCountry: current.country });
+    }
+    if (newStreak > current.streak) {
+      track('streak_extended', { newStreak, days: newStreak });
+    }
+
     saveProfile(updated);
-  }, [votes, saveProfile]);
+  }, [votes, saveProfile, qc]);
 
   const hasVoted = useCallback((pollId: number) => !!votes[pollId], [votes]);
   const getVotedOption = useCallback((pollId: number) => votes[pollId], [votes]);

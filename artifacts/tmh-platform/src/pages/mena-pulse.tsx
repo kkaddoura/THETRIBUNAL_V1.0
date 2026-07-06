@@ -13,6 +13,7 @@ import {
   type ApiPulseTopic,
 } from "@/hooks/use-cms-data";
 import { usePageTitle } from "@/hooks/use-page-title";
+import { track } from "@/lib/analytics";
 import { TitlePunctuation } from "@/components/TitlePunctuation";
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { LoadingDots } from "@/components/ui/loading-dots";
@@ -1277,7 +1278,13 @@ function TopicCardComponent({
   return (
     <div
       id={`pulse-${topic.id}`}
-      onClick={() => setExpanded(!expanded)}
+      onClick={() => {
+        // Fire on first expand (not on collapse) so we measure attention.
+        if (!expanded) {
+          track("pulse_topic_viewed", { topicId: topic.id, category: topic.tag })
+        }
+        setExpanded(!expanded)
+      }}
       style={{
         background: glowing ? `${topic.tagColor}12` : "rgba(0,0,0,0.5)",
         border: `1px solid ${glowing ? topic.tagColor : "rgba(255,255,255,0.06)"}`,
@@ -1439,12 +1446,40 @@ function TopicCardComponent({
       <div
         style={{
           display: "flex",
-          justifyContent: "flex-end",
+          justifyContent: "space-between",
+          alignItems: "center",
           marginTop: 12,
           paddingTop: 10,
           borderTop: "1px solid rgba(255,255,255,0.06)",
         }}
       >
+        {/* Tap affordance — the whole card toggles expand; this signals it. */}
+        <span
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 4,
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontSize: 9,
+            fontWeight: 800,
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: topic.tagColor,
+          }}
+        >
+          {expanded ? t("Show less") : t("View more")}
+          <span
+            style={{
+              display: "inline-block",
+              transform: expanded ? "rotate(180deg)" : "none",
+              transition: "transform 0.3s ease",
+              fontSize: 9,
+              lineHeight: 1,
+            }}
+          >
+            ▾
+          </span>
+        </span>
         <PulseShareBtn topic={topic} />
       </div>
 
@@ -1526,7 +1561,7 @@ function PulseTicker() {
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.7rem",
+                fontSize: "0.80rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
                 color: "rgba(250,250,250,0.75)",
@@ -1548,7 +1583,7 @@ function PulseTicker() {
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.72rem",
+                fontSize: "0.83rem",
                 color: item.up ? "#10B981" : "#DC143C",
               }}
             >
@@ -1628,7 +1663,7 @@ function BigNumber() {
           marginBottom: 6,
         }}
       >
-        {t("MENA Population Right Now")}
+        {t("The Region's Population Right Now")}
       </div>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <span
@@ -1762,14 +1797,14 @@ export default function MenaPulse() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.68rem",
+              fontSize: "0.78rem",
               textTransform: "uppercase",
               letterSpacing: "0.28em",
               color: "#DC143C",
               marginBottom: "0.5rem",
             }}
           >
-            {t(pulseConfig?.hero?.tagline || "Pulse")}
+            {t(pulseConfig?.hero?.tagline || "THE PULSE")}
           </p>
           <h1
             style={{
@@ -1785,20 +1820,30 @@ export default function MenaPulse() {
               marginBottom: "0.5rem",
             }}
           >
-            {t(pulseConfig?.hero?.titleLine1 || "What's Actually")}<br />
-            {t(pulseConfig?.hero?.titleLine2 || "Happening in MENA")}<TitlePunctuation punctuations={pulseConfig?.punctuations} />
+            {t(pulseConfig?.hero?.titleLine1 || "What is actually")}<br />
+            {t(pulseConfig?.hero?.titleLine2 || "happening.")}<TitlePunctuation punctuations={pulseConfig?.punctuations} />
           </h1>
           <p
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               textTransform: "uppercase",
               letterSpacing: "0.18em",
             }}
           >
-            {allTopics.length}{" "}
-            {t("trends the region needs to confront. Updated quarterly.")}
+            {t("Sourced data points that give context to the questions people are voting on.")}
+          </p>
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontStyle: "italic",
+              fontSize: "0.78rem",
+              color: "rgba(255,255,255,0.65)",
+              marginTop: "0.5rem",
+            }}
+          >
+            {t("Every card should cite its source.")}
           </p>
         </div>
 
@@ -1820,7 +1865,7 @@ export default function MenaPulse() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -1849,7 +1894,7 @@ export default function MenaPulse() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -1878,7 +1923,7 @@ export default function MenaPulse() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -1907,7 +1952,7 @@ export default function MenaPulse() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -1999,7 +2044,7 @@ export default function MenaPulse() {
                     color: "rgba(255,255,255,0.75)",
                   }}
                 >
-                  {t("Exploding Trends")}
+                  {t("Pulse Signals")}
                 </span>
                 <span
                   style={{

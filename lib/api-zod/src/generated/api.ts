@@ -32,6 +32,18 @@ export const ListPollsQueryParams = zod.object({
     ])
     .optional(),
   category: zod.coerce.string().optional(),
+  tag: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      "When set, returns polls whose tags array contains this tag (case-insensitive). Sort is forced to newest-first.",
+    ),
+  ids: zod.coerce
+    .string()
+    .optional()
+    .describe(
+      'Comma-separated list of poll IDs (e.g. \"12,7,33\"). Returns polls in the requested order. Mutually exclusive with filter\/category\/tag.',
+    ),
   limit: zod.coerce.number().default(listPollsQueryLimitDefault),
   offset: zod.coerce.number().default(listPollsQueryOffsetDefault),
 });
@@ -50,6 +62,7 @@ export const ListPollsResponse = zod.object({
         "multiple_choice",
         "head_to_head",
         "hot_take",
+        "scale",
       ]),
       options: zod.array(
         zod.object({
@@ -80,7 +93,13 @@ export const GetFeaturedPollResponse = zod.object({
   category: zod.string(),
   categorySlug: zod.string(),
   tags: zod.array(zod.string()),
-  pollType: zod.enum(["binary", "multiple_choice", "head_to_head", "hot_take"]),
+  pollType: zod.enum([
+    "binary",
+    "multiple_choice",
+    "head_to_head",
+    "hot_take",
+    "scale",
+  ]),
   options: zod.array(
     zod.object({
       id: zod.number(),
@@ -111,7 +130,13 @@ export const GetPollResponse = zod.object({
   category: zod.string(),
   categorySlug: zod.string(),
   tags: zod.array(zod.string()),
-  pollType: zod.enum(["binary", "multiple_choice", "head_to_head", "hot_take"]),
+  pollType: zod.enum([
+    "binary",
+    "multiple_choice",
+    "head_to_head",
+    "hot_take",
+    "scale",
+  ]),
   options: zod.array(
     zod.object({
       id: zod.number(),
@@ -162,6 +187,7 @@ export const VotePollParams = zod.object({
 export const VotePollBody = zod.object({
   optionId: zod.number(),
   voterToken: zod.string(),
+  ipConsent: zod.boolean().optional(),
 });
 
 export const VotePollResponse = zod.object({
@@ -203,6 +229,7 @@ export const ListProfilesResponse = zod.object({
       headline: zod.string(),
       role: zod.string(),
       company: zod.string().optional(),
+      companyUrl: zod.string().nullish(),
       sector: zod.string(),
       country: zod.string(),
       city: zod.string(),
@@ -231,6 +258,7 @@ export const GetProfileResponse = zod
     headline: zod.string(),
     role: zod.string(),
     company: zod.string().optional(),
+    companyUrl: zod.string().nullish(),
     sector: zod.string(),
     country: zod.string(),
     city: zod.string(),
@@ -260,6 +288,7 @@ export const GetProfileResponse = zod
             "multiple_choice",
             "head_to_head",
             "hot_take",
+            "scale",
           ]),
           options: zod.array(
             zod.object({
@@ -284,6 +313,7 @@ export const GetProfileResponse = zod
           headline: zod.string(),
           role: zod.string(),
           company: zod.string().optional(),
+          companyUrl: zod.string().nullish(),
           sector: zod.string(),
           country: zod.string(),
           city: zod.string(),
@@ -363,6 +393,7 @@ export const GetWeeklyPulseResponse = zod.object({
         "multiple_choice",
         "head_to_head",
         "hot_take",
+        "scale",
       ]),
       options: zod.array(
         zod.object({

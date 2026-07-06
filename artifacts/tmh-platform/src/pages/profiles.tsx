@@ -36,10 +36,10 @@ const FALLBACK_IMPACT_STATEMENTS: Record<string, string> = {
   Sarwa:
     "AED 10B+ in trading volume — making investing accessible to every Arab",
   CoinMENA:
-    "Opened crypto access for Arabs — building financial freedom across MENA",
+    "Opened crypto access for Arabs — building financial freedom across the region",
   Washmen:
     "Disrupted laundry in the Gulf — and cancelled a sponsorship over Gaza",
-  Deliveroo: "Built Deliveroo MENA from zero to millions of orders",
+  Deliveroo: "Built Deliveroo across the region from zero to millions of orders",
   "Binance FZE (Dubai)":
     "Leading Binance Dubai — reshaping how money moves in the Middle East",
   "MUNCH:ON (acquired by Careem)":
@@ -53,15 +53,15 @@ const FALLBACK_IMPACT_STATEMENTS: Record<string, string> = {
   "Sharjah Entrepreneurship Center (Sheraa)":
     "Turned Sharjah into a startup powerhouse — empowering the next generation",
   "MSA Capital / MSA Novo":
-    "One of MENA's most active emerging market VC funds — transforming obstacles into opportunity",
+    "One of the region's most active emerging market VC funds — transforming obstacles into opportunity",
   "Arzan Venture Capital":
     "Dentist turned VC — 9 exits and counting, now building again in stealth",
   "Saudi Exchange":
     "Helping build one of the world's fastest-growing capital markets",
   "The Tribunal":
-    "Building the region's opinion layer — where MENA's voice gets counted",
+    "Building the region's opinion layer — where the region's voice gets counted",
   "Tuhoon / Wamda Capital":
-    "Tackling the mental health crisis no one talks about in MENA",
+    "Tackling the mental health crisis no one talks about in the region",
   "Revolut UAE":
     "Founded Souqalmal, now leading Revolut UAE — making finance transparent for Arabs",
 };
@@ -128,7 +128,7 @@ function VoicesTicker({
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.7rem",
+                fontSize: "0.80rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
                 color: "rgba(250,250,250,0.75)",
@@ -151,7 +151,7 @@ function VoicesTicker({
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.72rem",
+                fontSize: "0.83rem",
                 color: "#DC143C",
                 whiteSpace: "nowrap",
               }}
@@ -168,7 +168,7 @@ function VoicesTicker({
 export default function Profiles() {
   usePageTitle({
     title: "Voices",
-    description: "Profiles and perspectives from founders, operators, and leaders shaping MENA's future.",
+    description: "Profiles and perspectives from founders, operators, and leaders shaping the region's future.",
   });
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<
@@ -234,14 +234,14 @@ export default function Profiles() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.68rem",
+              fontSize: "0.78rem",
               textTransform: "uppercase",
               letterSpacing: "0.28em",
               color: "#DC143C",
               marginBottom: "0.5rem",
             }}
           >
-            Voices
+            THE VOICES
           </p>
           <motion.h1
             style={{
@@ -258,19 +258,30 @@ export default function Profiles() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
           >
-            {pageConfig?.hero?.titleLine1 || "Meet the People"}<br />
-            {pageConfig?.hero?.titleLine2 || "Moving This Region."}<TitlePunctuation punctuations={pageConfig?.punctuations} />
+            {pageConfig?.hero?.titleLine1 || "People with"}<br />
+            {pageConfig?.hero?.titleLine2 || "something to say."}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </motion.h1>
           <p
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               textTransform: "uppercase",
               letterSpacing: "0.18em",
             }}
           >
-            {pageConfig?.hero?.subtitle || "Founders. Operators. Changemakers. Finally counted."}
+            {pageConfig?.hero?.subtitle || "Curated profiles of people connected to the region through their work, choices and positions."}
+          </p>
+          <p
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.85rem",
+              opacity: 0.65,
+              marginTop: "0.85rem",
+              letterSpacing: "0.02em",
+            }}
+          >
+            Selected, not submitted at scale.
           </p>
           {majlisEnabled && (
             <motion.div
@@ -280,7 +291,7 @@ export default function Profiles() {
             >
               <Link
                 href="/majlis"
-                className="inline-flex items-center gap-2 mt-4 bg-primary text-white text-[11px] font-bold uppercase tracking-[0.15em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
+                className="inline-flex items-center gap-2 mt-4 bg-primary text-white text-[13px] font-bold uppercase tracking-[0.15em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
               >
                 <Lock className="w-3.5 h-3.5" />
                 Enter The Majlis
@@ -315,7 +326,7 @@ export default function Profiles() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -344,7 +355,7 @@ export default function Profiles() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -373,7 +384,7 @@ export default function Profiles() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.72rem",
+              fontSize: "0.83rem",
               textTransform: "uppercase",
               letterSpacing: "0.15em",
               color: "rgba(250,250,250,0.75)",
@@ -439,7 +450,7 @@ export default function Profiles() {
               onClick={() => setFilter(f.id)}
               whileTap={{ scale: 0.95 }}
               className={cn(
-                "px-4 py-2 text-[10px] uppercase tracking-[0.2em] font-bold transition-colors border",
+                "px-4 py-2 text-[12px] uppercase tracking-[0.2em] font-bold transition-colors border",
                 filter === f.id
                   ? "bg-foreground text-background border-foreground"
                   : "text-muted-foreground border-border hover:text-foreground hover:border-foreground",

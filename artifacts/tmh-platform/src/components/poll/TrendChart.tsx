@@ -35,7 +35,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
   const sorted = [...payload].sort((a, b) => b.value - a.value)
   return (
     <div className="bg-card border border-border px-4 py-3 shadow-xl text-xs font-sans min-w-[180px]">
-      <p className="text-muted-foreground uppercase tracking-widest font-bold mb-2 text-[10px]">
+      <p className="text-muted-foreground uppercase tracking-widest font-bold mb-2 text-[12px]">
         {format(parseISO(label), "MMM d, yyyy")}
       </p>
       {sorted.map((entry, i) => (
@@ -67,7 +67,7 @@ export function TrendChart({ pollId }: TrendChartProps) {
   if (!data?.dataPoints?.length) {
     return (
       <div className="py-10 px-4 text-center border border-dashed border-border">
-        <p className="text-[10px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
+        <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
           Still Gathering Data
         </p>
         <p className="text-xs text-muted-foreground font-sans max-w-xs mx-auto leading-relaxed">
@@ -102,7 +102,7 @@ export function TrendChart({ pollId }: TrendChartProps) {
     <div>
       <div className="flex items-center justify-between mb-4">
         <div>
-          <p className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
+          <p className="text-[12px] uppercase tracking-widest font-bold text-muted-foreground mb-1">
             Opinion Trend · 10 Weeks
           </p>
           {leadingOption && (
@@ -117,7 +117,7 @@ export function TrendChart({ pollId }: TrendChartProps) {
           )}
         </div>
         {firstDate && lastDate && (
-          <p className="text-[10px] text-muted-foreground font-sans hidden sm:block">
+          <p className="text-[12px] text-muted-foreground font-sans hidden sm:block">
             {format(parseISO(firstDate), "MMM d")} — {format(parseISO(lastDate), "MMM d, yyyy")}
           </p>
         )}
@@ -158,7 +158,7 @@ export function TrendChart({ pollId }: TrendChartProps) {
         </LineChart>
       </ResponsiveContainer>
 
-      <p className="text-[9px] text-muted-foreground font-sans mt-2 uppercase tracking-widest text-right">
+      <p className="text-[10px] text-muted-foreground font-sans mt-2 uppercase tracking-widest text-right">
         Source: TMH Poll Data · tmhustle.com
       </p>
     </div>

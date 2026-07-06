@@ -76,6 +76,7 @@
   "dependencies": {
     "cobe": "^0.2.3",
     "motion": "catalog:",
+    "posthog-js": "^1.372.6",
     "uuid": "^13.0.0"
   }
 }

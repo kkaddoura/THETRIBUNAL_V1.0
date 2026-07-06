@@ -84,14 +84,14 @@ export default function MajlisLogin() {
           <div className="text-center mb-8">
             <div className="inline-flex items-center gap-2 mb-4">
               <Lock className="w-5 h-5 text-primary" />
-              <span className="text-[10px] font-serif font-bold uppercase tracking-[0.3em] text-primary">
+              <span className="text-[12px] font-serif font-bold uppercase tracking-[0.3em] text-primary">
                 Private Forum
               </span>
             </div>
             <h1 className="font-display text-4xl font-black uppercase tracking-tight text-foreground leading-none">
               The Majlis<span className="text-primary">.</span>
             </h1>
-            <p className="text-[10px] font-serif uppercase tracking-[0.2em] text-muted-foreground mt-2">
+            <p className="text-[12px] font-serif uppercase tracking-[0.2em] text-muted-foreground mt-2">
               المجلس — For Verified Voices Only
             </p>
           </div>
@@ -135,7 +135,7 @@ export default function MajlisLogin() {
             <form onSubmit={handleSubmit} autoComplete="off" className="space-y-4">
               {mode === "register" && (
                 <div>
-                  <label className="text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
+                  <label className="text-[12px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
                     Invitation Code
                   </label>
                   <input
@@ -146,7 +146,7 @@ export default function MajlisLogin() {
                     placeholder="Paste your invite code"
                     className="w-full bg-background border border-border px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:border-primary focus:outline-none transition-colors font-mono"
                   />
-                  <p className="text-[9px] text-muted-foreground mt-1 font-serif">
+                  <p className="text-[10px] text-muted-foreground mt-1 font-serif">
                     Invitation codes are issued by admins to verified Voices
                     only.
                   </p>
@@ -154,7 +154,7 @@ export default function MajlisLogin() {
               )}
 
               <div>
-                <label className="text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
+                <label className="text-[12px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
                   Email
                 </label>
                 <input
@@ -170,7 +170,7 @@ export default function MajlisLogin() {
               </div>
 
               <div>
-                <label className="text-[10px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
+                <label className="text-[12px] font-serif font-bold uppercase tracking-[0.2em] text-muted-foreground block mb-1.5">
                   Password
                 </label>
                 <div className="relative">
@@ -197,7 +197,7 @@ export default function MajlisLogin() {
                   </button>
                 </div>
                 {mode === "login" && (
-                  <p className="text-[10px] text-muted-foreground mt-2">
+                  <p className="text-[12px] text-muted-foreground mt-2">
                     Forgot your password?{" "}
                     <a href="mailto:hello@themiddleeasthustle.com" className="text-primary underline">
                       Contact admin
@@ -229,8 +229,8 @@ export default function MajlisLogin() {
             </form>
           </div>
 
-          <p className="text-center text-[9px] text-muted-foreground mt-4 font-serif uppercase tracking-wider">
-            A private space for MENA's founders, operators & change-makers
+          <p className="text-center text-[10px] text-muted-foreground mt-4 font-serif uppercase tracking-wider">
+            A private room for serious conversation
           </p>
         </div>
       </div>

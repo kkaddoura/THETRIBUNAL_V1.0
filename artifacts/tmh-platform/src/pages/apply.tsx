@@ -7,12 +7,11 @@ import { usePageTitle } from "@/hooks/use-page-title"
 import { TitlePunctuation } from "@/components/TitlePunctuation"
 
 const FALLBACK_CRITERIA = [
-  "Real, verifiable impact — named outcomes, not just job titles",
-  "Based in MENA or with a deep, ongoing connection to the region",
-  "A unique story — pivots, failures, non-linear journeys",
-  "Built, led, or founded something tangible",
-  "An original quote — specific to your experience, not a LinkedIn cliché",
-  "A public profile verifiable on LinkedIn or in the press",
+  "A clear body of work we can verify",
+  "A serious connection to the region",
+  "Something specific to say — a position, belief, or view",
+  "Something you have built, led, or founded",
+  "A public profile we can review (e.g. LinkedIn or press)",
 ]
 
 const FALLBACK_COUNTRIES = [
@@ -42,8 +41,8 @@ type Status = "idle" | "submitting" | "success" | "error"
 
 export default function Apply() {
   usePageTitle({
-    title: "Join The Voices",
-    description: "Apply to become a featured voice on The Tribunal. Share your perspective with 541 million people across MENA.",
+    title: "Apply to be a Voice",
+    description: "Apply to become a curated profile on The Tribunal. Applications are reviewed by a human.",
   });
   const [status, setStatus] = useState<Status>("idle")
   const [refNumber, setRefNumber] = useState("")
@@ -134,8 +133,8 @@ export default function Apply() {
       {/* Hero */}
       <div className="bg-foreground text-background py-16 border-b border-border">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <p className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">{hero?.tagline || "The Voices"}</p>
-          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
+          <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">{hero?.tagline || "The Voices"}</p>
+          <h1 style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "hsl(var(--background))", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
             {hero?.titleLine1 || "Think You Belong"}<br />
             {hero?.titleLine2 || "In The Voices?"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
@@ -395,10 +394,10 @@ function Field({ label, required, hint, children, className }: {
 }) {
   return (
     <div className={cn("flex flex-col gap-1.5", className)}>
-      <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-foreground font-serif">
+      <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-foreground font-serif">
         {label}
       </label>
-      {hint && <p className="text-[11px] text-muted-foreground font-sans mb-1">{hint}</p>}
+      {hint && <p className="text-[13px] text-muted-foreground font-sans mb-1">{hint}</p>}
       {children}
     </div>
   )

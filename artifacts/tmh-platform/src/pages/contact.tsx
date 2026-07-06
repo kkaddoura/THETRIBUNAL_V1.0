@@ -4,7 +4,7 @@ import { Layout } from "@/components/layout/Layout"
 import { useI18n } from "@/lib/i18n"
 import { Mail, MapPin, MessageSquare } from "lucide-react"
 import { usePageTitle } from "@/hooks/use-page-title"
-import { usePageConfig } from "@/hooks/use-cms-data"
+import { usePageConfig, useSiteSettings } from "@/hooks/use-cms-data"
 import { TitlePunctuation } from "@/components/TitlePunctuation"
 
 export default function Contact() {
@@ -14,6 +14,8 @@ export default function Contact() {
   });
   const { t, isAr } = useI18n()
   const { data: pageConfig } = usePageConfig<{ titleLine1?: string; titleLine2?: string; punctuations?: string[] }>("contact")
+  const { data: siteSettings } = useSiteSettings()
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" })
   const [submitted, setSubmitted] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
@@ -43,7 +45,7 @@ export default function Contact() {
     // Open mailto with pre-filled fields as fallback
     const mailtoBody = `Name: ${form.name}%0D%0A%0D%0A${form.message}`
     const mailtoSubject = form.subject || "General Inquiry"
-    window.location.href = `mailto:hello@themiddleeasthustle.com?subject=${encodeURIComponent(mailtoSubject)}&body=${mailtoBody}`
+    window.location.href = `mailto:support@tribunal.me?subject=${encodeURIComponent(mailtoSubject)}&body=${mailtoBody}`
     setSubmitted(true)
   }
 
@@ -52,14 +54,14 @@ export default function Contact() {
       {/* Hero */}
       <div className="bg-foreground text-background border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10">
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.68rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.28em", color: "#DC143C", marginBottom: "0.5rem" }}>
             {t("Get In Touch")}
           </p>
-          <h1 style={{ fontFamily: isAr ? "'IBM Plex Sans Arabic', sans-serif" : "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "var(--background)", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
+          <h1 style={{ fontFamily: isAr ? "'IBM Plex Sans Arabic', sans-serif" : "'Barlow Condensed', sans-serif", fontWeight: 900, fontSize: "clamp(2rem, 5vw, 3.5rem)", textTransform: "uppercase", color: "hsl(var(--background))", letterSpacing: "-0.01em", lineHeight: 1.05, marginBottom: "0.5rem" }}>
             {t(pageConfig?.titleLine1 || "Contact")}<br />
             {t(pageConfig?.titleLine2 || "Us")}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </h1>
-          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.78rem", textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(250,250,250,0.65)" }}>
+          <p style={{ fontFamily: "'Barlow Condensed', sans-serif", fontWeight: 700, fontSize: "0.90rem", textTransform: "uppercase", letterSpacing: "0.18em", color: "rgba(250,250,250,0.65)" }}>
             {t("Questions, partnerships, press inquiries, or just want to say hello.")}
           </p>
         </div>
@@ -77,14 +79,14 @@ export default function Contact() {
                 <div className="flex items-start gap-3">
                   <Mail className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
+                    <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
                       {t("Email")}
                     </p>
                     <a
-                      href="mailto:hello@themiddleeasthustle.com"
+                      href="mailto:support@tribunal.me"
                       className="text-sm font-sans text-foreground hover:text-primary transition-colors"
                     >
-                      hello@themiddleeasthustle.com
+                      support@tribunal.me
                     </a>
                   </div>
                 </div>
@@ -92,7 +94,7 @@ export default function Contact() {
                 <div className="flex items-start gap-3">
                   <MapPin className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
+                    <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
                       {t("Region")}
                     </p>
                     <p className="text-sm font-sans text-foreground">
@@ -104,7 +106,7 @@ export default function Contact() {
                 <div className="flex items-start gap-3">
                   <MessageSquare className="w-4 h-4 text-primary mt-1 flex-shrink-0" />
                   <div>
-                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
+                    <p className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-1">
                       {t("Social")}
                     </p>
                     <div className="flex flex-col gap-1">
@@ -124,7 +126,7 @@ export default function Contact() {
             </div>
 
             <div className="border-t border-border pt-8">
-              <h3 className="text-[10px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
+              <h3 className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
                 {t("What We Can Help With")}
               </h3>
               <ul className="space-y-2 text-sm text-muted-foreground font-sans">
@@ -150,13 +152,13 @@ export default function Contact() {
                 </p>
                 <p className="text-sm text-muted-foreground font-sans">
                   {t("If it doesn't, send your message directly to")}{" "}
-                  <a href="mailto:hello@themiddleeasthustle.com" className="text-primary hover:underline">
-                    hello@themiddleeasthustle.com
+                  <a href="mailto:support@tribunal.me" className="text-primary hover:underline">
+                    support@tribunal.me
                   </a>
                 </p>
                 <button
                   onClick={() => setSubmitted(false)}
-                  className="mt-6 text-[10px] uppercase tracking-widest font-bold font-serif text-primary hover:text-foreground transition-colors"
+                  className="mt-6 text-[12px] uppercase tracking-widest font-bold font-serif text-primary hover:text-foreground transition-colors"
                 >
                   {t("Send Another Message")} {isAr ? "←" : "→"}
                 </button>
@@ -165,7 +167,7 @@ export default function Contact() {
               <form onSubmit={handleSubmit} noValidate className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
+                    <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
                       {t("Name")} *
                     </label>
                     <input
@@ -179,7 +181,7 @@ export default function Contact() {
                     {fieldErrors.name && <p className="text-xs text-red-500 mt-1">{fieldErrors.name}</p>}
                   </div>
                   <div>
-                    <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
+                    <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
                       {t("Email")} *
                     </label>
                     <input
@@ -195,7 +197,7 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
+                  <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
                     {t("Subject")}
                   </label>
                   <select
@@ -216,7 +218,7 @@ export default function Contact() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
+                  <label className="text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground font-serif mb-2 block">
                     {t("Message")} *
                   </label>
                   <textarea
@@ -246,24 +248,33 @@ export default function Contact() {
       <div className="bg-secondary/20 border-t border-border py-12">
         <div className="max-w-3xl mx-auto px-4 text-center">
           <p className="font-display text-xl text-foreground mb-2 leading-snug">
-            {t("541 million voices. One platform.")}
+            {t("The region, on record.")}
           </p>
           <p className="text-sm text-muted-foreground font-sans mb-6">
-            {t("Join the conversation shaping the future of the Middle East.")}
+            {t("Vote privately. See the result publicly.")}
           </p>
           <div className="flex flex-wrap gap-4 justify-center">
             <Link
               href="/debates"
-              className="bg-foreground text-background px-6 py-2.5 font-bold uppercase tracking-widest text-[10px] hover:bg-primary transition-colors font-serif"
+              className="bg-foreground text-background px-6 py-2.5 font-bold uppercase tracking-widest text-[12px] hover:bg-primary transition-colors font-serif"
             >
               {t("Enter The Debates")}
             </Link>
-            <Link
-              href="/apply"
-              className="border border-foreground text-foreground px-6 py-2.5 font-bold uppercase tracking-widest text-[10px] hover:bg-foreground hover:text-background transition-colors font-serif"
-            >
-              {t("Join The Voices")}
-            </Link>
+            {voicesEnabled ? (
+              <Link
+                href="/apply"
+                className="border border-foreground text-foreground px-6 py-2.5 font-bold uppercase tracking-widest text-[12px] hover:bg-foreground hover:text-background transition-colors font-serif"
+              >
+                {t("Join The Voices")}
+              </Link>
+            ) : (
+              <Link
+                href="/predictions"
+                className="border border-foreground text-foreground px-6 py-2.5 font-bold uppercase tracking-widest text-[12px] hover:bg-foreground hover:text-background transition-colors font-serif"
+              >
+                {t("Make a Prediction")}
+              </Link>
+            )}
           </div>
         </div>
       </div>

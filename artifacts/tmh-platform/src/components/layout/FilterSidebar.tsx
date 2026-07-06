@@ -53,7 +53,7 @@ export function FilterSidebar({ search, sort, categories }: FilterSidebarProps) 
     >
       {search && (
         <div>
-          <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4 border-b border-border pb-2">
+          <h3 className="text-[12px] uppercase tracking-widest font-bold text-muted-foreground mb-4 border-b border-border pb-2">
             {search.label ?? "Search"}
           </h3>
           <div className="relative">
@@ -80,7 +80,7 @@ export function FilterSidebar({ search, sort, categories }: FilterSidebarProps) 
 
       {sort && (
         <div>
-          <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4 border-b border-border pb-2">
+          <h3 className="text-[12px] uppercase tracking-widest font-bold text-muted-foreground mb-4 border-b border-border pb-2">
             {sort.label ?? "Sort By"}
           </h3>
           <div className="relative flex bg-secondary border border-border p-1">
@@ -102,7 +102,7 @@ export function FilterSidebar({ search, sort, categories }: FilterSidebarProps) 
                 key={opt.id}
                 onClick={() => sort.onChange(opt.id)}
                 className={cn(
-                  "relative z-10 flex-1 px-2 py-2 text-[10px] uppercase tracking-widest font-bold transition-colors duration-300 text-center",
+                  "relative z-10 flex-1 px-2 py-2 text-[12px] uppercase tracking-widest font-bold transition-colors duration-300 text-center",
                   sort.value === opt.id
                     ? "text-background"
                     : "text-muted-foreground hover:text-foreground",
@@ -117,7 +117,7 @@ export function FilterSidebar({ search, sort, categories }: FilterSidebarProps) 
 
       {categories && (
         <div>
-          <h3 className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground mb-4 border-b border-border pb-2">
+          <h3 className="text-[12px] uppercase tracking-widest font-bold text-muted-foreground mb-4 border-b border-border pb-2">
             {categories.label ?? "Categories"}
           </h3>
           <div className="flex flex-col gap-1">

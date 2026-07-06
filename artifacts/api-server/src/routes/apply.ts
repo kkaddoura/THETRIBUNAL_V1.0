@@ -1,5 +1,7 @@
 import { Router } from "express"
 import { db, hustlerApplicationsTable } from "@workspace/db"
+import { sendEmail } from "../lib/email.js"
+import { unsubscribeUrl } from "../lib/unsubscribe.js"
 
 const router = Router()
 
@@ -106,9 +108,6 @@ function scoreApplication(data: any): { score: number; status: string; reasoning
 }
 
 async function sendApplicationEmail(email: string, name: string, status: string, reasoning: string, score: number) {
-  const RESEND_API_KEY = process.env.RESEND_API_KEY
-  if (!RESEND_API_KEY) return
-
   const subjects: Record<string, string> = {
     passed: "Your Tribunal application is through.",
     conditional: "Your Tribunal application — one more step.",
@@ -121,24 +120,13 @@ async function sendApplicationEmail(email: string, name: string, status: string,
     not_yet: `Hi ${name},\n\nThe Tribunal's bar is high because our audience is discerning (score: ${score}/100).\n\n${reasoning}\n\nYou're on our Rising Voices watchlist. Reapply in 90 days. In the meantime — go vote on something.\n\nthemiddleeasthustle.com\n\nThe Tribunal, by The Middle East Hustle`,
   }
 
-  try {
-    await fetch("https://api.resend.com/emails", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${RESEND_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        from: "The Tribunal <noreply@themiddleeasthustle.com>",
-        to: email,
-        subject: subjects[status] ?? "Your Tribunal Application",
-        text: bodies[status] ?? `Thank you for applying, ${name}. We'll be in touch.`,
-      }),
-    })
-    console.log(`[APPLY] Resend email sent to ${email.substring(0, 3)}*** (${status})`)
-  } catch (err) {
-    console.error("[APPLY] Resend email failed:", err)
-  }
+  await sendEmail({
+    label: `apply-${status}`,
+    to: email,
+    subject: subjects[status] ?? "Your Tribunal Application",
+    text: bodies[status] ?? `Thank you for applying, ${name}. We'll be in touch.`,
+    listUnsubscribeUrl: unsubscribeUrl(email),
+  })
 }
 
 router.post("/apply", async (req, res) => {

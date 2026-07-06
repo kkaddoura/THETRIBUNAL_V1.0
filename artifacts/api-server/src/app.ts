@@ -1,9 +1,11 @@
 import express, { type Request, type Express } from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
 import path from "path";
 import rateLimit from "express-rate-limit";
 import router from "./routes";
 import { ogTagsMiddleware } from "./middlewares/ogTags";
+import { optionalAuth } from "./middlewares/auth";
 
 const app: Express = express();
 
@@ -21,9 +23,14 @@ const allowedOrigins =
       ]
     : true; // allow all origins in development
 
-app.use(cors({ origin: allowedOrigins }));
+app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cookieParser());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Decorate every API request with req.userId if a valid session cookie is
+// present. Routes that need auth use the requireAuth middleware additionally.
+app.use("/api", optionalAuth);
 
 // ── Hostname routing helper ─────────────────────────────────
 // Matches "cms.*" subdomain pattern (works with any root domain).
@@ -60,6 +67,9 @@ app.use("/api/cms", (_req, res, next) => {
 });
 
 // ── Auth rate limiting ──────────────────────────────────────
+// Only apply to credential-validating endpoints. /me, /avatars, /logout,
+// /link-voter-token are called on normal page loads and would exhaust a
+// shared bucket within a single signup→logout→login cycle.
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 10, // 10 attempts per window
@@ -68,8 +78,15 @@ const authLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+// CMS + Majlis auth are single-endpoint routers, so blanket-mounting is fine.
 app.use("/api/cms/auth", authLimiter);
 app.use("/api/majlis/auth", authLimiter);
+
+// User auth has many endpoints — only rate-limit the credential ones.
+app.use("/api/auth/login", authLimiter);
+app.use("/api/auth/signup", authLimiter);
+app.use("/api/auth/forgot-password", authLimiter);
+app.use("/api/auth/reset-password", authLimiter);
 
 // ── API routes ──────────────────────────────────────────────
 

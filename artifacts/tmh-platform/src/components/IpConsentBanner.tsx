@@ -4,6 +4,7 @@ import { X } from "lucide-react"
 import { useSiteSettings } from "@/hooks/use-cms-data"
 
 const CONSENT_KEY = "tmh_ip_consent"
+export const IP_CONSENT_CHANGED_EVENT = "tmh:ip-consent-changed"
 
 export function getIpConsent(): "accepted" | "rejected" | null {
   if (typeof window === "undefined") return null
@@ -32,12 +33,14 @@ export function IpConsentBanner() {
     localStorage.setItem(CONSENT_KEY, "accepted")
     setConsent("accepted")
     setVisible(false)
+    window.dispatchEvent(new CustomEvent(IP_CONSENT_CHANGED_EVENT, { detail: "accepted" }))
   }
 
   const reject = () => {
     localStorage.setItem(CONSENT_KEY, "rejected")
     setConsent("rejected")
     setVisible(false)
+    window.dispatchEvent(new CustomEvent(IP_CONSENT_CHANGED_EVENT, { detail: "rejected" }))
   }
 
   if (!ipConsentEnabled) return null
@@ -61,22 +64,21 @@ export function IpConsentBanner() {
               <X className="w-4 h-4" />
             </button>
             <p className="font-serif font-black uppercase text-sm text-foreground tracking-tight mb-2">
-              Location-Aware Results<span className="text-primary">.</span>
+              Country based results<span className="text-primary">.</span>
             </p>
-            <p className="text-[12px] text-muted-foreground font-sans leading-relaxed mb-4">
-              We use your IP address to determine your country so you can see how voters from your region compare.
-              Your vote is still anonymous — we don't store personal data.
+            <p className="text-[14px] text-muted-foreground font-sans leading-relaxed mb-4">
+              We can use your IP address once to estimate your country and show regional breakdowns. Your name and email are not shown with your vote.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={accept}
-                className="flex-1 bg-primary text-white font-bold uppercase tracking-widest text-[10px] px-4 py-2.5 hover:bg-primary/90 transition-colors font-serif"
+                className="flex-1 bg-primary text-white font-bold uppercase tracking-widest text-[12px] px-4 py-2.5 hover:bg-primary/90 transition-colors font-serif"
               >
                 Accept
               </button>
               <button
                 onClick={reject}
-                className="flex-1 border border-border text-foreground font-bold uppercase tracking-widest text-[10px] px-4 py-2.5 hover:bg-secondary transition-colors font-serif"
+                className="flex-1 border border-border text-foreground font-bold uppercase tracking-widest text-[12px] px-4 py-2.5 hover:bg-secondary transition-colors font-serif"
               >
                 No Thanks
               </button>

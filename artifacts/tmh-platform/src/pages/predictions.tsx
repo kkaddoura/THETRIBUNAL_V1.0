@@ -11,6 +11,7 @@ import { useInfiniteScroll } from "@/hooks/use-infinite-scroll";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { PredictionGridSkeleton } from "@/components/skeletons/PredictionCardSkeleton";
 import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
+import { track } from "@/lib/analytics";
 
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -421,8 +422,8 @@ function PredShareBtn({ card }: { card: PredictionCard }) {
   const [showModal, setShowModal] = useState(false);
   const url =
     typeof window !== "undefined"
-      ? `${window.location.origin}/predictions?shared=${card.id}`
-      : `/predictions?shared=${card.id}`;
+      ? `${window.location.origin}/predictions/${card.id}`
+      : `/predictions/${card.id}`;
 
   const totalVotes = parseInt(card.count.replace(/,/g, ""), 10) || 0;
 
@@ -476,8 +477,8 @@ function PredMajlisShareBtn({ card }: { card: PredictionCard }) {
 
   const url =
     typeof window !== "undefined"
-      ? `${window.location.origin}/predictions?shared=${card.id}`
-      : `/predictions?shared=${card.id}`;
+      ? `${window.location.origin}/predictions/${card.id}`
+      : `/predictions/${card.id}`;
   const totalVotes = parseInt(card.count.replace(/,/g, ""), 10) || 0;
 
   const shareContext: PredictionShareContext = {
@@ -730,7 +731,7 @@ function MomentumTicker({
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.7rem",
+                fontSize: "0.80rem",
                 textTransform: "uppercase",
                 letterSpacing: "0.08em",
                 color: "rgba(250,250,250,0.75)",
@@ -752,7 +753,7 @@ function MomentumTicker({
               style={{
                 fontFamily: "'Barlow Condensed', sans-serif",
                 fontWeight: 700,
-                fontSize: "0.72rem",
+                fontSize: "0.83rem",
                 color: item.up ? "#10B981" : "#DC143C",
               }}
             >
@@ -800,7 +801,7 @@ function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.68rem",
+              fontSize: "0.78rem",
               textTransform: "uppercase",
               letterSpacing: "0.18em",
               color: "var(--muted-foreground)",
@@ -881,7 +882,7 @@ function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (
             style={{
               fontFamily: "DM Sans, sans-serif",
               fontStyle: "italic",
-              fontSize: "0.8rem",
+              fontSize: "0.92rem",
               color: month30Change >= 0 ? "#10B981" : "#DC143C",
               marginTop: "0.5rem",
             }}
@@ -932,7 +933,7 @@ function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (
           <p
             style={{
               fontFamily: "DM Sans, sans-serif",
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               color: "var(--muted-foreground)",
               fontStyle: "italic",
             }}
@@ -965,7 +966,7 @@ function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (
           <p
             style={{
               fontFamily: "DM Sans, sans-serif",
-              fontSize: "0.8rem",
+              fontSize: "0.92rem",
               color: "var(--muted-foreground)",
             }}
           >
@@ -1129,7 +1130,7 @@ function PredictionGridCard({
               >
                 <p style={{
                   fontFamily: "DM Sans, sans-serif",
-                  fontSize: "0.75rem",
+                  fontSize: "0.86rem",
                   color: "rgba(255,255,255,0.7)",
                   margin: "0 0 4px",
                 }}>
@@ -1137,7 +1138,7 @@ function PredictionGridCard({
                 </p>
                 <p style={{
                   fontFamily: "DM Sans, sans-serif",
-                  fontSize: "0.75rem",
+                  fontSize: "0.86rem",
                   color: "rgba(255,255,255,0.7)",
                   margin: "0 0 4px",
                 }}>
@@ -1145,7 +1146,7 @@ function PredictionGridCard({
                 </p>
                 <p style={{
                   fontFamily: "DM Sans, sans-serif",
-                  fontSize: "0.75rem",
+                  fontSize: "0.86rem",
                   color: "rgba(255,255,255,0.7)",
                   margin: 0,
                 }}>
@@ -1195,7 +1196,7 @@ function PredictionGridCard({
       <p
         style={{
           fontFamily: "DM Sans, sans-serif",
-          fontSize: "0.78rem",
+          fontSize: "0.90rem",
           color: "var(--muted-foreground)",
         }}
       >
@@ -1309,7 +1310,7 @@ function ClosedPredictionCard() {
             style={{
               fontFamily: "DM Sans, sans-serif",
               fontStyle: "italic",
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               color: "var(--muted-foreground)",
               marginTop: "0.5rem",
             }}
@@ -1373,7 +1374,7 @@ function ClosedPredictionCard() {
           <p
             style={{
               fontFamily: "DM Sans, sans-serif",
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               color: "var(--muted-foreground)",
             }}
           >
@@ -1506,6 +1507,7 @@ export default function Predictions() {
       const controller = new AbortController();
       searchAbortRef.current = controller;
       const params = new URLSearchParams({ search: q, limit: "100" });
+      track("search_used", { surface: "predictions", queryLength: q.length });
       fetch(`/api/public/predictions?${params}`, { signal: controller.signal })
         .then(r => r.ok ? r.json() : null)
         .then(data => {
@@ -1650,7 +1652,7 @@ export default function Predictions() {
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.68rem",
+              fontSize: "0.78rem",
               textTransform: "uppercase",
               letterSpacing: "0.28em",
               color: "#DC143C",
@@ -1674,20 +1676,29 @@ export default function Predictions() {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
           >
-            {pageConfig?.hero?.titleLine1 || "What Do You Think"}<br />
-            {pageConfig?.hero?.titleLine2 || "Actually Happens?"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
+            {pageConfig?.hero?.titleLine1 || "What do people"}<br />
+            {pageConfig?.hero?.titleLine2 || "think happens next?"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
           </motion.h1>
           <p
             className="text-text2"
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.78rem",
+              fontSize: "0.90rem",
               textTransform: "uppercase",
               letterSpacing: "0.18em",
             }}
           >
-            {pageConfig?.hero?.subtitle || `${PREDICTIONS.length} predictions across ${PREDICTION_CATEGORIES.length} categories. Not what should happen. What will.`}
+            {pageConfig?.hero?.subtitle || "Future facing questions on where the region is heading."}
+          </p>
+          <p
+            className="text-text2/70 mt-2 italic"
+            style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: "0.85rem",
+            }}
+          >
+            Predictions are opinion forecasts, not financial bets.
           </p>
         </motion.div>
       </div>
@@ -1709,7 +1720,7 @@ export default function Predictions() {
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 700,
-            fontSize: "0.72rem",
+            fontSize: "0.83rem",
             textTransform: "uppercase",
             letterSpacing: "0.15em",
             color: "rgba(250,250,250,0.75)",
@@ -1734,7 +1745,7 @@ export default function Predictions() {
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 700,
-            fontSize: "0.72rem",
+            fontSize: "0.83rem",
             textTransform: "uppercase",
             letterSpacing: "0.15em",
             color: "rgba(250,250,250,0.75)",
@@ -1759,7 +1770,7 @@ export default function Predictions() {
           style={{
             fontFamily: "'Barlow Condensed', sans-serif",
             fontWeight: 700,
-            fontSize: "0.72rem",
+            fontSize: "0.83rem",
             textTransform: "uppercase",
             letterSpacing: "0.15em",
             color: "rgba(250,250,250,0.75)",
@@ -1903,7 +1914,7 @@ export default function Predictions() {
                 style={{
                   fontFamily: "'Barlow Condensed', sans-serif",
                   fontWeight: 700,
-                  fontSize: "0.72rem",
+                  fontSize: "0.83rem",
                   textTransform: "uppercase",
                   letterSpacing: "0.15em",
                   color: "#DC143C",

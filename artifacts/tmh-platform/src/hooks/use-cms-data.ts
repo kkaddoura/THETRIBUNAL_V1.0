@@ -86,6 +86,7 @@ export interface SiteSettings {
   featureToggles?: {
     majlis?: { enabled: boolean }
     voices?: { enabled: boolean }
+    pulse?: { enabled: boolean }
     shareGate?: { enabled: boolean }
     emailCapture?: { enabled: boolean }
     ipConsent?: { enabled: boolean }
@@ -120,6 +121,25 @@ export function usePulseTopics() {
   return useQuery<{ items: ApiPulseTopic[] }>({
     queryKey: ["pulse-topics"],
     queryFn: () => fetchJson("/api/public/pulse-topics"),
+    staleTime: 60_000,
+  })
+}
+
+export interface TopItem {
+  type: "debate" | "prediction"
+  id: number
+  question: string
+  category: string
+  votes: number
+  window: "24h" | "all-time"
+  href: string
+}
+
+/** Top debate + prediction of the day (most votes in last 24h, all-time fallback). */
+export function useTopPost() {
+  return useQuery<{ topDebate: TopItem | null; topPrediction: TopItem | null; topPost: TopItem | null }>({
+    queryKey: ["top-post"],
+    queryFn: () => fetchJson("/api/public/top-post"),
     staleTime: 60_000,
   })
 }

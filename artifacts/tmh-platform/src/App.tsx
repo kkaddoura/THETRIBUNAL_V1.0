@@ -22,10 +22,19 @@ import MenaPulse from "@/pages/mena-pulse"
 import Majlis from "@/pages/majlis"
 import MajlisLogin from "@/pages/majlis-login"
 import Contact from "@/pages/contact"
+import Signup from "@/pages/signup"
+import LoginPage from "@/pages/login"
+import AccountPage from "@/pages/account"
+import VerifyEmail from "@/pages/verify-email"
+import ProfilePublic from "@/pages/profile-public"
+import ForgotPassword from "@/pages/forgot-password"
+import ResetPassword from "@/pages/reset-password"
 import NotFound from "@/pages/not-found"
 import { Chatbot } from "@/components/Chatbot"
 import { IpConsentBanner } from "@/components/IpConsentBanner"
+import { LoginPromptBanner } from "@/components/auth/LoginPromptBanner"
 import { useSiteSettings } from "@/hooks/use-cms-data"
+import { useAnalyticsBootstrap, usePageView, useScrollDepth } from "@/hooks/use-analytics"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +49,9 @@ function Router() {
   const { data: siteSettings } = useSiteSettings()
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false
   const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true
+  useAnalyticsBootstrap()
+  usePageView()
+  useScrollDepth()
 
   return (
     <Switch>
@@ -79,6 +91,13 @@ function Router() {
       )}
       <Route path="/contact" component={Contact} />
       <Route path="/admin" component={Admin} />
+      <Route path="/signup" component={Signup} />
+      <Route path="/login" component={LoginPage} />
+      <Route path="/account" component={AccountPage} />
+      <Route path="/verify" component={VerifyEmail} />
+      <Route path="/forgot-password" component={ForgotPassword} />
+      <Route path="/reset-password" component={ResetPassword} />
+      <Route path="/profile/:username" component={ProfilePublic} />
       {/* URL redirects */}
       <Route path="/polls"><Redirect to="/debates" /></Route>
       <Route path="/polls/:id">{(params: { id: string }) => <Redirect to={`/debates/${params.id}`} />}</Route>
@@ -98,6 +117,7 @@ function App() {
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <ErrorBoundary>
               <Router />
+              <LoginPromptBanner />
             </ErrorBoundary>
           </WouterRouter>
           <Toaster />

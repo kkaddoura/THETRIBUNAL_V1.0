@@ -8,8 +8,8 @@ const FALLBACK_SOCIALS = [
   { label: "Instagram", href: "https://instagram.com/tmhustle" },
 ]
 
-const FALLBACK_TAGLINE = "The voice of 541 million. Real people. Real hustle. Real change."
-const FALLBACK_COPYRIGHT = "© 2026 The Middle East Hustle. All rights reserved."
+const FALLBACK_TAGLINE = "The region, on record."
+const FALLBACK_COPYRIGHT = "© 2026 The Middle East Hustle. The Tribunal is operated under The Middle East Hustle brand. All rights reserved."
 
 export function Footer() {
   const { t } = useI18n()
@@ -17,8 +17,9 @@ export function Footer() {
   const { data: designTokens } = useDesignTokens()
 
   const footerSettings = siteSettings?.footer
-  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? true
+  const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false
+  const pulseEnabled = siteSettings?.featureToggles?.pulse?.enabled ?? false
   const SOCIALS = footerSettings?.socialLinks?.length
     ? footerSettings.socialLinks.map(s => ({ label: s.platform, href: s.url }))
     : designTokens?.items
@@ -35,16 +36,20 @@ export function Footer() {
   const NAV = (footerSettings?.links?.length
     ? footerSettings.links.map(link => ({ label: t(link.label), href: link.href }))
     : [
-        { label: t("About"), href: "/about" },
-        { label: t("Pulse"), href: "/pulse" },
         { label: t("Debates"), href: "/debates" },
         { label: t("Predictions"), href: "/predictions" },
-        ...(voicesEnabled ? [{ label: t("Voices"), href: "/voices" }] : []),
-        { label: t("Join The Voices"), href: "/apply" },
+        { label: t("Pulse"), href: "/pulse" },
+        { label: t("Voices"), href: "/voices" },
+        { label: t("The Majlis"), href: "/majlis" },
+        { label: t("About"), href: "/about" },
+        { label: t("FAQ"), href: "/faq" },
+        { label: t("Terms"), href: "/terms" },
+        { label: t("Contact"), href: "/contact" },
       ]
   ).filter(link =>
-    (voicesEnabled || !link.href?.startsWith("/voices"))
+    (voicesEnabled || (!link.href?.startsWith("/voices") && !link.href?.startsWith("/apply")))
     && (majlisEnabled || !link.href?.startsWith("/majlis"))
+    && (pulseEnabled || !link.href?.startsWith("/pulse"))
   )
 
   return (
@@ -56,7 +61,7 @@ export function Footer() {
               <span className="font-display font-black text-3xl uppercase tracking-tight text-background leading-none block hover:text-primary transition-colors">
                 {siteSettings?.seo?.siteTitle?.split(" by ")?.[0] || "The Tribunal"}<span className="text-primary">.</span>
               </span>
-              <span className="text-[10px] font-serif tracking-[0.2em] uppercase text-background/75 mt-1 block">
+              <span className="text-[12px] font-serif tracking-[0.2em] uppercase text-background/75 mt-1 block">
                 {t(siteSettings?.seo?.siteTitle?.includes(" by ") ? `by ${siteSettings.seo.siteTitle.split(" by ")[1]}` : "by The Middle East Hustle")}
               </span>
             </Link>
@@ -70,7 +75,7 @@ export function Footer() {
                   href={s.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[11px] uppercase tracking-widest font-bold text-background/75 hover:text-background transition-colors font-serif"
+                  className="text-[13px] uppercase tracking-widest font-bold text-background/75 hover:text-background transition-colors font-serif"
                 >
                   {s.label}
                 </a>
@@ -84,7 +89,7 @@ export function Footer() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="text-[12px] uppercase tracking-[0.15em] font-bold text-background/60 hover:text-background transition-colors font-serif"
+                  className="text-[14px] uppercase tracking-[0.15em] font-bold text-background/60 hover:text-background transition-colors font-serif"
                 >
                   {link.label}
                 </Link>
@@ -93,13 +98,13 @@ export function Footer() {
           </div>
 
           <div className="max-w-xs">
-            <h4 className="text-[11px] uppercase tracking-[0.3em] font-bold text-background/75 mb-4 font-serif">{t("Stay Informed")}</h4>
+            <h4 className="text-[13px] uppercase tracking-[0.3em] font-bold text-background/75 mb-4 font-serif">{t("Stay Informed")}</h4>
             <p className="text-sm text-background/75 font-sans leading-relaxed mb-4">
-              {t("The questions no one else asks. The data no one else collects. Straight to your inbox.")}
+              {t("Get the sharpest questions, results and prediction shifts from The Tribunal.")}
             </p>
             <Link
               href="/join"
-              className="inline-block bg-primary text-white text-[11px] font-bold uppercase tracking-[0.2em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
+              className="inline-block bg-primary text-white text-[13px] font-bold uppercase tracking-[0.2em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
             >
               {t("Get Updates")}
             </Link>
@@ -107,13 +112,13 @@ export function Footer() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-[11px] uppercase tracking-widest text-background/75 font-serif">
+          <p className="text-[13px] uppercase tracking-widest text-background/75 font-serif">
             {copyright}
           </p>
           <div className="flex items-center gap-6">
-            <Link href="/faq" className="text-[12px] uppercase tracking-[0.15em] font-bold text-background/75 hover:text-background transition-colors font-serif">{t("FAQ")}</Link>
-            <Link href="/terms" className="text-[12px] uppercase tracking-[0.15em] font-bold text-background/75 hover:text-background transition-colors font-serif">{t("Terms")}</Link>
-            <Link href="/contact" className="text-[12px] uppercase tracking-[0.15em] font-bold text-background/75 hover:text-background transition-colors font-serif">{t("Contact")}</Link>
+            <Link href="/faq" className="text-[14px] uppercase tracking-[0.15em] font-bold text-background/75 hover:text-background transition-colors font-serif">{t("FAQ")}</Link>
+            <Link href="/terms" className="text-[14px] uppercase tracking-[0.15em] font-bold text-background/75 hover:text-background transition-colors font-serif">{t("Terms")}</Link>
+            <Link href="/contact" className="text-[14px] uppercase tracking-[0.15em] font-bold text-background/75 hover:text-background transition-colors font-serif">{t("Contact")}</Link>
           </div>
         </div>
       </div>

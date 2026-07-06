@@ -1,6 +1,7 @@
 import { Router } from "express"
 import { loadFonts } from "../lib/og-fonts.js"
 import { debateCard, predictionCard, pulseCard } from "../lib/og-card.js"
+import { getBrandTokens } from "../lib/design-tokens-cache.js"
 
 // Satori and resvg are ESM-only packages. The server builds to CJS via
 // esbuild, so static `import satori from "satori"` breaks at runtime
@@ -31,10 +32,11 @@ const INTERNAL_API_BASE =
 router.get("/og-image/:type/:id", async (req, res) => {
   try {
     const { type, id } = req.params
+    const tokens = await getBrandTokens()
     const [satori, Resvg, fonts] = await Promise.all([
       getSatori(),
       getResvg(),
-      loadFonts(),
+      loadFonts({ headingFamily: tokens.headingFont, bodyFamily: tokens.bodyFont }),
     ])
 
     let element: ReturnType<typeof debateCard>
@@ -47,15 +49,18 @@ router.get("/og-image/:type/:id", async (req, res) => {
       }
       const poll = (await pollRes.json()) as Record<string, any>
 
-      element = debateCard({
-        question: poll.question ?? "Untitled debate",
-        category: poll.category,
-        totalVotes: poll.totalVotes ?? 0,
-        options: (poll.options ?? []).map((o: Record<string, any>) => ({
-          text: o.text ?? "",
-          percentage: o.percentage ?? 0,
-        })),
-      })
+      element = debateCard(
+        {
+          question: poll.question ?? "Untitled debate",
+          category: poll.category,
+          totalVotes: poll.totalVotes ?? 0,
+          options: (poll.options ?? []).map((o: Record<string, any>) => ({
+            text: o.text ?? "",
+            percentage: o.percentage ?? 0,
+          })),
+        },
+        tokens,
+      )
     } else if (type === "prediction") {
       const predRes = await fetch(`${INTERNAL_API_BASE}/api/predictions/${id}`)
       if (!predRes.ok) {
@@ -64,25 +69,31 @@ router.get("/og-image/:type/:id", async (req, res) => {
       }
       const pred = (await predRes.json()) as Record<string, any>
 
-      element = predictionCard({
-        question: pred.question ?? "Untitled prediction",
-        category: pred.category,
-        totalVotes: pred.totalCount ?? 0,
-        yesPercentage: pred.yesPercentage,
-        noPercentage: pred.noPercentage,
-        options: pred.options?.map((text: string) => ({
-          text,
-          percentage: pred.optionResults?.[text] ?? 0,
-        })),
-      })
+      element = predictionCard(
+        {
+          question: pred.question ?? "Untitled prediction",
+          category: pred.category,
+          totalVotes: pred.totalCount ?? 0,
+          yesPercentage: pred.yesPercentage,
+          noPercentage: pred.noPercentage,
+          options: pred.options?.map((text: string) => ({
+            text,
+            percentage: pred.optionResults?.[text] ?? 0,
+          })),
+        },
+        tokens,
+      )
     } else if (type === "pulse") {
-      element = pulseCard({
-        title: "MENA Pulse",
-        stat: "",
-        delta: "",
-        deltaUp: true,
-        category: "PULSE",
-      })
+      element = pulseCard(
+        {
+          title: "MENA Pulse",
+          stat: "",
+          delta: "",
+          deltaUp: true,
+          category: "PULSE",
+        },
+        tokens,
+      )
     } else {
       res.status(404).send("Unknown content type")
       return

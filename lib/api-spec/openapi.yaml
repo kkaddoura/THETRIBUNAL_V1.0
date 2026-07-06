@@ -48,6 +48,16 @@ paths:
           in: query
           schema:
             type: string
+        - name: tag
+          in: query
+          description: When set, returns polls whose tags array contains this tag (case-insensitive). Sort is forced to newest-first.
+          schema:
+            type: string
+        - name: ids
+          in: query
+          description: Comma-separated list of poll IDs (e.g. "12,7,33"). Returns polls in the requested order. Mutually exclusive with filter/category/tag.
+          schema:
+            type: string
         - name: limit
           in: query
           schema:
@@ -335,7 +345,7 @@ components:
             type: string
         pollType:
           type: string
-          enum: [binary, multiple_choice, head_to_head, hot_take]
+          enum: [binary, multiple_choice, head_to_head, hot_take, scale]
         options:
           type: array
           items:
@@ -389,6 +399,8 @@ components:
           type: integer
         voterToken:
           type: string
+        ipConsent:
+          type: boolean
       required:
         - optionId
         - voterToken
@@ -425,6 +437,9 @@ components:
           type: string
         company:
           type: string
+        companyUrl:
+          type: string
+          nullable: true
         sector:
           type: string
         country:

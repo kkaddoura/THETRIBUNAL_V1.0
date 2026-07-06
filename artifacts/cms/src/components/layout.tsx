@@ -1,7 +1,7 @@
 import type React from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
-import { LayoutDashboard, MessageSquare, TrendingUp, Users, LogOut, Home, Mail, FileText, BarChart3, Activity, Info, HelpCircle, ScrollText, Phone, Shield, Palette, Sparkles, Lightbulb, Settings, Vote, UserPlus } from "lucide-react";
+import { LayoutDashboard, MessageSquare, TrendingUp, Users, LogOut, Home, Mail, FileText, BarChart3, Activity, Info, HelpCircle, ScrollText, Phone, Shield, Palette, Sparkles, Lightbulb, Settings, Vote, UserPlus, Tags } from "lucide-react";
 
 const NAV_SECTIONS = [
   {
@@ -38,9 +38,17 @@ const NAV_SECTIONS = [
     ],
   },
   {
+    label: "DISTRIBUTION",
+    items: [
+      { path: "/studio", label: "Social Studio", icon: Sparkles },
+      { path: "/newsletter", label: "Weekly Digest", icon: Mail },
+    ],
+  },
+  {
     label: "SETTINGS",
     items: [
       { path: "/site-settings", label: "Site Settings", icon: Settings },
+      { path: "/categories", label: "Categories", icon: Tags },
     ],
   },
   {

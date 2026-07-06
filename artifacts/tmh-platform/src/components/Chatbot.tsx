@@ -4,6 +4,7 @@ import { X, Send, MessageCircle, Loader2 } from "lucide-react"
 import { motion, AnimatePresence } from "motion/react"
 import { cn } from "@/lib/utils"
 import { useSiteSettings } from "@/hooks/use-cms-data"
+import { track } from "@/lib/analytics"
 
 const API_BASE = (import.meta as any).env?.VITE_API_BASE_URL ?? ""
 
@@ -256,7 +257,10 @@ export function Chatbot() {
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0, opacity: 0 }}
             transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              setIsOpen(true)
+              track("chatbot_opened", { source: "fab" })
+            }}
             className="fixed bottom-6 right-6 z-[600] flex items-center justify-center w-14 h-14 rounded-full cursor-pointer group"
             style={{
               background: "#DC143C",
@@ -304,7 +308,7 @@ export function Chatbot() {
                 </div>
                 <div>
                   <h3 className="text-white text-sm font-bold leading-tight">Noor</h3>
-                  <p className="text-[10px] text-white/75 flex items-center gap-1.5">
+                  <p className="text-[12px] text-white/75 flex items-center gap-1.5">
                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
                     online
                   </p>
@@ -378,7 +382,7 @@ export function Chatbot() {
                       </div>
                       <div
                         className={cn(
-                          "text-[9px] mt-1 select-none",
+                          "text-[10px] mt-1 select-none",
                           isUser ? "text-white/75 text-right" : "text-white/75 text-right"
                         )}
                       >

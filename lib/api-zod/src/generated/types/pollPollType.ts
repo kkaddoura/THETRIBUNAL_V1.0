@@ -13,4 +13,5 @@ export const PollPollType = {
   multiple_choice: "multiple_choice",
   head_to_head: "head_to_head",
   hot_take: "hot_take",
+  scale: "scale",
 } as const;

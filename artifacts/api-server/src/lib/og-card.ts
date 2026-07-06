@@ -5,17 +5,12 @@
  * Each element is { type: string, props: { style, children } }.
  *
  * All containers use display: "flex" (Satori flexbox-only layout engine).
+ *
+ * Templates accept a `tokens` argument so that brand colors and font families
+ * are sourced from the CMS `designTokensTable` (resolved via design-tokens-cache).
  */
 
-// --- Brand constants ---
-const BLACK = "#0A0A0A"
-const WHITE = "#F2EDE4"
-const RED = "#DC143C"
-const MUTED = "#9A9690"
-const BORDER = "#2A2A2A"
-
-const HEADING_FONT = "Barlow Condensed"
-const BODY_FONT = "Barlow"
+import type { BrandTokens } from "./design-tokens-cache.js"
 
 // --- Satori element type ---
 interface SatoriElement {
@@ -29,7 +24,7 @@ interface SatoriElement {
 
 // ─── Shared layout helpers ──────────────────────────────────────────
 
-function cardShell(children: (SatoriElement | string)[]): SatoriElement {
+function cardShell(tokens: BrandTokens, children: (SatoriElement | string)[]): SatoriElement {
   return {
     type: "div",
     props: {
@@ -38,13 +33,13 @@ function cardShell(children: (SatoriElement | string)[]): SatoriElement {
         flexDirection: "column",
         width: "100%",
         height: "100%",
-        backgroundColor: BLACK,
-        fontFamily: HEADING_FONT,
+        backgroundColor: tokens.bg,
+        fontFamily: tokens.headingFont,
         position: "relative",
         overflow: "hidden",
       },
       children: [
-        // Red accent bar
+        // Accent bar
         {
           type: "div",
           props: {
@@ -52,7 +47,7 @@ function cardShell(children: (SatoriElement | string)[]): SatoriElement {
               display: "flex",
               width: "100%",
               height: "5px",
-              backgroundColor: RED,
+              backgroundColor: tokens.accent,
               flexShrink: 0,
             },
             children: [],
@@ -77,7 +72,7 @@ function cardShell(children: (SatoriElement | string)[]): SatoriElement {
   }
 }
 
-function brandHeader(category?: string): SatoriElement {
+function brandHeader(tokens: BrandTokens, category?: string): SatoriElement {
   return {
     type: "div",
     props: {
@@ -101,13 +96,13 @@ function brandHeader(category?: string): SatoriElement {
                     display: "flex",
                     fontSize: "30px",
                     fontWeight: 900,
-                    color: WHITE,
+                    color: tokens.fg,
                     letterSpacing: "2px",
                     textTransform: "uppercase" as const,
                   },
                   children: [
                     { type: "span", props: { children: "THE TRIBUNAL" } },
-                    { type: "span", props: { style: { color: RED }, children: "." } },
+                    { type: "span", props: { style: { color: tokens.accent }, children: "." } },
                   ],
                 },
               },
@@ -118,8 +113,8 @@ function brandHeader(category?: string): SatoriElement {
                     display: "flex",
                     fontSize: "12px",
                     fontWeight: 600,
-                    fontFamily: BODY_FONT,
-                    color: MUTED,
+                    fontFamily: tokens.bodyFont,
+                    color: tokens.muted,
                     letterSpacing: "3px",
                     textTransform: "uppercase" as const,
                     marginTop: "4px",
@@ -138,11 +133,11 @@ function brandHeader(category?: string): SatoriElement {
                 props: {
                   style: {
                     display: "flex",
-                    backgroundColor: RED,
-                    color: WHITE,
+                    backgroundColor: tokens.accent,
+                    color: tokens.fg,
                     fontSize: "13px",
                     fontWeight: 700,
-                    fontFamily: BODY_FONT,
+                    fontFamily: tokens.bodyFont,
                     padding: "6px 16px",
                     borderRadius: "4px",
                     textTransform: "uppercase" as const,
@@ -158,7 +153,7 @@ function brandHeader(category?: string): SatoriElement {
   }
 }
 
-function footer(leftText: string, rightText: string = "TRIBUNAL.COM"): SatoriElement {
+function footer(tokens: BrandTokens, leftText: string, rightText: string = "TRIBUNAL.COM"): SatoriElement {
   return {
     type: "div",
     props: {
@@ -167,7 +162,7 @@ function footer(leftText: string, rightText: string = "TRIBUNAL.COM"): SatoriEle
         justifyContent: "space-between",
         alignItems: "center",
         width: "100%",
-        borderTop: `1px solid ${BORDER}`,
+        borderTop: `1px solid ${tokens.border}`,
         paddingTop: "20px",
       },
       children: [
@@ -178,8 +173,8 @@ function footer(leftText: string, rightText: string = "TRIBUNAL.COM"): SatoriEle
               display: "flex",
               fontSize: "14px",
               fontWeight: 600,
-              fontFamily: BODY_FONT,
-              color: MUTED,
+              fontFamily: tokens.bodyFont,
+              color: tokens.muted,
               letterSpacing: "1px",
               textTransform: "uppercase" as const,
             },
@@ -193,8 +188,8 @@ function footer(leftText: string, rightText: string = "TRIBUNAL.COM"): SatoriEle
               display: "flex",
               fontSize: "14px",
               fontWeight: 700,
-              fontFamily: BODY_FONT,
-              color: MUTED,
+              fontFamily: tokens.bodyFont,
+              color: tokens.muted,
               letterSpacing: "2px",
               textTransform: "uppercase" as const,
             },
@@ -206,7 +201,7 @@ function footer(leftText: string, rightText: string = "TRIBUNAL.COM"): SatoriEle
   }
 }
 
-function questionText(text: string, maxFontSize = 42): SatoriElement {
+function questionText(tokens: BrandTokens, text: string, maxFontSize = 42): SatoriElement {
   // Adjust font size based on text length for readability
   const len = text.length
   let fontSize = maxFontSize
@@ -221,7 +216,7 @@ function questionText(text: string, maxFontSize = 42): SatoriElement {
         display: "flex",
         fontSize: `${fontSize}px`,
         fontWeight: 900,
-        color: WHITE,
+        color: tokens.fg,
         textTransform: "uppercase" as const,
         lineHeight: 1.15,
         letterSpacing: "0.5px",
@@ -234,9 +229,9 @@ function questionText(text: string, maxFontSize = 42): SatoriElement {
 
 // ─── Result bar (used for debate + prediction options) ──────────────
 
-function resultBar(label: string, percentage: number, highlight = false): SatoriElement {
+function resultBar(tokens: BrandTokens, label: string, percentage: number, highlight = false): SatoriElement {
   const pct = Math.max(0, Math.min(100, Math.round(percentage)))
-  const barColor = highlight ? RED : BORDER
+  const barColor = highlight ? tokens.accent : tokens.border
 
   return {
     type: "div",
@@ -266,8 +261,8 @@ function resultBar(label: string, percentage: number, highlight = false): Satori
                     display: "flex",
                     fontSize: "16px",
                     fontWeight: 700,
-                    fontFamily: BODY_FONT,
-                    color: WHITE,
+                    fontFamily: tokens.bodyFont,
+                    color: tokens.fg,
                     textTransform: "uppercase" as const,
                     letterSpacing: "0.5px",
                   },
@@ -281,8 +276,8 @@ function resultBar(label: string, percentage: number, highlight = false): Satori
                     display: "flex",
                     fontSize: "18px",
                     fontWeight: 900,
-                    color: highlight ? RED : WHITE,
-                    fontFamily: HEADING_FONT,
+                    color: highlight ? tokens.accent : tokens.fg,
+                    fontFamily: tokens.headingFont,
                   },
                   children: `${pct}%`,
                 },
@@ -333,19 +328,19 @@ export interface DebateCardData {
   options: { text: string; percentage: number }[]
 }
 
-export function debateCard(data: DebateCardData): SatoriElement {
+export function debateCard(data: DebateCardData, tokens: BrandTokens): SatoriElement {
   const topOptions = data.options.slice(0, 4) // max 4 options
   const maxPct = Math.max(...topOptions.map((o) => o.percentage), 0)
 
-  return cardShell([
-    brandHeader(data.category),
+  return cardShell(tokens, [
+    brandHeader(tokens, data.category),
 
     // Question
     {
       type: "div",
       props: {
         style: { display: "flex", flexDirection: "column", marginTop: "20px" },
-        children: [questionText(data.question)],
+        children: [questionText(tokens, data.question)],
       },
     },
 
@@ -360,13 +355,11 @@ export function debateCard(data: DebateCardData): SatoriElement {
           marginBottom: "16px",
           width: "100%",
         },
-        children: topOptions.map((opt) => resultBar(opt.text, opt.percentage, opt.percentage === maxPct && maxPct > 0)),
+        children: topOptions.map((opt) => resultBar(tokens, opt.text, opt.percentage, opt.percentage === maxPct && maxPct > 0)),
       },
     },
 
-    footer(
-      data.totalVotes > 0 ? `${data.totalVotes.toLocaleString()} votes` : "Vote now",
-    ),
+    footer(tokens, data.totalVotes > 0 ? `${data.totalVotes.toLocaleString()} votes` : "Vote now"),
   ])
 }
 
@@ -379,32 +372,32 @@ export interface PredictionCardData {
   options?: { text: string; percentage: number }[]
 }
 
-export function predictionCard(data: PredictionCardData): SatoriElement {
+export function predictionCard(data: PredictionCardData, tokens: BrandTokens): SatoriElement {
   // Build result bars: use options if available, otherwise fall back to yes/no
   let bars: SatoriElement[]
   if (data.options && data.options.length > 0) {
     const maxPct = Math.max(...data.options.map((o) => o.percentage), 0)
     bars = data.options
       .slice(0, 4)
-      .map((opt) => resultBar(opt.text, opt.percentage, opt.percentage === maxPct && maxPct > 0))
+      .map((opt) => resultBar(tokens, opt.text, opt.percentage, opt.percentage === maxPct && maxPct > 0))
   } else {
     const yesPct = data.yesPercentage ?? 50
     const noPct = data.noPercentage ?? 100 - yesPct
     bars = [
-      resultBar("Yes", yesPct, yesPct >= noPct),
-      resultBar("No", noPct, noPct > yesPct),
+      resultBar(tokens, "Yes", yesPct, yesPct >= noPct),
+      resultBar(tokens, "No", noPct, noPct > yesPct),
     ]
   }
 
-  return cardShell([
-    brandHeader(data.category ?? "PREDICTION"),
+  return cardShell(tokens, [
+    brandHeader(tokens, data.category ?? "PREDICTION"),
 
     // Question
     {
       type: "div",
       props: {
         style: { display: "flex", flexDirection: "column", marginTop: "20px" },
-        children: [questionText(data.question)],
+        children: [questionText(tokens, data.question)],
       },
     },
 
@@ -423,9 +416,7 @@ export function predictionCard(data: PredictionCardData): SatoriElement {
       },
     },
 
-    footer(
-      data.totalVotes > 0 ? `${data.totalVotes.toLocaleString()} predictions` : "Predict now",
-    ),
+    footer(tokens, data.totalVotes > 0 ? `${data.totalVotes.toLocaleString()} predictions` : "Predict now"),
   ])
 }
 
@@ -438,19 +429,19 @@ export interface PulseCardData {
   source?: string
 }
 
-export function pulseCard(data: PulseCardData): SatoriElement {
-  const deltaColor = data.deltaUp ? "#22C55E" : RED
-  const deltaArrow = data.deltaUp ? "\u25B2" : "\u25BC"
+export function pulseCard(data: PulseCardData, tokens: BrandTokens): SatoriElement {
+  const deltaColor = data.deltaUp ? "#22C55E" : tokens.accent
+  const deltaArrow = data.deltaUp ? "▲" : "▼"
 
-  return cardShell([
-    brandHeader(data.category ?? "MENA PULSE"),
+  return cardShell(tokens, [
+    brandHeader(tokens, data.category ?? "MENA PULSE"),
 
     // Title
     {
       type: "div",
       props: {
         style: { display: "flex", flexDirection: "column", marginTop: "24px" },
-        children: [questionText(data.title, 38)],
+        children: [questionText(tokens, data.title, 38)],
       },
     },
 
@@ -475,9 +466,9 @@ export function pulseCard(data: PulseCardData): SatoriElement {
                       display: "flex",
                       fontSize: "80px",
                       fontWeight: 900,
-                      color: WHITE,
+                      color: tokens.fg,
                       lineHeight: 1,
-                      fontFamily: HEADING_FONT,
+                      fontFamily: tokens.headingFont,
                     },
                     children: data.stat,
                   },
@@ -494,7 +485,7 @@ export function pulseCard(data: PulseCardData): SatoriElement {
                       display: "flex",
                       fontSize: "28px",
                       fontWeight: 700,
-                      fontFamily: BODY_FONT,
+                      fontFamily: tokens.bodyFont,
                       color: deltaColor,
                       marginLeft: "20px",
                     },
@@ -507,8 +498,6 @@ export function pulseCard(data: PulseCardData): SatoriElement {
       },
     },
 
-    footer(
-      data.source ? `Source: ${data.source}` : "Live data",
-    ),
+    footer(tokens, data.source ? `Source: ${data.source}` : "Live data"),
   ])
 }

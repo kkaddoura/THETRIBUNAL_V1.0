@@ -9,4 +9,5 @@
 export interface VoteRequest {
   optionId: number;
   voterToken: string;
+  ipConsent?: boolean;
 }

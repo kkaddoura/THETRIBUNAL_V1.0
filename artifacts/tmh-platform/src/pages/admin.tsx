@@ -47,7 +47,7 @@ function ScoreBadge({ score, status }: { score: number | null; status: string | 
   if (score === null) return null
   const color = status === "passed" ? "bg-green-500" : status === "conditional" ? "bg-yellow-500" : "bg-red-500"
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 text-white font-bold text-[10px] uppercase tracking-widest", color)}>
+    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 text-white font-bold text-[12px] uppercase tracking-widest", color)}>
       {score}/100
     </span>
   )
@@ -63,7 +63,7 @@ function EditorialBadge({ status }: { status: string }) {
   const m = map[status] ?? map.pending
   const Icon = m.icon
   return (
-    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 border text-[10px] font-bold uppercase tracking-widest", m.color)}>
+    <span className={cn("inline-flex items-center gap-1 px-2 py-0.5 border text-[12px] font-bold uppercase tracking-widest", m.color)}>
       <Icon className="w-3 h-3" />
       {m.label}
     </span>
@@ -98,10 +98,10 @@ function ApplicationRow({ app, adminKey, onUpdate }: { app: Application; adminKe
             <ScoreBadge score={app.aiScore} status={app.aiStatus} />
             <EditorialBadge status={app.editorialStatus} />
           </div>
-          <p className="text-[11px] text-muted-foreground font-sans">
+          <p className="text-[13px] text-muted-foreground font-sans">
             {app.title} @ {app.company}{app.city ? ` · ${app.city}` : ""}{app.country ? `, ${app.country}` : ""}
           </p>
-          <p className="text-[10px] text-muted-foreground/60 font-sans mt-0.5">
+          <p className="text-[12px] text-muted-foreground/60 font-sans mt-0.5">
             {new Date(app.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
             {" · "}{app.email}
           </p>
@@ -113,25 +113,25 @@ function ApplicationRow({ app, adminKey, onUpdate }: { app: Application; adminKe
         <div className="border-t border-border p-4 space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Bio</p>
-              <p className="text-[12px] font-sans text-foreground leading-relaxed">{app.bio}</p>
+              <p className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Bio</p>
+              <p className="text-[14px] font-sans text-foreground leading-relaxed">{app.bio}</p>
             </div>
             <div className="space-y-3">
               {app.impact && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Impact Statement</p>
-                  <p className="text-[12px] font-sans text-foreground leading-relaxed">{app.impact}</p>
+                  <p className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Impact Statement</p>
+                  <p className="text-[14px] font-sans text-foreground leading-relaxed">{app.impact}</p>
                 </div>
               )}
               {app.quote && (
                 <div>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Signature Quote</p>
-                  <p className="text-[12px] font-serif italic text-foreground">"{app.quote}"</p>
+                  <p className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Signature Quote</p>
+                  <p className="text-[14px] font-serif italic text-foreground">"{app.quote}"</p>
                 </div>
               )}
               <div>
-                <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">LinkedIn</p>
-                <a href={app.linkedin} target="_blank" rel="noopener noreferrer" className="text-[12px] text-primary flex items-center gap-1 hover:underline">
+                <p className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold mb-1">LinkedIn</p>
+                <a href={app.linkedin} target="_blank" rel="noopener noreferrer" className="text-[14px] text-primary flex items-center gap-1 hover:underline">
                   {app.linkedin} <ExternalLink className="w-3 h-3" />
                 </a>
               </div>
@@ -140,13 +140,13 @@ function ApplicationRow({ app, adminKey, onUpdate }: { app: Application; adminKe
 
           {app.aiReasoning && (
             <div className="bg-secondary/30 border border-border p-3">
-              <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">AI Reasoning</p>
-              <p className="text-[11px] font-sans text-foreground leading-relaxed">{app.aiReasoning}</p>
+              <p className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold mb-1">AI Reasoning</p>
+              <p className="text-[13px] font-sans text-foreground leading-relaxed">{app.aiReasoning}</p>
             </div>
           )}
 
           <div>
-            <p className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Editor Notes</p>
+            <p className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold mb-1">Editor Notes</p>
             <textarea
               value={notes}
               onChange={e => setNotes(e.target.value)}
@@ -160,28 +160,28 @@ function ApplicationRow({ app, adminKey, onUpdate }: { app: Application; adminKe
             <button
               onClick={() => update("approved")}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white font-bold text-[10px] uppercase tracking-widest hover:bg-green-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 bg-green-600 text-white font-bold text-[12px] uppercase tracking-widest hover:bg-green-700 transition-colors disabled:opacity-50"
             >
               <CheckCircle2 className="w-3 h-3" /> Approve
             </button>
             <button
               onClick={() => update("declined")}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white font-bold text-[10px] uppercase tracking-widest hover:bg-red-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 bg-red-600 text-white font-bold text-[12px] uppercase tracking-widest hover:bg-red-700 transition-colors disabled:opacity-50"
             >
               <XCircle className="w-3 h-3" /> Decline
             </button>
             <button
               onClick={() => update("revision")}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white font-bold text-[10px] uppercase tracking-widest hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white font-bold text-[12px] uppercase tracking-widest hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
               Request Revision
             </button>
             <button
               onClick={() => update("pending")}
               disabled={saving}
-              className="flex items-center gap-1.5 px-4 py-2 border border-border text-foreground font-bold text-[10px] uppercase tracking-widest hover:bg-secondary transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 px-4 py-2 border border-border text-foreground font-bold text-[12px] uppercase tracking-widest hover:bg-secondary transition-colors disabled:opacity-50"
             >
               Reset to Pending
             </button>
@@ -223,7 +223,7 @@ function CreatePollForm({ adminKey, onCreated }: { adminKey: string; onCreated: 
   return (
     <form onSubmit={submit} className="space-y-4">
       <div>
-        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold block mb-1">Question *</label>
+        <label className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold block mb-1">Question *</label>
         <input
           required value={question} onChange={e => setQuestion(e.target.value)}
           placeholder="Your job will still exist in 5 years. Be honest."
@@ -232,7 +232,7 @@ function CreatePollForm({ adminKey, onCreated }: { adminKey: string; onCreated: 
       </div>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold block mb-1">Category *</label>
+          <label className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold block mb-1">Category *</label>
           <input
             required value={category} onChange={e => setCategory(e.target.value)}
             placeholder="Technology & AI"
@@ -240,7 +240,7 @@ function CreatePollForm({ adminKey, onCreated }: { adminKey: string; onCreated: 
           />
         </div>
         <div>
-          <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold block mb-1">Context (optional)</label>
+          <label className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold block mb-1">Context (optional)</label>
           <input
             value={context} onChange={e => setContext(e.target.value)}
             placeholder="One-line editorial framing"
@@ -249,7 +249,7 @@ function CreatePollForm({ adminKey, onCreated }: { adminKey: string; onCreated: 
         </div>
       </div>
       <div>
-        <label className="text-[10px] uppercase tracking-widest text-muted-foreground font-bold block mb-2">Answer Options (min 2) *</label>
+        <label className="text-[12px] uppercase tracking-widest text-muted-foreground font-bold block mb-2">Answer Options (min 2) *</label>
         <div className="space-y-2">
           {options.map((opt, i) => (
             <input
@@ -265,18 +265,18 @@ function CreatePollForm({ adminKey, onCreated }: { adminKey: string; onCreated: 
           type="checkbox" id="featured" checked={isFeatured} onChange={e => setIsFeatured(e.target.checked)}
           className="w-4 h-4 accent-primary"
         />
-        <label htmlFor="featured" className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground cursor-pointer">
+        <label htmlFor="featured" className="text-[13px] font-bold uppercase tracking-widest text-muted-foreground cursor-pointer">
           Set as Featured (Hero) Poll
         </label>
       </div>
       <div className="flex items-center gap-3">
         <button
           type="submit" disabled={saving}
-          className="px-6 py-2.5 bg-primary text-white font-black uppercase tracking-[0.15em] text-[11px] hover:bg-primary/90 transition-colors disabled:opacity-50"
+          className="px-6 py-2.5 bg-primary text-white font-black uppercase tracking-[0.15em] text-[13px] hover:bg-primary/90 transition-colors disabled:opacity-50"
         >
           {saving ? "Publishing…" : "Publish Debate"}
         </button>
-        {success && <span className="text-green-500 font-bold text-[11px] uppercase tracking-widest">Poll published!</span>}
+        {success && <span className="text-green-500 font-bold text-[13px] uppercase tracking-widest">Poll published!</span>}
       </div>
     </form>
   )
@@ -327,7 +327,7 @@ export default function Admin() {
             <h1 className="font-display font-black text-4xl uppercase text-foreground">
               TMH<span className="text-primary">.</span>
             </h1>
-            <p className="text-[10px] uppercase tracking-[0.3em] text-muted-foreground mt-1 font-serif">Admin Access</p>
+            <p className="text-[12px] uppercase tracking-[0.3em] text-muted-foreground mt-1 font-serif">Admin Access</p>
           </div>
           <form onSubmit={login} className="space-y-4">
             <input
@@ -341,7 +341,7 @@ export default function Admin() {
             />
             <button
               type="submit"
-              className="w-full px-4 py-3 bg-foreground text-background font-black uppercase tracking-[0.2em] text-[11px] hover:bg-primary transition-colors"
+              className="w-full px-4 py-3 bg-foreground text-background font-black uppercase tracking-[0.2em] text-[13px] hover:bg-primary transition-colors"
             >
               Enter
             </button>
@@ -373,21 +373,21 @@ export default function Admin() {
               TMH<span className="text-primary">.</span>
             </span>
           </Link>
-          <span className="text-[10px] uppercase tracking-[0.3em] text-background/70 font-serif hidden sm:block">Admin</span>
+          <span className="text-[12px] uppercase tracking-[0.3em] text-background/70 font-serif hidden sm:block">Admin</span>
         </div>
         {stats && (
           <div className="flex items-center gap-6">
             <div className="text-center hidden sm:block">
               <div className="font-black text-lg text-primary leading-none">{stats.pendingApplications}</div>
-              <div className="text-[9px] uppercase tracking-widest text-background/70 font-serif">Pending</div>
+              <div className="text-[10px] uppercase tracking-widest text-background/70 font-serif">Pending</div>
             </div>
             <div className="text-center hidden sm:block">
               <div className="font-black text-lg text-background leading-none">{stats.totalVotes?.toLocaleString()}</div>
-              <div className="text-[9px] uppercase tracking-widest text-background/70 font-serif">Total Votes</div>
+              <div className="text-[10px] uppercase tracking-widest text-background/70 font-serif">Total Votes</div>
             </div>
             <div className="text-center hidden sm:block">
               <div className="font-black text-lg text-background leading-none">{stats.subscribers}</div>
-              <div className="text-[9px] uppercase tracking-widest text-background/70 font-serif">Subscribers</div>
+              <div className="text-[10px] uppercase tracking-widest text-background/70 font-serif">Subscribers</div>
             </div>
           </div>
         )}
@@ -403,7 +403,7 @@ export default function Admin() {
                 key={t.id}
                 onClick={() => setTab(t.id)}
                 className={cn(
-                  "flex items-center gap-2 px-5 py-3 text-[11px] font-bold uppercase tracking-widest border-b-2 -mb-px transition-colors",
+                  "flex items-center gap-2 px-5 py-3 text-[13px] font-bold uppercase tracking-widest border-b-2 -mb-px transition-colors",
                   tab === t.id
                     ? "border-primary text-primary"
                     : "border-transparent text-muted-foreground hover:text-foreground"
@@ -425,7 +425,7 @@ export default function Admin() {
                   key={f}
                   onClick={() => setFilter(f)}
                   className={cn(
-                    "px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest border transition-colors",
+                    "px-3 py-1.5 text-[12px] font-bold uppercase tracking-widest border transition-colors",
                     filter === f ? "bg-foreground text-background border-foreground" : "border-border text-muted-foreground hover:border-foreground"
                   )}
                 >
@@ -476,7 +476,7 @@ export default function Admin() {
             ].map(s => (
               <div key={s.label} className="border border-border bg-card p-6">
                 <div className="font-black text-4xl font-serif text-foreground leading-none mb-2">{s.value}</div>
-                <div className="text-[10px] uppercase tracking-widest text-muted-foreground font-serif">{s.label}</div>
+                <div className="text-[12px] uppercase tracking-widest text-muted-foreground font-serif">{s.label}</div>
               </div>
             ))}
           </div>
