@@ -1,6 +1,8 @@
+import { useState } from "react"
 import { Link } from "wouter"
 import { useI18n } from "@/lib/i18n"
 import { useSiteSettings, useDesignTokens, getTokenValue } from "@/hooks/use-cms-data"
+import { track } from "@/lib/analytics"
 
 const FALLBACK_SOCIALS = [
   { label: "X", href: "https://x.com/tmhustle" },
@@ -15,6 +17,25 @@ export function Footer() {
   const { t } = useI18n()
   const { data: siteSettings } = useSiteSettings()
   const { data: designTokens } = useDesignTokens()
+  const [email, setEmail] = useState("")
+  const [joined, setJoined] = useState(() =>
+    typeof window !== "undefined" && !!localStorage.getItem("tmh_cta_joined")
+  )
+
+  const handleNewsletterSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const cleaned = email.trim().toLowerCase()
+    if (!cleaned) return
+    localStorage.setItem("tmh_cta_joined", cleaned)
+    setJoined(true)
+    const baseUrl = import.meta.env?.VITE_API_BASE_URL ?? ""
+    fetch(`${baseUrl}/api/newsletter/subscribe`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: cleaned, source: "footer", newsletterOptIn: true }),
+    }).catch(() => {})
+    track("newsletter_subscribed", { source: "footer", optedIn: true })
+  }
 
   const footerSettings = siteSettings?.footer
   const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false
@@ -59,7 +80,7 @@ export function Footer() {
           <div className="flex-1">
             <Link href="/">
               <span className="font-display font-black text-3xl uppercase tracking-tight text-background leading-none block hover:text-primary transition-colors">
-                {siteSettings?.seo?.siteTitle?.split(" by ")?.[0] || "The Tribunal"}<span className="text-primary">.</span>
+                {siteSettings?.seo?.siteTitle?.split(" by ")?.[0] || "The Tribunal"}
               </span>
               <span className="text-[12px] font-serif tracking-[0.2em] uppercase text-background/75 mt-1 block">
                 {t(siteSettings?.seo?.siteTitle?.includes(" by ") ? `by ${siteSettings.seo.siteTitle.split(" by ")[1]}` : "by The Middle East Hustle")}
@@ -83,7 +104,7 @@ export function Footer() {
             </div>
           </div>
 
-          <div>
+          <nav aria-label="Footer navigation">
             <div className="flex flex-col gap-3">
               {NAV.map(link => (
                 <Link
@@ -95,31 +116,48 @@ export function Footer() {
                 </Link>
               ))}
             </div>
-          </div>
+          </nav>
 
           <div className="max-w-xs">
-            <h4 className="text-[13px] uppercase tracking-[0.3em] font-bold text-background/75 mb-4 font-serif">{t("Stay Informed")}</h4>
+            <h4 className="text-[13px] uppercase tracking-[0.3em] font-bold text-background/75 mb-4 font-serif">
+              {t("Stay Informed")}
+            </h4>
             <p className="text-sm text-background/75 font-sans leading-relaxed mb-4">
               {t("Get the sharpest questions, results and prediction shifts from The Tribunal.")}
             </p>
-            <Link
-              href="/join"
-              className="inline-block bg-primary text-white text-[13px] font-bold uppercase tracking-[0.2em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
-            >
-              {t("Get Updates")}
-            </Link>
+            {joined ? (
+              <p className="border-l-2 border-primary pl-3 text-[12px] uppercase tracking-widest font-bold text-background font-serif" role="status">
+                {t("You're subscribed")}
+              </p>
+            ) : (
+              <form onSubmit={handleNewsletterSubmit} className="flex w-full" aria-label="Newsletter signup">
+                <label htmlFor="footer-newsletter-email" className="sr-only">
+                  {t("Email address")}
+                </label>
+                <input
+                  id="footer-newsletter-email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  placeholder="your@email.com"
+                  className="min-w-0 flex-1 border border-background/30 bg-transparent px-3 py-2.5 font-sans text-sm text-background outline-none placeholder:text-background/40 focus:border-primary"
+                />
+                <button
+                  type="submit"
+                  className="bg-primary px-4 py-2.5 font-serif text-[10px] font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-background"
+                >
+                  {t("Subscribe")}
+                </button>
+              </form>
+            )}
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4">
           <p className="text-[13px] uppercase tracking-widest text-background/75 font-serif">
             {copyright}
           </p>
-          <div className="flex items-center gap-6">
-            <Link href="/faq" className="text-[14px] uppercase tracking-[0.15em] font-bold text-background/75 hover:text-background transition-colors font-serif">{t("FAQ")}</Link>
-            <Link href="/terms" className="text-[14px] uppercase tracking-[0.15em] font-bold text-background/75 hover:text-background transition-colors font-serif">{t("Terms")}</Link>
-            <Link href="/contact" className="text-[14px] uppercase tracking-[0.15em] font-bold text-background/75 hover:text-background transition-colors font-serif">{t("Contact")}</Link>
-          </div>
         </div>
       </div>
     </footer>

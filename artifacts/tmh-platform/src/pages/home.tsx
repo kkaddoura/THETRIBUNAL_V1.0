@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo, lazy, Suspense } from "react";
 import {
-  useGetFeaturedPoll,
   useGetPoll,
   useListPolls,
   useListProfiles,
   useListCategories,
 } from "@workspace/api-client-react";
+import type { Poll } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout/Layout";
 import { PollCard } from "@/components/poll/PollCard";
 import { ProfileCard } from "@/components/profile/ProfileCard";
@@ -13,7 +13,7 @@ import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
 const AboutSection = lazy(() => import("@/components/home/AboutSection"));
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
-import { ArrowRight, Share2, Lock, Mail, CheckCircle2 } from "lucide-react";
+import { ArrowDown, ArrowRight, Share2, Lock, Mail, CheckCircle2, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import {
   motion,
@@ -26,6 +26,60 @@ import {
 import { track } from "@/lib/analytics";
 
 const API_BASE_HOME = import.meta.env?.VITE_API_BASE_URL ?? "";
+
+interface LeadDebateScheduleSlot {
+  id?: string;
+  debateId?: number | null;
+  startsAt?: string | null;
+  endsAt?: string | null;
+  enabled?: boolean;
+}
+
+interface HomeSectionConfig {
+  id: string;
+  type: string;
+  config: {
+    selectedDebateId?: number | null;
+    leadDebateSchedule?: LeadDebateScheduleSlot[];
+    [key: string]: unknown;
+  };
+}
+
+type TickerItem = { topic: string; badge: string; stat: string; href: string };
+
+const TICKER_MIN_VOTES = 1;
+const HOMEPAGE_DEBATE_LIMIT = 5;
+const TICKER_LIVE_STATUSES = new Set(["approved", "published", "live", "active"]);
+
+function isLiveEditorialStatus(status?: string | null) {
+  return !!status && TICKER_LIVE_STATUSES.has(status.toLowerCase());
+}
+
+function cleanTickerTopic(value?: string | null) {
+  return value?.replace(/\s+/g, " ").trim() ?? "";
+}
+
+function isOpenTickerWindow(value?: string | null) {
+  if (!value) return true;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) || time >= Date.now();
+}
+
+function resolveActiveLeadDebateId(section?: HomeSectionConfig): number | undefined {
+  if (!section) return undefined;
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+  const schedule = Array.isArray(section.config.leadDebateSchedule)
+    ? section.config.leadDebateSchedule
+    : [];
+  const activeSlot = [...schedule].reverse().find((slot) => {
+    if (!slot || slot.enabled === false || !slot.debateId) return false;
+    const startsAt = slot.startsAt || "";
+    const endsAt = slot.endsAt || "";
+    return (!startsAt || startsAt <= today) && (!endsAt || endsAt >= today);
+  });
+  return activeSlot?.debateId ?? section.config.selectedDebateId ?? undefined;
+}
 
 // ── Animation utilities ──────────────────────────────────────────────────────
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
@@ -584,7 +638,7 @@ const HOME_CONTENT_DEFAULTS: HomeContent = {
     headline: "The questions people avoid in public",
     subcopy: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
     trustLine: "Your vote is private. The result is public.",
-    accountMicrocopy: "Sign up only if you want to save your activity and continue later.",
+    accountMicrocopy: "",
     primaryCtaLabel: "Cast Your Vote",
     primaryCtaHref: "/debates",
     secondaryCtaLabel: "How It Works",
@@ -608,7 +662,7 @@ const HOME_CONTENT_DEFAULTS: HomeContent = {
     quoteAuthor: "— Kareem Kaddoura, Founder",
   },
   cards: {
-    heading: "What you'll find here",
+    heading: "Editorial Product Index",
     items: [
       { key: "debates", title: "Debates", subtitle: "What people believe.", body: "Direct questions about work, money, identity, media, culture, power and the future. Vote privately. See where you stand.", cta: "Enter the Debates" },
       { key: "predictions", title: "Predictions", subtitle: "What people think will happen.", body: "Not what should happen. What people expect will happen. Track how confidence shifts over time. Sign up if you want to save your calls and come back to them later.", cta: "Make a Prediction" },
@@ -636,10 +690,12 @@ const HOME_CONTENT_DEFAULTS: HomeContent = {
 function resolveHomeContent(cfg?: Partial<HomeContent>): HomeContent {
   const d = HOME_CONTENT_DEFAULTS;
   const c = (cfg ?? {}) as any;
+  const cardsHeading =
+    c.cards?.heading === "What you'll find here" ? d.cards.heading : c.cards?.heading;
   return {
     hero: { ...d.hero, ...c.hero, stats: c.hero?.stats?.length ? c.hero.stats : d.hero.stats },
     intro: { ...d.intro, ...c.intro, negations: c.intro?.negations?.length ? c.intro.negations : d.intro.negations },
-    cards: { ...d.cards, ...c.cards, items: c.cards?.items?.length ? c.cards.items : d.cards.items },
+    cards: { ...d.cards, ...c.cards, heading: cardsHeading ?? d.cards.heading, items: c.cards?.items?.length ? c.cards.items : d.cards.items },
     voices: { ...d.voices, ...c.voices },
     exploreTopics: { ...d.exploreTopics, ...c.exploreTopics },
     newsletter: { ...d.newsletter, ...c.newsletter, bullets: c.newsletter?.bullets?.length ? c.newsletter.bullets : d.newsletter.bullets },
@@ -801,6 +857,129 @@ function LiveActivity() {
   );
 }
 
+function LiveResultsSnapshot({
+  polls,
+  loading,
+  topics,
+}: {
+  polls?: Poll[];
+  loading: boolean;
+  topics?: Array<{ slug: string; name: string; pollCount?: number }>;
+}) {
+  const { t } = useI18n();
+  const items = (polls ?? [])
+    .filter((poll) => Array.isArray(poll.options) && poll.options.length > 0)
+    .slice(0, 4);
+
+  if (!loading && items.length === 0) return null;
+
+  return (
+    <section className="bg-background dark:bg-[#0A0A0A] border-b border-border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
+        <div className="flex items-center justify-between gap-4 mb-5">
+          <div>
+            <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-primary font-serif">
+              {t("Live Results")}
+            </p>
+            <h2 className="font-display font-black uppercase text-xl sm:text-2xl text-foreground mt-1">
+              {t("Where opinion is splitting now")}
+            </h2>
+          </div>
+          <Link
+            href="/debates"
+            className="hidden sm:inline-flex text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
+          >
+            {t("View all")}
+          </Link>
+        </div>
+
+        {loading && items.length === 0 ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="h-36 bg-secondary/70 dark:bg-secondary/40 border border-border animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
+            {items.map((poll) => {
+              const topOptions = [...poll.options]
+                .sort((a, b) => (b.percentage ?? 0) - (a.percentage ?? 0))
+                .slice(0, 2);
+              return (
+                <motion.div key={poll.id} variants={staggerItem}>
+                  <Link
+                    href={`/debates/${poll.id}`}
+                    className="group block h-full border border-border bg-card/80 hover:bg-secondary/50 dark:bg-card/70 dark:hover:bg-card transition-colors p-4"
+                  >
+                    <div className="flex items-center justify-between gap-3 mb-3">
+                      <p className="text-[11px] uppercase tracking-[0.2em] text-primary font-serif font-bold truncate">
+                        {poll.category}
+                      </p>
+                      <p className="text-[11px] text-muted-foreground font-serif whitespace-nowrap">
+                        {(poll.totalVotes ?? 0).toLocaleString()} votes
+                      </p>
+                    </div>
+                    <h3 className="font-serif font-black uppercase text-[15px] leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2 min-h-[2.4rem]">
+                      {poll.question}
+                    </h3>
+                    <div className="mt-4 space-y-2.5">
+                      {topOptions.map((option) => (
+                        <div key={option.id}>
+                          <div className="flex items-center justify-between gap-2 mb-1">
+                            <span className="text-xs text-muted-foreground truncate">{option.text}</span>
+                            <span className="font-serif font-bold text-sm text-foreground">
+                              {Math.round(option.percentage ?? 0)}%
+                            </span>
+                          </div>
+                          <div className="h-1.5 bg-secondary overflow-hidden">
+                            <motion.div
+                              className="h-full bg-primary"
+                              initial={{ width: 0 }}
+                              whileInView={{ width: `${Math.max(0, Math.min(100, option.percentage ?? 0))}%` }}
+                              viewport={{ once: true, amount: 0.5 }}
+                              transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </Link>
+                </motion.div>
+              );
+            })}
+          </StaggerGrid>
+        )}
+
+        {topics && topics.length > 0 && (
+          <div className="mt-7 border-t border-border pt-6">
+            <div className="mb-4">
+              <h3 className="font-serif text-base font-black uppercase tracking-[0.16em] text-foreground">
+                {t("Explore Topics")}
+              </h3>
+            </div>
+            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+              {topics.map((topic) => (
+                <Link
+                  key={topic.slug}
+                  href={`/debates?category=${topic.slug}`}
+                  className="group flex items-center justify-between gap-3 border border-border bg-secondary/60 px-4 py-3 transition-colors hover:border-foreground hover:bg-foreground hover:text-background"
+                >
+                  <span className="font-serif text-sm font-bold uppercase tracking-wide leading-tight">
+                    {topic.name}
+                  </span>
+                  <span className="shrink-0 font-serif text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-background/65">
+                    {topic.pollCount ?? 0}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </section>
+  );
+}
+
 interface FeaturedPredProps {
   featured: PredictionCard;
   chartW: number;
@@ -910,14 +1089,14 @@ function FeaturedPredictionCard({
       className="bg-card border border-border rounded-[4px] flex flex-col lg:flex-row gap-0 overflow-hidden"
       style={{ borderWidth: "1.5px" }}
     >
-      <div className="flex-1 p-5">
+      <div className="flex-1 p-6 sm:p-8">
         <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
           Confidence Over Time — Yes %
         </p>
         <svg
           viewBox={`0 0 ${chartW} ${chartH}`}
           className="w-full"
-          style={{ maxHeight: 160 }}
+          style={{ maxHeight: 220 }}
           onMouseLeave={() => setHovIdx(null)}
         >
           <defs>
@@ -1118,7 +1297,7 @@ function FeaturedPredictionCard({
           {featured.momentum}% in the last 30 days
         </p>
       </div>
-      <div className="flex-1 p-5 border-t lg:border-t-0 lg:border-l border-border flex flex-col justify-between gap-3">
+      <div className="flex-1 p-6 sm:p-8 border-t lg:border-t-0 lg:border-l border-border flex flex-col justify-between gap-5">
         <div>
           <div className="flex items-center gap-2 flex-wrap mb-2">
             <span className="px-3 py-1 bg-foreground text-background text-[13px] font-bold uppercase tracking-[0.16em] font-serif">
@@ -1143,13 +1322,13 @@ function FeaturedPredictionCard({
           </div>
           <Link href="/predictions">
             <p
-              className="font-serif font-black uppercase text-[15px] leading-tight text-foreground tracking-tight cursor-pointer hover:text-primary transition-colors"
-              style={{ lineHeight: 1.15 }}
+              className="font-serif font-black uppercase text-xl sm:text-2xl text-foreground tracking-tight cursor-pointer hover:text-primary transition-colors"
+              style={{ lineHeight: 1.08 }}
             >
               {featured.question}
             </p>
           </Link>
-          <p className="text-[12px] text-muted-foreground font-serif mt-2">
+          <p className="text-[13px] text-muted-foreground font-serif mt-3">
             {featured.count} predictions locked in
           </p>
         </div>
@@ -1579,6 +1758,47 @@ function SidebarPredictionItem({
   );
 }
 
+function MixedTicker({ items }: { items: TickerItem[] }) {
+  if (items.length === 0) return null;
+  const doubled = [...items, ...items];
+
+  return (
+    <div
+      className="min-h-[48px] overflow-hidden border-y border-white/10 bg-[#0D0D0D]"
+      aria-label="Live questions and predictions"
+    >
+      <div className="tmh-ticker-scroll">
+        {doubled.map((item, i) => (
+          <Link
+            key={`${item.href}-${i}`}
+            href={item.href}
+            className="flex items-center gap-2.5 border-r border-white/10 px-8 py-3 no-underline"
+          >
+            <span
+              className={cn(
+                "whitespace-nowrap border px-1.5 py-0.5 font-display text-[10px] font-extrabold uppercase tracking-[0.12em]",
+                item.badge === "DEBATE"
+                  ? "border-primary/30 bg-primary/15 text-primary"
+                  : item.badge === "PREDICTION"
+                    ? "border-blue-500/30 bg-blue-500/15 text-blue-400"
+                    : "border-green-500/30 bg-green-500/15 text-green-400",
+              )}
+            >
+              {item.badge}
+            </span>
+            <span className="whitespace-nowrap font-display text-[13px] font-bold uppercase tracking-[0.08em] text-white/75">
+              {item.topic}
+            </span>
+            <span className="whitespace-nowrap font-display text-sm font-bold text-white">
+              {item.stat}
+            </span>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function Home() {
   usePageTitle({
     description: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
@@ -1595,7 +1815,7 @@ export default function Home() {
       pulse?: string;
       voices?: string;
     };
-    sections?: Array<{ id: string; type: string; config: Record<string, unknown> }>;
+    sections?: HomeSectionConfig[];
     sectionVisibility?: Record<string, boolean>;
     content?: Partial<HomeContent>;
   }>();
@@ -1615,27 +1835,87 @@ export default function Home() {
   const heroReady = !homeConfigLoading;
 
   // Extract CMS-selected content IDs
-  const cmsSelectedDebateId = homepageConfig?.sections?.find(s => s.type === "lead_debate")?.config?.selectedDebateId as number | undefined;
+  const leadDebateSection = homepageConfig?.sections?.find((s) => s.type === "lead_debate");
+  const cmsSelectedDebateId = resolveActiveLeadDebateId(leadDebateSection);
 
   // Top debate/prediction of the day (auto). A CMS-pinned lead debate wins;
   // otherwise the lead debate auto-replaces with the day's top debate.
   const { data: topPost } = useTopPost();
   const effectiveDebateId = cmsSelectedDebateId ?? topPost?.topDebate?.id;
 
-  // Lead debate: CMS pin → top debate of the day → generic featured poll.
-  const { data: defaultFeaturedPoll, isLoading: defaultFeaturedLoading } =
-    useGetFeaturedPoll();
+  // Lead debate: dated CMS schedule → CMS fallback pick → top debate of the day → first trending debate.
   const { data: selectedPoll, isLoading: selectedPollLoading } = useGetPoll(
     effectiveDebateId ?? 0,
     { query: { enabled: !!effectiveDebateId } as any },
   );
-  const featuredPoll = selectedPoll ?? defaultFeaturedPoll;
-  const featuredLoading = effectiveDebateId ? selectedPollLoading : defaultFeaturedLoading;
 
   const { data: trendingPolls, isLoading: trendingLoading } = useListPolls({
     filter: "trending",
     limit: 5,
   });
+  const featuredPoll = selectedPoll ?? trendingPolls?.polls?.[0];
+  const featuredLoading = effectiveDebateId ? selectedPollLoading : trendingLoading;
+  const leadDebateDeck = useMemo(() => {
+    const byId = new Map<number, Poll>();
+    if (featuredPoll) byId.set(featuredPoll.id, featuredPoll);
+    for (const poll of trendingPolls?.polls ?? []) byId.set(poll.id, poll);
+    return [...byId.values()].slice(0, 5);
+  }, [featuredPoll, trendingPolls?.polls]);
+  const [activeLeadId, setActiveLeadId] = useState<number | null>(null);
+  const [completedLeadIds, setCompletedLeadIds] = useState<number[]>([]);
+  const [showMoreDebatesModal, setShowMoreDebatesModal] = useState(false);
+  const moreDebatesModalShownRef = useRef(false);
+  const leadAdvanceTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const activeLeadDebate =
+    leadDebateDeck.find((poll) => poll.id === activeLeadId) ?? leadDebateDeck[0];
+  const queuedLeadDebates = leadDebateDeck.filter(
+    (poll) => poll.id !== activeLeadDebate?.id && !completedLeadIds.includes(poll.id),
+  );
+
+  useEffect(() => {
+    if (leadDebateDeck.length === 0) return;
+    setActiveLeadId((current) =>
+      current && leadDebateDeck.some((poll) => poll.id === current)
+        ? current
+        : leadDebateDeck[0].id,
+    );
+  }, [leadDebateDeck]);
+
+  useEffect(() => () => {
+    if (leadAdvanceTimer.current) clearTimeout(leadAdvanceTimer.current);
+  }, []);
+
+  useEffect(() => {
+    if (!showMoreDebatesModal) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setShowMoreDebatesModal(false);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [showMoreDebatesModal]);
+
+  const promoteLeadDebate = useCallback((pollId: number) => {
+    if (leadAdvanceTimer.current) clearTimeout(leadAdvanceTimer.current);
+    setActiveLeadId(pollId);
+  }, []);
+
+  const handleLeadVoteComplete = useCallback((pollId: number) => {
+    const completed = new Set([...completedLeadIds, pollId]);
+    const next = leadDebateDeck.find((poll) => !completed.has(poll.id));
+    setCompletedLeadIds([...completed]);
+    if (leadAdvanceTimer.current) clearTimeout(leadAdvanceTimer.current);
+    const queueLimit = Math.min(HOMEPAGE_DEBATE_LIMIT, leadDebateDeck.length);
+    if (!next || completed.size >= queueLimit) {
+      leadAdvanceTimer.current = setTimeout(() => {
+        if (moreDebatesModalShownRef.current) return;
+        moreDebatesModalShownRef.current = true;
+        setShowMoreDebatesModal(true);
+        track("homepage_debate_limit_prompt_viewed", { answered: completed.size });
+      }, 1400);
+      return;
+    }
+    leadAdvanceTimer.current = setTimeout(() => setActiveLeadId(next.id), 1400);
+  }, [completedLeadIds, leadDebateDeck]);
   const { data: featuredProfiles, isLoading: profilesLoading } =
     useListProfiles({ filter: "featured", limit: 8 });
   const { data: categories } = useListCategories();
@@ -1646,27 +1926,12 @@ export default function Home() {
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false;
   const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false;
   const pulseEnabled = siteSettings?.featureToggles?.pulse?.enabled ?? false;
-  const [ctaEmail, setCtaEmail] = useState("");
-  const [ctaJoined, setCtaJoined] = useState(
-    () => !!localStorage.getItem("tmh_cta_joined"),
-  );
   const [pulseHovIdx, setPulseHovIdx] = useState<number | null>(null);
-  const [astTime, setAstTime] = useState(() => {
-    const now = new Date();
-    return now.toLocaleTimeString("en-US", { timeZone: "Asia/Riyadh", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true });
-  });
-  useEffect(() => {
-    const id = setInterval(() => {
-      const now = new Date();
-      setAstTime(now.toLocaleTimeString("en-US", { timeZone: "Asia/Riyadh", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: true }));
-    }, 1000);
-    return () => clearInterval(id);
-  }, []);
   const menaPop = usePopulationCounter(
     homepageConfig?.masthead?.basePopulation,
     homepageConfig?.masthead?.growthRate,
   );
-  const { t, isAr } = useI18n();
+  const { t } = useI18n();
   const prefersReducedMotion = useReducedMotion();
   const mastheadRef = useRef<HTMLDivElement>(null);
   const { scrollYProgress: mastheadProgress } = useScroll({
@@ -1688,73 +1953,83 @@ export default function Home() {
     return (topId != null && PREDICTIONS.find((p) => p.id === topId)) || PREDICTIONS[0];
   }, [PREDICTIONS, topPost]);
 
-  const handleCtaSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleaned = ctaEmail.trim().toLowerCase();
-    if (!cleaned) return;
-    localStorage.setItem("tmh_cta_joined", cleaned);
-    setCtaJoined(true);
-    // The previous version only saved to localStorage and never actually
-    // subscribed the user — fixing the silent drop here.
-    fetch(`${API_BASE_HOME}/api/newsletter/subscribe`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: cleaned, source: "home_cta", newsletterOptIn: true }),
-    }).catch(() => {});
-    track("newsletter_subscribed", { source: "home_cta", optedIn: true });
-  };
+  const debateItems = useMemo<TickerItem[]>(() => {
+    const byId = new Map<number, Poll>();
+    if (selectedPoll) byId.set(selectedPoll.id, selectedPoll);
+    for (const poll of trendingPolls?.polls ?? []) byId.set(poll.id, poll);
 
-  const tickerPolls = trendingPolls?.polls ?? [];
-  const debateItems = tickerPolls.slice(0, 8).map((p) => ({
-    topic:
-      p.question?.length > 38
-        ? p.question.substring(0, 36) + "…"
-        : (p.question ?? "Debate"),
-    badge: "DEBATE" as const,
-    stat: `${(p.totalVotes ?? 0).toLocaleString()} votes`,
-    href: `/debates/${p.id}`,
-  }));
-  const predictionItems = useMemo(() => {
+    return [...byId.values()]
+      .filter((poll) => {
+        const topic = cleanTickerTopic(poll.question);
+        return (
+          topic.length > 0 &&
+          isOpenTickerWindow(poll.endsAt) &&
+          (poll.totalVotes ?? 0) >= TICKER_MIN_VOTES
+        );
+      })
+      .slice(0, 4)
+      .map((poll) => ({
+        topic: cleanTickerTopic(poll.question),
+        badge: "DEBATE",
+        stat: `${(poll.totalVotes ?? 0).toLocaleString()} votes`,
+        href: `/debates/${poll.id}`,
+      }));
+  }, [selectedPoll, trendingPolls]);
+
+  const predictionItems = useMemo<TickerItem[]>(() => {
     if (!apiPredictions?.items?.length) return [];
-    return apiPredictions.items.slice(0, 8).map((p) => ({
-      topic:
-        p.question.length > 40
-          ? p.question.substring(0, 38) + "…"
-          : p.question,
-      badge: "PREDICTION" as const,
-      stat: `${p.yesPercentage}% yes`,
-      href: `/predictions/${p.id}`,
-    }));
-  }, [apiPredictions]);
-  const pulseItems = useMemo(() => {
+    const topPredictionId = topPost?.topPrediction?.id;
+    const sorted = [...apiPredictions.items].sort((a, b) => {
+      if (a.id === topPredictionId) return -1;
+      if (b.id === topPredictionId) return 1;
+      if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
+      return (b.totalCount ?? 0) - (a.totalCount ?? 0);
+    });
+
+    return sorted
+      .filter((prediction) => {
+        const topic = cleanTickerTopic(prediction.question);
+        return (
+          topic.length > 0 &&
+          isLiveEditorialStatus(prediction.editorialStatus) &&
+          isOpenTickerWindow(prediction.resolvesAt) &&
+          (prediction.totalCount ?? 0) >= TICKER_MIN_VOTES
+        );
+      })
+      .slice(0, 3)
+      .map((prediction) => ({
+        topic: cleanTickerTopic(prediction.question),
+        badge: "PREDICTION",
+        stat: `${prediction.yesPercentage}% yes`,
+        href: `/predictions/${prediction.id}`,
+      }));
+  }, [apiPredictions, topPost]);
+
+  const pulseItems = useMemo<TickerItem[]>(() => {
     if (!pulseEnabled) return [];
     if (!apiPulseTopics?.items?.length) return [];
-    return apiPulseTopics.items.slice(0, 8).map((t) => ({
-      topic: t.title.length > 35 ? t.title.substring(0, 33) + "…" : t.title,
-      badge: "PULSE" as const,
-      stat: `${t.deltaUp ? "↑" : "↓"} ${t.delta}`,
-      href: `/pulse?shared=${encodeURIComponent(t.topicId)}`,
-    }));
+    return apiPulseTopics.items
+      .filter((topic) => cleanTickerTopic(topic.title).length > 0 && isLiveEditorialStatus(topic.editorialStatus))
+      .slice(0, 3)
+      .map((topic) => ({
+        topic: cleanTickerTopic(topic.title),
+        badge: "PULSE",
+        stat: `${topic.deltaUp ? "↑" : "↓"} ${topic.delta}`,
+        href: `/pulse?shared=${encodeURIComponent(topic.topicId)}`,
+      }));
   }, [apiPulseTopics, pulseEnabled]);
   const maxLen = Math.max(
     debateItems.length,
     predictionItems.length,
     pulseItems.length,
   );
-  const interleaved: { topic: string; badge: string; stat: string; href: string }[] = [];
+  const interleaved: TickerItem[] = [];
   for (let i = 0; i < maxLen; i++) {
     if (debateItems[i]) interleaved.push(debateItems[i]);
     if (predictionItems[i]) interleaved.push(predictionItems[i]);
     if (pulseItems[i]) interleaved.push(pulseItems[i]);
   }
-  const tickerDoubled = [...interleaved, ...interleaved];
-
-  const issueDate = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
+  const tickerItems = interleaved.length >= 2 ? interleaved : [];
 
   return (
     <Layout>
@@ -1787,18 +2062,10 @@ export default function Home() {
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-2 text-[10px] uppercase tracking-[0.18em] text-muted-foreground font-serif">
-            <span className="hidden sm:block">{issueDate}</span>
-            <span className="text-primary font-bold font-mono tabular-nums">
-              {astTime} AST
-            </span>
-          </div>
-
           <motion.div
-            className="py-5 my-3"
+            className="py-8 my-3 sm:py-10"
             style={{
               borderTop: "2px solid #DC143C",
-              borderBottom: "2px solid #DC143C",
             }}
             initial={{ opacity: 0, y: -12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -1810,22 +2077,6 @@ export default function Home() {
                 className="flex flex-col items-center justify-center w-full text-center"
                 style={{ opacity: heroReady ? 1 : 0, transition: "opacity 0.35s ease" }}
               >
-                {/* Eyebrow */}
-                <motion.div
-                  className="flex items-center gap-2.5 mb-5"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.15 }}
-                >
-                  <span className="relative flex w-2 h-2">
-                    <span className="absolute inline-flex w-full h-full rounded-full bg-[#10B981] opacity-60 animate-ping" />
-                    <span className="relative inline-flex w-2 h-2 rounded-full bg-[#10B981]" />
-                  </span>
-                  <span className="font-serif font-bold text-[12px] tracking-[0.32em] uppercase text-[#10B981]">
-                    {t(C.hero.eyebrow)}
-                  </span>
-                </motion.div>
-
                 {/* Headline */}
                 <motion.h1
                   className="font-serif font-black uppercase tracking-[-0.01em] text-foreground text-center max-w-5xl"
@@ -1835,99 +2086,7 @@ export default function Home() {
                   transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.1 }}
                 >
                   {t(C.hero.headline)}
-                  <span className="text-primary">.</span>
                 </motion.h1>
-
-                {/* Underline accent */}
-                <motion.div
-                  className="h-[3px] bg-primary mt-4"
-                  initial={{ width: 0 }}
-                  animate={{ width: "5rem" }}
-                  transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.45 }}
-                />
-
-                {/* Body */}
-                <motion.p
-                  className="text-base sm:text-[17px] text-foreground/80 font-sans mt-5 max-w-xl leading-relaxed"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.4 }}
-                >
-                  {t(C.hero.subcopy)}
-                </motion.p>
-
-                {/* Trust line */}
-                <motion.p
-                  className="text-[13px] sm:text-[14px] text-foreground/65 font-sans mt-3 italic"
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.5 }}
-                >
-                  {t(C.hero.trustLine)}
-                </motion.p>
-
-                {/* Account microcopy */}
-                {C.hero.accountMicrocopy?.trim() && (
-                  <motion.p
-                    className="text-[12px] sm:text-[13px] text-foreground/55 font-sans mt-2"
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.55, ease: EASE_OUT_EXPO, delay: 0.55 }}
-                  >
-                    {t(C.hero.accountMicrocopy)}
-                  </motion.p>
-                )}
-
-                {/* CTAs */}
-                <motion.div
-                  className="mt-7 flex items-center gap-4 flex-wrap justify-center"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ duration: 0.5, delay: 0.6 }}
-                >
-                  <Link
-                    href={C.hero.primaryCtaHref}
-                    onClick={() => track("cta_clicked", { label: "cast_your_vote", surface: "home_hero" })}
-                    className="inline-flex items-center gap-2 bg-primary text-white font-bold uppercase tracking-widest text-xs px-7 py-3 hover:bg-primary/90 transition-colors font-serif"
-                  >
-                    {t(C.hero.primaryCtaLabel)} <ArrowRight className="w-3 h-3" />
-                  </Link>
-                  <Link
-                    href={C.hero.secondaryCtaHref}
-                    onClick={() => track("cta_clicked", { label: "how_it_works", surface: "home_hero" })}
-                    className="inline-flex items-center gap-2 text-foreground/70 hover:text-foreground font-bold uppercase tracking-widest text-xs px-2 py-3 transition-colors font-serif underline underline-offset-4 decoration-primary/40"
-                  >
-                    {t(C.hero.secondaryCtaLabel)}
-                  </Link>
-                </motion.div>
-
-                {/* Stats row */}
-                <motion.div
-                  className="mt-9 pt-7 border-t border-border/60 grid grid-cols-2 sm:grid-cols-4 gap-5 w-full max-w-[560px]"
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, ease: EASE_OUT_EXPO, delay: 0.8 }}
-                >
-                  {C.hero.stats.map((stat, i) => {
-                    const isNumeric = /[0-9]/.test(stat.value);
-                    return (
-                      <div key={i}>
-                        <div
-                          className={
-                            isNumeric
-                              ? "font-display font-black text-[26px] sm:text-[28px] text-foreground tabular-nums leading-none"
-                              : "font-display font-black text-[18px] sm:text-[20px] text-foreground leading-none pt-1.5"
-                          }
-                        >
-                          {isNumeric ? stat.value : t(stat.value)}
-                        </div>
-                        <div className="text-[10px] font-serif font-bold uppercase tracking-[0.22em] text-foreground/55 mt-2">
-                          {t(stat.label)}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </motion.div>
               </div>
 
             </div>
@@ -1936,203 +2095,85 @@ export default function Home() {
       </motion.div>
       )}
 
-      {/* ── MIXED TICKER ── */}
-      {showSection("ticker") && ((trendingLoading || predictionsLoading || pulseLoading) && interleaved.length === 0 ? (
-        <TickerSkeleton />
-      ) : interleaved.length > 0 ? (
-      <div
-        className="min-h-[48px]"
-        style={{
-          background: "#0D0D0D",
-          borderTop: "1px solid rgba(255,255,255,0.06)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          overflow: "hidden",
-        }}
+      {/* ── HERO TO BALLOT TRANSITION ── */}
+      {showSection("lead_debate") && (
+      <a
+        href="#debates"
+        className="group relative block overflow-hidden bg-foreground text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
       >
-        <div className="tmh-ticker-scroll">
-          {tickerDoubled.map((item, i) => (
-            <Link
-              key={i}
-              href={item.href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.6rem",
-                padding: "0.7rem 2rem",
-                borderRight: "1px solid rgba(255,255,255,0.1)",
-                cursor: "pointer",
-                textDecoration: "none",
-              }}
-            >
-              <span
-                style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 800,
-                  fontSize: "0.63rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.12em",
-                  whiteSpace: "nowrap",
-                  padding: "2px 6px",
-                  background:
-                    item.badge === "DEBATE"
-                      ? "rgba(220,20,60,0.15)"
-                      : item.badge === "PREDICTION"
-                        ? "rgba(59,130,246,0.15)"
-                        : "rgba(34,197,94,0.15)",
-                  color:
-                    item.badge === "DEBATE"
-                      ? "#DC143C"
-                      : item.badge === "PREDICTION"
-                        ? "#3B82F6"
-                        : "#22C55E",
-                  border: `1px solid ${item.badge === "DEBATE" ? "rgba(220,20,60,0.25)" : item.badge === "PREDICTION" ? "rgba(59,130,246,0.25)" : "rgba(34,197,94,0.25)"}`,
-                }}
-              >
-                {item.badge}
-              </span>
-              <span
-                style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 700,
-                  fontSize: "0.80rem",
-                  textTransform: "uppercase",
-                  letterSpacing: "0.08em",
-                  color: "rgba(250,250,250,0.75)",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {item.topic}
-              </span>
-              <span
-                style={{
-                  fontFamily: "'Barlow Condensed', sans-serif",
-                  fontWeight: 700,
-                  fontSize: "0.90rem",
-                  color: "#fff",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {item.stat}
-              </span>
-            </Link>
-          ))}
+        <motion.div
+          className="absolute inset-y-0 left-0 w-[38%] bg-primary [clip-path:polygon(0_0,86%_0,100%_100%,0_100%)] sm:w-[30%]"
+          initial={{ x: "-100%" }}
+          animate={{ x: 0 }}
+          transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.45 }}
+        />
+        <div className="relative mx-auto grid min-h-20 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-4 sm:gap-8 sm:px-6 lg:px-8">
+          <span className="relative z-10 font-display text-xs font-black uppercase tracking-[0.22em] text-white sm:text-sm">
+            Enter the debate
+          </span>
+          <span className="justify-self-center font-serif text-sm font-bold uppercase tracking-[0.12em] text-background/70 transition-colors group-hover:text-background sm:text-base">
+            Read the question. Choose your position.
+          </span>
+          <span className="flex h-10 w-10 items-center justify-center border border-background/30 transition-colors group-hover:border-primary group-hover:bg-primary group-hover:text-white">
+            <ArrowDown className="h-4 w-4 transition-transform group-hover:translate-y-1" aria-hidden="true" />
+          </span>
         </div>
-      </div>
-      ) : null)}
-
-      {/* ── WHAT IS THE TRIBUNAL? — Intro ── */}
-      {showSection("intro") && (
-      <section className="py-20 bg-background border-b border-border">
-        <FadeUp>
-          <div className="max-w-3xl mx-auto px-4 sm:px-6">
-            <h2 className="font-serif font-black uppercase text-3xl text-foreground mb-3 border-l-4 border-primary pl-4">
-              {t(C.intro.heading)}
-            </h2>
-            <p className="text-xl font-sans text-foreground/80 mb-8 pl-5">
-              {t(C.intro.lead)}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-4">
-              {t(C.intro.body)}
-            </p>
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-4">
-              {t(C.intro.statement)}
-            </p>
-            {C.intro.negations.map((line, i) => (
-              <p
-                key={line}
-                className={`text-base text-muted-foreground font-sans leading-relaxed ${
-                  i === C.intro.negations.length - 1 ? "mb-6" : "mb-2"
-                }`}
-              >
-                {t(line)}
-              </p>
-            ))}
-            <p className="text-base text-muted-foreground font-sans leading-relaxed mb-8">
-              {t(C.intro.closing)}
-            </p>
-            <p className="text-sm font-serif italic text-foreground/70 leading-relaxed border-l-2 border-primary/60 pl-4 mb-10">
-              {t(C.intro.trust)}
-            </p>
-            <blockquote className="font-display text-2xl md:text-3xl border-l-4 border-primary pl-6 py-4 text-foreground leading-snug">
-              {t(C.intro.quote)}
-            </blockquote>
-            <p className="text-sm font-sans text-foreground/70 mt-4 pl-6">
-              {t(C.intro.quoteAuthor)}
-            </p>
-          </div>
-        </FadeUp>
-      </section>
-      )}
-
-      {/* ── PRODUCT CARDS ── */}
-      {showSection("cards") && (
-      <section className="py-20 bg-secondary/20 border-b border-border">
-        <FadeUp>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="font-serif font-black uppercase text-2xl text-foreground mb-12 border-l-4 border-primary pl-4">
-              {t(C.cards.heading)}
-            </h2>
-            <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[
-                { key: "debates", num: "01", href: "/debates", enabled: true },
-                { key: "predictions", num: "02", href: "/predictions", enabled: true },
-                { key: "pulse", num: "03", href: "/pulse", enabled: pulseEnabled },
-                { key: "voices", num: "04", href: "/voices", enabled: voicesEnabled },
-                { key: "majlis", num: "05", href: "/majlis", enabled: majlisEnabled },
-              ].filter(c => c.enabled).map(card => {
-                const copy = C.cards.items.find(i => i.key === card.key);
-                if (!copy) return null;
-                return (
-                <motion.div key={card.key} variants={staggerItem}>
-                  <div className="bg-card border border-border p-6 h-full flex flex-col">
-                    <span className="font-display font-black text-5xl text-foreground/20 leading-none">{card.num}</span>
-                    <h3 className="font-serif font-black uppercase text-lg text-foreground mt-3 tracking-wide">{t(copy.title)}</h3>
-                    <p className="text-sm font-serif font-bold uppercase tracking-[0.15em] text-primary mt-2">{t(copy.subtitle)}</p>
-                    <p className="text-sm text-muted-foreground font-sans leading-relaxed mt-3 flex-1">{t(copy.body)}</p>
-                    <Link
-                      href={card.href}
-                      className="inline-block text-[12px] font-serif font-bold uppercase tracking-widest text-primary hover:text-foreground transition-colors border-b border-primary pb-0.5 mt-4 self-start"
-                    >
-                      {t(copy.cta)} {isAr ? "←" : "→"}
-                    </Link>
-                  </div>
-                </motion.div>
-                );
-              })}
-            </StaggerGrid>
-          </div>
-        </FadeUp>
-      </section>
+      </a>
       )}
 
       {/* ── FRONT PAGE: Lead Debate + Sidebar ── */}
       {showSection("lead_debate") && (
-      <section className="py-8 bg-background border-b border-border relative">
+      <section id="debates" className="scroll-mt-20 bg-background py-10 border-b border-border relative">
         <FadeUp>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
-            {/* LEFT: Today's Lead Debate */}
             <div className="lg:pr-8 lg:border-r lg:border-border pb-8 lg:pb-0">
               <FadeIn delay={0.1}>
-              <div className="text-sm uppercase tracking-[0.22em] font-bold text-primary mb-5 flex items-center gap-2 font-serif">
-                <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                {t("TODAY'S LEAD DEBATE")}
+              <div className="mb-5 flex items-center justify-between gap-4">
+                <div className="flex items-center gap-2 font-serif text-sm font-bold uppercase tracking-[0.22em] text-primary">
+                  <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
+                  {t("CURRENT LEAD DEBATE")}
+                </div>
+                {completedLeadIds.length > 0 && (
+                  <span className="font-serif text-[10px] font-bold uppercase tracking-widest text-muted-foreground" aria-live="polite">
+                    {completedLeadIds.length} answered
+                  </span>
+                )}
               </div>
               </FadeIn>
               {featuredLoading ? (
                 <div className="h-96 bg-secondary animate-pulse border border-border" />
-              ) : featuredPoll ? (
-                <PollCard poll={featuredPoll} featured />
+              ) : activeLeadDebate ? (
+                <AnimatePresence mode="wait">
+                  <motion.div
+                    key={activeLeadDebate.id}
+                    initial={{ opacity: 0, x: 28 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -28 }}
+                    transition={{ duration: 0.35, ease: EASE_OUT_EXPO }}
+                  >
+                    <PollCard
+                      poll={activeLeadDebate}
+                      featured
+                      stacked
+                      onVoteComplete={handleLeadVoteComplete}
+                    />
+                  </motion.div>
+                </AnimatePresence>
               ) : null}
             </div>
 
-            {/* RIGHT: Sidebar */}
-            <div className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border">
+            <aside className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border" aria-label="Upcoming debates">
               <FadeIn delay={0.15}>
-              <div className="flex items-center justify-between mb-4">
-                <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
-                  {t("Latest Debates")}
-                </p>
+              <div className="mb-4 flex items-end justify-between gap-3 border-b-2 border-foreground pb-3">
+                <div>
+                  <p className="font-serif text-[10px] font-bold uppercase tracking-[0.28em] text-primary">
+                    Ballot queue
+                  </p>
+                  <h2 className="mt-1 font-display text-xl font-black uppercase leading-none text-foreground">
+                    Up next
+                  </h2>
+                </div>
                 <Link
                   href="/debates"
                   className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
@@ -2140,46 +2181,94 @@ export default function Home() {
                   {t("View All")}
                 </Link>
               </div>
+              <p className="mb-4 font-sans text-xs leading-relaxed text-muted-foreground">
+                Pick any question, or vote on the current lead to bring the next one forward.
+              </p>
               </FadeIn>
 
               {trendingLoading ? (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="h-16 bg-secondary animate-pulse" />
+                    <div key={i} className="h-28 bg-secondary animate-pulse border border-border" />
                   ))}
                 </div>
+              ) : queuedLeadDebates.length === 0 ? (
+                <div className="border border-border bg-secondary/40 p-6 text-center">
+                  <p className="font-serif text-sm font-black uppercase tracking-wide text-foreground">
+                    Queue complete
+                  </p>
+                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                    You have weighed in on every featured question.
+                  </p>
+                  <Link
+                    href="/debates"
+                    className="mt-4 inline-flex items-center gap-2 font-serif text-[10px] font-bold uppercase tracking-widest text-primary"
+                  >
+                    Find more debates <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                  </Link>
+                </div>
               ) : (
-                <StaggerGrid>
-                  {trendingPolls?.polls?.slice(0, 4).map((poll) => (
-                    <motion.div key={poll.id} variants={staggerItem}>
-                    <Link href={`/debates/${poll.id}`}>
-                      <motion.div
-                        className="py-3 border-b border-border group cursor-pointer"
-                        whileHover={{ x: 4 }}
-                        transition={{ duration: 0.2, ease: EASE_OUT_EXPO }}
+                <div className="max-h-[38rem] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin]" role="list" aria-live="polite">
+                  <AnimatePresence initial={false}>
+                    {queuedLeadDebates.map((poll, index) => (
+                      <motion.button
+                        key={poll.id}
+                        type="button"
+                        role="listitem"
+                        onClick={() => promoteLeadDebate(poll.id)}
+                        layout
+                        initial={{ opacity: 0, y: 18 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, x: 36 }}
+                        transition={{ duration: 0.3, ease: EASE_OUT_EXPO }}
+                        className="group w-full border border-border bg-card p-4 text-left transition-colors hover:border-primary hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
-                        <p className="text-[14px] uppercase tracking-widest text-primary font-serif font-bold">
-                          {poll.category}
-                        </p>
-                        <p className="font-serif font-black uppercase text-[15px] leading-tight text-foreground mt-1 group-hover:text-primary transition-colors">
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="font-serif text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                            {poll.category}
+                          </span>
+                          <span className="font-display text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                            {index === 0 ? "Next" : `In queue`}
+                          </span>
+                        </div>
+                        <p className="mt-2 font-serif text-[15px] font-black uppercase leading-tight text-foreground transition-colors group-hover:text-primary">
                           {poll.question.length > 90
-                            ? poll.question.slice(0, 90) + "…"
+                            ? poll.question.slice(0, 90) + "..."
                             : poll.question}
                         </p>
-                        <p className="text-[13px] text-muted-foreground mt-1 font-serif">
-                          {(poll.totalVotes ?? 0).toLocaleString()} votes
-                        </p>
-                      </motion.div>
-                    </Link>
-                    </motion.div>
-                  ))}
-                </StaggerGrid>
+                        <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
+                          <span className="font-sans text-[11px] text-muted-foreground">
+                            {poll.options.length} positions
+                          </span>
+                          <span className="flex items-center gap-1 font-serif text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors group-hover:text-primary">
+                            Make lead <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+                          </span>
+                        </div>
+                      </motion.button>
+                    ))}
+                  </AnimatePresence>
+                </div>
               )}
-            </div>
+            </aside>
           </div>
         </div>
         </FadeUp>
       </section>
+      )}
+
+      {/* ── LIVE EDITORIAL RAIL ── */}
+      {showSection("ticker") && (
+        (trendingLoading || predictionsLoading || pulseLoading) && tickerItems.length === 0
+          ? <TickerSkeleton />
+          : <MixedTicker items={tickerItems} />
+      )}
+
+      {showSection("debates") && (
+        <LiveResultsSnapshot
+          polls={trendingPolls?.polls}
+          loading={trendingLoading}
+          topics={showSection("explore_topics") ? categories?.categories : undefined}
+        />
       )}
 
       {/* ── PREDICTIONS ── */}
@@ -2190,9 +2279,9 @@ export default function Home() {
       >
         <FadeUp delay={0.05}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
-            {/* LEFT: Today's Featured Prediction */}
-            <div className="lg:pr-8 lg:border-r lg:border-border pb-8 lg:pb-0">
+          <div>
+            {/* Today's Featured Prediction */}
+            <div>
               <FadeIn delay={0.1}>
               <div className="text-base uppercase tracking-[0.2em] font-bold text-[#3B82F6] mb-5 flex items-center gap-2 font-serif">
                 <span className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
@@ -2256,8 +2345,8 @@ export default function Home() {
               })()}
             </div>
 
-            {/* RIGHT: Latest Predictions Sidebar */}
-            <div className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border">
+            {/* More predictions */}
+            <div className="mt-8 border-t border-border pt-6">
               <FadeIn delay={0.15}>
               <div className="flex items-center justify-between mb-4">
                 <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground font-serif">
@@ -2272,7 +2361,7 @@ export default function Home() {
               </div>
               </FadeIn>
 
-              <StaggerGrid>
+              <StaggerGrid className="grid grid-cols-1 gap-x-8 md:grid-cols-3">
                 {(() => {
                   const seen = new Set<string>();
                   seen.add(featuredPrediction.category);
@@ -2878,116 +2967,72 @@ export default function Home() {
       </Suspense>
       )}
 
-      {/* ── EXPLORE TOPICS ── */}
-      {categories?.categories && categories.categories.length > 0 && showSection("explore_topics") && (
-        <section className="py-20 bg-background border-b border-border">
-          <FadeUp>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="mb-12 border-l-4 border-primary pl-4">
-              <h2 className="font-serif font-black uppercase text-2xl text-foreground">
-                {t(C.exploreTopics.heading)}
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-              {categories.categories.map((cat) => (
-                <Link
-                  key={cat.slug}
-                  href={`/debates?category=${cat.slug}`}
-                  className="bg-secondary p-5 flex flex-col justify-between transition-all hover:bg-foreground hover:text-background group border border-border hover:-translate-y-0.5 hover:shadow-md duration-300"
-                >
-                  <span className="font-serif font-bold uppercase tracking-wider text-base mb-3 leading-tight">
-                    {cat.name}
-                  </span>
-                  <span className="text-[12px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-background/75">
-                    {cat.pollCount} Debates
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-          </FadeUp>
-        </section>
-      )}
-
       {/* ── LIVE ACTIVITY ── */}
       {showSection("live_activity") && <LiveActivity />}
 
-      {/* ── NEWSLETTER CTA ── */}
-      {showSection("newsletter") && (
-      <section className="bg-foreground text-background py-16 md:py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col md:flex-row gap-12 md:gap-16 items-center">
-            <FadeUp className="flex-1 md:basis-2/3">
-              <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
-                {t(C.newsletter.eyebrow)}
+      <AnimatePresence>
+        {showMoreDebatesModal && (
+          <motion.div
+            className="fixed inset-0 z-[100] flex items-center justify-center bg-foreground/75 px-4 py-8 backdrop-blur-[2px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setShowMoreDebatesModal(false);
+            }}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="more-debates-title"
+              aria-describedby="more-debates-description"
+              className="relative w-full max-w-lg border-2 border-foreground bg-background p-6 shadow-[10px_10px_0_#DC143C] sm:p-8"
+              initial={{ opacity: 0, y: 24, scale: 0.97 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 16, scale: 0.98 }}
+              transition={{ duration: 0.3, ease: EASE_OUT_EXPO }}
+            >
+              <button
+                type="button"
+                onClick={() => setShowMoreDebatesModal(false)}
+                className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center border border-border text-muted-foreground transition-colors hover:border-foreground hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" aria-hidden="true" />
+              </button>
+              <p className="font-serif text-[11px] font-bold uppercase tracking-[0.28em] text-primary">
+                Featured queue complete
               </p>
-              <h2 className="font-display font-black text-4xl md:text-5xl uppercase leading-none tracking-tight text-background mb-4">
-                {t(C.newsletter.heading)}
+              <h2
+                id="more-debates-title"
+                className="mt-3 max-w-md font-display text-3xl font-black uppercase leading-none text-foreground sm:text-4xl"
+              >
+                Looking for more debates?
               </h2>
-              <p className="text-background/75 font-sans text-base leading-relaxed max-w-xl mb-3">
-                {t(C.newsletter.body)}
+              <p id="more-debates-description" className="mt-4 max-w-md font-sans text-sm leading-relaxed text-muted-foreground sm:text-base">
+                You have answered the featured questions. Explore every active debate, or stay here to review the results you unlocked.
               </p>
-              <ul className="text-background/60 font-sans text-sm space-y-1.5 max-w-xl">
-                {C.newsletter.bullets.map((b, i) => (
-                  <li key={i} className="flex items-center gap-2">
-                    <span className="text-primary font-bold">→</span> {t(b)}
-                  </li>
-                ))}
-              </ul>
-            </FadeUp>
-            <FadeIn direction="right" delay={0.15} className="w-full md:basis-1/3">
-              <AnimatePresence mode="wait">
-              {ctaJoined ? (
-                <motion.div
-                  key="joined"
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, ease: EASE_OUT_EXPO }}
-                  className="border-2 border-primary p-8 text-center"
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Link
+                  href="/debates"
+                  onClick={() => track("homepage_debate_limit_cta_clicked", { answered: completedLeadIds.length })}
+                  className="inline-flex items-center justify-center gap-2 bg-primary px-6 py-3 font-serif text-xs font-bold uppercase tracking-[0.16em] text-white transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
-                  <p className="font-display font-black text-3xl uppercase text-background tracking-tight">
-                    {t("You're in")}
-                    <span className="text-primary">.</span>
-                  </p>
-                  <p className="text-[12px] uppercase tracking-widest text-background/70 mt-2 font-serif">
-                    {t("Welcome to The Tribunal.")}
-                  </p>
-                </motion.div>
-              ) : (
-                <motion.div key="form" exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-                <form
-                  onSubmit={handleCtaSubmit}
-                  className="flex flex-col gap-3"
+                  Explore all debates <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setShowMoreDebatesModal(false)}
+                  className="px-5 py-3 font-serif text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                 >
-                  <input
-                    type="email"
-                    required
-                    placeholder="your@email.com"
-                    value={ctaEmail}
-                    onChange={(e) => setCtaEmail(e.target.value)}
-                    className="bg-background text-foreground border-none px-4 py-3 w-full focus:outline-none focus:ring-2 focus:ring-primary text-sm font-sans"
-                  />
-                  <motion.button
-                    type="submit"
-                    whileTap={{ scale: 0.97 }}
-                    whileHover={{ scale: 1.02 }}
-                    transition={{ duration: 0.15 }}
-                    className="bg-primary text-white font-bold uppercase tracking-widest px-6 py-3 text-xs hover:bg-primary/90 font-serif"
-                  >
-                    {t(C.newsletter.ctaLabel)}
-                  </motion.button>
-                  <p className="text-[10px] text-background/60 font-sans">
-                    {t(C.newsletter.disclaimer)}
-                  </p>
-                </form>
-                </motion.div>
-              )}
-              </AnimatePresence>
-            </FadeIn>
-          </div>
-        </div>
-      </section>
-      )}
+                  Not now
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </Layout>
   );
 }

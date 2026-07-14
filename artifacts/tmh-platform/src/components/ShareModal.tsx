@@ -91,6 +91,17 @@ export function ShareModal({
 
   const isGeneratingAny = generating !== null
 
+  const persistGateUnlock = () => {
+    if (context.contentType === "debate") {
+      localStorage.setItem(`tmh_unlocked_${context.pollId}`, "true")
+    }
+  }
+
+  const completeGateUnlock = () => {
+    persistGateUnlock()
+    onUnlock?.()
+  }
+
   // ── Fetch Majlis channels when entering Majlis view ────────
 
   useEffect(() => {
@@ -216,11 +227,10 @@ export function ShareModal({
 
       if (
         showEmailGate &&
-        onUnlock &&
         result.outcome !== "failed" &&
         result.outcome !== "cancelled"
       ) {
-        onUnlock()
+        completeGateUnlock()
       }
     } catch {
       // Silently fail
@@ -253,11 +263,8 @@ export function ShareModal({
       showResultToast("majlis", result)
       if (result.outcome === "sent") {
         setMajlisSent(selectedChannel.displayName)
-        if (
-          showEmailGate &&
-          onUnlock
-        ) {
-          onUnlock()
+        if (showEmailGate) {
+          completeGateUnlock()
         }
         setTimeout(onClose, 1500)
       }
@@ -274,6 +281,7 @@ export function ShareModal({
     if (!email.trim()) return
     setEmailSubmitted(true)
     localStorage.setItem("tmh_email_submitted", "true")
+    persistGateUnlock()
     const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL ?? ""
     fetch(`${baseUrl}/api/newsletter/subscribe`, {
       method: "POST",
@@ -285,7 +293,7 @@ export function ShareModal({
       }),
     }).catch(() => {})
     track("newsletter_subscribed", { source: "share_modal", optedIn: newsletterOptIn })
-    if (onUnlock) onUnlock()
+    onUnlock?.()
     setTimeout(onClose, 800)
   }
 

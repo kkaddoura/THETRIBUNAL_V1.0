@@ -48,7 +48,7 @@ export default function PageApply() {
   if (!config) return <div className="text-center py-12 text-red-500">Failed to load Apply page config</div>;
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold uppercase tracking-wide">Apply Page<span className="text-primary">.</span></h1>
         <button onClick={save} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-sm text-sm hover:bg-primary/90 disabled:opacity-50">

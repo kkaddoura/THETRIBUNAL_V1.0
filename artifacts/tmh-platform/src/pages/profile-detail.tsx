@@ -3,7 +3,7 @@ import { useRoute, Link } from "wouter"
 import { useGetProfile } from "@workspace/api-client-react"
 import { Layout } from "@/components/layout/Layout"
 import { PollCard } from "@/components/poll/PollCard"
-import { ProfileCard } from "@/components/profile/ProfileCard"
+import { getProfileImageCandidates, ProfileCard } from "@/components/profile/ProfileCard"
 import { ArrowLeft, MapPin, Building, Briefcase, Eye, ExternalLink, MessageSquare } from "lucide-react"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { track } from "@/lib/analytics"
@@ -67,7 +67,7 @@ function CompanyLink({ company, companyUrl: apiUrl }: { company: string; company
 export default function ProfileDetail() {
   const [, params] = useRoute("/voices/:id")
   const id = params?.id ? parseInt(params.id) : 0
-  const [imgError, setImgError] = useState(false)
+  const [imgIndex, setImgIndex] = useState(0)
 
   const { data: profile, isLoading, error } = useGetProfile(id)
   usePageTitle(profile?.name)
@@ -77,6 +77,10 @@ export default function ProfileDetail() {
       track("voice_profile_viewed", { profileId: profile.id, source: "detail" })
     }
   }, [profile?.id])
+
+  useEffect(() => {
+    setImgIndex(0)
+  }, [profile?.id, profile?.imageUrl])
 
   if (isLoading) {
     return (
@@ -104,6 +108,8 @@ export default function ProfileDetail() {
   }
 
   const paragraphs = profile.story.split('\n').filter(Boolean)
+  const imageCandidates = getProfileImageCandidates(profile)
+  const imageUrl = imageCandidates[imgIndex]
 
   return (
     <Layout>
@@ -116,13 +122,19 @@ export default function ProfileDetail() {
 
           <div className="flex flex-col md:flex-row gap-8 md:gap-12 items-start">
             {/* Portrait photo */}
-            {profile.imageUrl && !imgError ? (
+            {imageUrl ? (
               <div className="flex-shrink-0 w-48 md:w-56 overflow-hidden" style={{ aspectRatio: '3/4' }}>
                 <img
-                  src={profile.imageUrl}
+                  src={imageUrl}
                   alt={profile.name}
                   className="w-full h-full object-cover object-top grayscale"
-                  onError={() => setImgError(true)}
+                  onError={() => {
+                    if (imgIndex < imageCandidates.length - 1) {
+                      setImgIndex((index) => index + 1)
+                    } else {
+                      setImgIndex(imageCandidates.length)
+                    }
+                  }}
                 />
               </div>
             ) : (

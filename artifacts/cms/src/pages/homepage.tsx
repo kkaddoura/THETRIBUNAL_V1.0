@@ -25,6 +25,18 @@ interface Section {
   config: Record<string, unknown>;
 }
 
+interface LeadDebateScheduleSlot {
+  id: string;
+  debateId: number | null;
+  startsAt: string;
+  endsAt: string;
+  enabled: boolean;
+}
+
+function localDateInputValue(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 interface CountryBreakdown {
   name: string;
   flag: string;
@@ -54,7 +66,7 @@ const HOME_CONTENT_DEFAULTS: HomeContent = {
     headline: "The questions people avoid in public",
     subcopy: "Private voting on what the region really thinks about power, money, culture, work, media and the future.",
     trustLine: "Your vote is private. The result is public.",
-    accountMicrocopy: "Sign up only if you want to save your activity and continue later.",
+    accountMicrocopy: "",
     primaryCtaLabel: "Cast Your Vote",
     primaryCtaHref: "/debates",
     secondaryCtaLabel: "How It Works",
@@ -78,7 +90,7 @@ const HOME_CONTENT_DEFAULTS: HomeContent = {
     quoteAuthor: "— Kareem Kaddoura, Founder",
   },
   cards: {
-    heading: "What you'll find here",
+    heading: "Editorial Product Index",
     items: [
       { key: "debates", title: "Debates", subtitle: "What people believe.", body: "Direct questions about work, money, identity, media, culture, power and the future. Vote privately. See where you stand.", cta: "Enter the Debates" },
       { key: "predictions", title: "Predictions", subtitle: "What people think will happen.", body: "Not what should happen. What people expect will happen. Track how confidence shifts over time. Sign up if you want to save your calls and come back to them later.", cta: "Make a Prediction" },
@@ -101,10 +113,12 @@ const HOME_CONTENT_DEFAULTS: HomeContent = {
 
 function resolveContent(cfg?: Partial<HomeContent>): HomeContent {
   const d = HOME_CONTENT_DEFAULTS; const c = (cfg ?? {}) as any;
+  const cardsHeading =
+    c.cards?.heading === "What you'll find here" ? d.cards.heading : c.cards?.heading;
   return {
     hero: { ...d.hero, ...c.hero, stats: c.hero?.stats?.length ? c.hero.stats : d.hero.stats },
     intro: { ...d.intro, ...c.intro, negations: c.intro?.negations?.length ? c.intro.negations : d.intro.negations },
-    cards: { ...d.cards, ...c.cards, items: c.cards?.items?.length ? c.cards.items : d.cards.items },
+    cards: { ...d.cards, ...c.cards, heading: cardsHeading ?? d.cards.heading, items: c.cards?.items?.length ? c.cards.items : d.cards.items },
     voices: { ...d.voices, ...c.voices },
     exploreTopics: { ...d.exploreTopics, ...c.exploreTopics },
     newsletter: { ...d.newsletter, ...c.newsletter, bullets: c.newsletter?.bullets?.length ? c.newsletter.bullets : d.newsletter.bullets },
@@ -125,18 +139,16 @@ interface HomepageData {
 // Canonical list of public homepage sections that can be shown/hidden. Keys are
 // kept in sync with the showSection() gates in tmh-platform/src/pages/home.tsx.
 const HOMEPAGE_VISIBILITY_SECTIONS: { key: string; label: string; hint?: string }[] = [
-  { key: "hero", label: "Hero / Masthead", hint: "Headline, CTAs, live population counter" },
-  { key: "ticker", label: "News Ticker", hint: "Scrolling debates / predictions strip" },
-  { key: "intro", label: "Intro — What is The Tribunal" },
-  { key: "cards", label: "Product Cards", hint: "Debates / Predictions / Pulse / Voices / Majlis" },
-  { key: "lead_debate", label: "Lead Debate + Sidebar" },
-  { key: "predictions", label: "Predictions" },
+  { key: "hero", label: "Hero / Masthead", hint: "The main homepage headline" },
+  { key: "lead_debate", label: "Lead Debate + Ballot Queue", hint: "Also controls the Enter the Debate banner" },
+  { key: "ticker", label: "Live Editorial Ticker", hint: "Scrolling debates, predictions and Pulse updates" },
+  { key: "debates", label: "Debates + Live Results", hint: "Live debate results and the active debates grid" },
+  { key: "explore_topics", label: "Explore Topics", hint: "Topic links beneath Debates + Live Results" },
+  { key: "predictions", label: "Featured Predictions" },
   { key: "pulse", label: "The Pulse", hint: "Also needs the global Pulse feature toggle ON" },
   { key: "voices", label: "The Voices", hint: "Also needs the global Voices feature toggle ON" },
-  { key: "about", label: "About Section" },
-  { key: "explore_topics", label: "Explore Topics" },
+  { key: "about", label: "Our Ethos" },
   { key: "live_activity", label: "Live Activity Feed" },
-  { key: "newsletter", label: "Newsletter CTA" },
 ];
 
 const SECTION_TYPE_LABELS: Record<string, string> = {
@@ -169,6 +181,7 @@ export default function HomepagePage() {
     setSaving(true);
     try {
       await api.updateHomepage(data as unknown as Record<string, unknown>);
+      toast.success("Homepage saved");
     } catch (e: unknown) { toast.error(e instanceof Error ? e.message : "Save failed"); }
     finally { setSaving(false); }
   };
@@ -214,6 +227,55 @@ export default function HomepagePage() {
     });
   };
 
+  const getLeadDebateSchedule = (section: Section): LeadDebateScheduleSlot[] => {
+    const raw = section.config.leadDebateSchedule;
+    return Array.isArray(raw)
+      ? raw.map((slot, index) => {
+          const item = slot as Partial<LeadDebateScheduleSlot>;
+          return {
+            id: typeof item.id === "string" && item.id ? item.id : `lead-${index}`,
+            debateId: typeof item.debateId === "number" ? item.debateId : null,
+            startsAt: typeof item.startsAt === "string" ? item.startsAt : "",
+            endsAt: typeof item.endsAt === "string" ? item.endsAt : "",
+            enabled: item.enabled !== false,
+          };
+        })
+      : [];
+  };
+
+  const updateLeadDebateSchedule = (section: Section, schedule: LeadDebateScheduleSlot[]) => {
+    updateSectionConfig(section.id, "leadDebateSchedule", schedule);
+  };
+
+  const addLeadDebateScheduleSlot = (section: Section) => {
+    const schedule = getLeadDebateSchedule(section);
+    const today = localDateInputValue();
+    updateLeadDebateSchedule(section, [
+      ...schedule,
+      {
+        id: `lead-${Date.now()}`,
+        debateId: null,
+        startsAt: today,
+        endsAt: today,
+        enabled: true,
+      },
+    ]);
+  };
+
+  const updateLeadDebateScheduleSlot = (
+    section: Section,
+    slotId: string,
+    patch: Partial<LeadDebateScheduleSlot>,
+  ) => {
+    const schedule = getLeadDebateSchedule(section);
+    updateLeadDebateSchedule(section, schedule.map((slot) => (slot.id === slotId ? { ...slot, ...patch } : slot)));
+  };
+
+  const removeLeadDebateScheduleSlot = (section: Section, slotId: string) => {
+    const schedule = getLeadDebateSchedule(section);
+    updateLeadDebateSchedule(section, schedule.filter((slot) => slot.id !== slotId));
+  };
+
   const moveSection = (id: string, direction: "up" | "down") => {
     if (!data) return;
     const sorted = [...data.sections].sort((a, b) => a.order - b.order);
@@ -244,7 +306,7 @@ export default function HomepagePage() {
   const setContent = (next: HomeContent) => setData({ ...data, content: next });
 
   return (
-    <div className="max-w-3xl space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold uppercase tracking-wide">Homepage Manager</h1>
         <div className="flex items-center gap-2">
@@ -436,13 +498,94 @@ export default function HomepagePage() {
                   )}
                   {section.type === "lead_debate" && (
                     <div className="space-y-3">
-                      <ContentPicker
-                        type="debates"
-                        mode="single"
-                        label="lead debate"
-                        selectedIds={section.config.selectedDebateId ? [section.config.selectedDebateId as number] : []}
-                        onChange={(ids) => updateSectionConfig(section.id, "selectedDebateId", ids[0] ?? null)}
-                      />
+                      <div className="rounded-md border border-border bg-secondary/20 p-3 space-y-3">
+                        <div className="flex items-start justify-between gap-3">
+                          <div>
+                            <p className="text-xs font-bold uppercase tracking-wider text-primary">Lead Debate Schedule</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Active dated slots override the fallback lead debate. Use the same start and end date for a daily pick, or a date range for weekly runs.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => addLeadDebateScheduleSlot(section)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-sm text-xs font-medium hover:bg-primary/90"
+                          >
+                            <Plus className="w-3.5 h-3.5" /> Add Slot
+                          </button>
+                        </div>
+
+                        <ContentPicker
+                          type="debates"
+                          mode="single"
+                          label="fallback lead debate"
+                          selectedIds={section.config.selectedDebateId ? [section.config.selectedDebateId as number] : []}
+                          onChange={(ids) => updateSectionConfig(section.id, "selectedDebateId", ids[0] ?? null)}
+                        />
+
+                        {getLeadDebateSchedule(section).length === 0 ? (
+                          <p className="rounded-sm border border-dashed border-border px-3 py-3 text-xs text-muted-foreground">
+                            No scheduled lead debates yet. Add a slot to control the lead debate by day or week.
+                          </p>
+                        ) : (
+                          <div className="space-y-3">
+                            {getLeadDebateSchedule(section).map((slot, index) => (
+                              <div key={slot.id} className="rounded-md border border-border bg-card p-3 space-y-3">
+                                <div className="flex items-center justify-between gap-3">
+                                  <p className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                                    Slot {index + 1}
+                                  </p>
+                                  <div className="flex items-center gap-2">
+                                    <button
+                                      type="button"
+                                      onClick={() => updateLeadDebateScheduleSlot(section, slot.id, { enabled: !slot.enabled })}
+                                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-sm text-[11px] transition-colors ${
+                                        slot.enabled ? "text-green-500 hover:bg-green-500/10" : "text-muted-foreground hover:bg-accent"
+                                      }`}
+                                    >
+                                      {slot.enabled ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
+                                      {slot.enabled ? "Active" : "Off"}
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeLeadDebateScheduleSlot(section, slot.id)}
+                                      className="p-1 text-red-400 hover:text-red-300"
+                                      aria-label={`Remove lead debate slot ${index + 1}`}
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </div>
+                                </div>
+                                <ContentPicker
+                                  type="debates"
+                                  mode="single"
+                                  label="scheduled lead debate"
+                                  selectedIds={slot.debateId ? [slot.debateId] : []}
+                                  onChange={(ids) => updateLeadDebateScheduleSlot(section, slot.id, { debateId: ids[0] ?? null })}
+                                />
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                  <Field label="Starts">
+                                    <input
+                                      type="date"
+                                      value={slot.startsAt}
+                                      onChange={(e) => updateLeadDebateScheduleSlot(section, slot.id, { startsAt: e.target.value })}
+                                      className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                  </Field>
+                                  <Field label="Ends">
+                                    <input
+                                      type="date"
+                                      value={slot.endsAt}
+                                      onChange={(e) => updateLeadDebateScheduleSlot(section, slot.id, { endsAt: e.target.value })}
+                                      className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                                    />
+                                  </Field>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                       <label className="flex items-center gap-2 text-sm">
                         <input type="checkbox" checked={(section.config.showSidebar as boolean) ?? true} onChange={e => updateSectionConfig(section.id, "showSidebar", e.target.checked)} className="accent-primary" />
                         Show sidebar with latest debates
@@ -654,21 +797,7 @@ export default function HomepagePage() {
             </Field>
           </Grp>
 
-          <Grp title="Intro — What is The Tribunal?" visible={isSectionVisible("intro")} onToggleVisible={() => setSectionVisible("intro", !isSectionVisible("intro"))}>
-            <Field label="Heading"><TI value={content.intro.heading} onChange={v => setContent({ ...content, intro: { ...content.intro, heading: v } })} /></Field>
-            <Field label="Lead"><TI value={content.intro.lead} onChange={v => setContent({ ...content, intro: { ...content.intro, lead: v } })} /></Field>
-            <Field label="Body"><TA value={content.intro.body} onChange={v => setContent({ ...content, intro: { ...content.intro, body: v } })} /></Field>
-            <Field label="Statement"><TI value={content.intro.statement} onChange={v => setContent({ ...content, intro: { ...content.intro, statement: v } })} /></Field>
-            <Field label="Negations (one per line)">
-              <TA rows={3} value={content.intro.negations.join("\n")} onChange={v => setContent({ ...content, intro: { ...content.intro, negations: v.split("\n").map(s => s.trim()).filter(Boolean) } })} />
-            </Field>
-            <Field label="Closing"><TA value={content.intro.closing} onChange={v => setContent({ ...content, intro: { ...content.intro, closing: v } })} /></Field>
-            <Field label="Trust note"><TI value={content.intro.trust} onChange={v => setContent({ ...content, intro: { ...content.intro, trust: v } })} /></Field>
-            <Field label="Founder quote"><TA value={content.intro.quote} onChange={v => setContent({ ...content, intro: { ...content.intro, quote: v } })} /></Field>
-            <Field label="Quote attribution"><TI value={content.intro.quoteAuthor} onChange={v => setContent({ ...content, intro: { ...content.intro, quoteAuthor: v } })} /></Field>
-          </Grp>
-
-          <Grp title="Product cards — What you'll find here" visible={isSectionVisible("cards")} onToggleVisible={() => setSectionVisible("cards", !isSectionVisible("cards"))}>
+          <Grp title="Editorial Product Index" visible={isSectionVisible("cards")} onToggleVisible={() => setSectionVisible("cards", !isSectionVisible("cards"))}>
             <Field label="Section heading"><TI value={content.cards.heading} onChange={v => setContent({ ...content, cards: { ...content.cards, heading: v } })} /></Field>
             {content.cards.items.map((card, i) => (
               <div key={card.key} className="border border-border rounded p-3 space-y-2">
@@ -704,8 +833,22 @@ export default function HomepagePage() {
 }
 
 function HomepagePreview({ data, onClose }: { data: HomepageData; onClose: () => void }) {
+  const isVisible = (key: string) => data.sectionVisibility?.[key] !== false;
+  const sectionVisibilityKey: Record<string, string | null> = {
+    lead_debate: "lead_debate",
+    debate_grid: "debates",
+    predictions: "predictions",
+    voices: "voices",
+    explore_topics: "explore_topics",
+    live_activity: "live_activity",
+    newsletter_cta: null,
+  };
   const sortedSections = [...data.sections].sort((a, b) => a.order - b.order);
-  const enabledSections = sortedSections.filter(s => s.enabled);
+  const enabledSections = sortedSections.filter((section) => {
+    if (!section.enabled) return false;
+    const visibilityKey = sectionVisibilityKey[section.type];
+    return visibilityKey ? isVisible(visibilityKey) : false;
+  });
   const topBanners = data.banners.filter(b => b.enabled && b.position === "top");
   const middleBanners = data.banners.filter(b => b.enabled && b.position === "middle");
   const bottomBanners = data.banners.filter(b => b.enabled && b.position === "bottom");
@@ -723,6 +866,7 @@ function HomepagePreview({ data, onClose }: { data: HomepageData; onClose: () =>
         <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
           {topBanners.map(b => <BannerPreview key={b.id} banner={b} />)}
 
+          {isVisible("hero") && (
           <div className="text-center py-8 px-4" style={{ background: "radial-gradient(ellipse at 50% -20%, rgba(220,20,60,0.07) 0%, transparent 65%)" }}>
             <p className="text-[9px] uppercase tracking-[0.18em] text-[rgba(255,255,255,0.4)]" style={{ fontFamily: "'Playfair Display', serif" }}>{data.masthead.issueLabel}</p>
             <h2 className="font-black text-3xl uppercase tracking-tight mt-2 text-white" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{data.masthead.title}</h2>
@@ -731,8 +875,9 @@ function HomepagePreview({ data, onClose }: { data: HomepageData; onClose: () =>
               <div className="mt-3 text-xs text-[rgba(255,255,255,0.3)]">▲ Population counter active</div>
             )}
           </div>
+          )}
 
-          {data.ticker.enabled && (
+          {isVisible("ticker") && data.ticker.enabled && (
             <div className="bg-[rgba(220,20,60,0.08)] border-y border-[rgba(220,20,60,0.15)] py-2 px-4 overflow-hidden">
               <div className="flex gap-8 text-xs text-[rgba(255,255,255,0.6)] whitespace-nowrap animate-pulse">
                 {data.ticker.items.map((item, i) => (
@@ -751,17 +896,6 @@ function HomepagePreview({ data, onClose }: { data: HomepageData; onClose: () =>
           {enabledSections.slice(midpoint).map(section => (
             <SectionPreview key={section.id} section={section} />
           ))}
-
-          {data.newsletter.enabled && (
-            <div className="px-6 py-10 text-center" style={{ background: "rgba(255,255,255,0.03)" }}>
-              <h3 className="font-black text-xl uppercase tracking-tight text-white" style={{ fontFamily: "'Barlow Condensed', sans-serif" }}>{data.newsletter.heading}</h3>
-              <p className="text-xs text-[rgba(255,255,255,0.5)] mt-2 max-w-sm mx-auto">{data.newsletter.subheading}</p>
-              <div className="mt-4 flex gap-2 justify-center max-w-xs mx-auto">
-                <div className="flex-1 h-9 bg-[rgba(255,255,255,0.06)] rounded border border-[rgba(255,255,255,0.1)]" />
-                <button className="px-4 py-2 bg-[#DC143C] text-white text-xs font-bold uppercase tracking-wider rounded">{data.newsletter.buttonText}</button>
-              </div>
-            </div>
-          )}
 
           {bottomBanners.map(b => <BannerPreview key={b.id} banner={b} />)}
 

@@ -146,7 +146,7 @@ export default function PagePulse() {
   const filteredTopics = filterCat === "ALL" ? topics : topics.filter(t => t.tag === filterCat);
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold uppercase tracking-wide flex items-center gap-2">
           <Database className="w-5 h-5 text-primary" /> Pulse Page<span className="text-primary">.</span>

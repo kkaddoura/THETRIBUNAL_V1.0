@@ -6,7 +6,6 @@ import { Layout } from "@/components/layout/Layout";
 import { PollCard } from "@/components/poll/PollCard";
 import { usePageConfig } from "@/hooks/use-cms-data";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { TitlePunctuation } from "@/components/TitlePunctuation";
 import { motion } from "motion/react";
 import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
 import { DebateGridSkeleton } from "@/components/skeletons/DebateCardSkeleton";
@@ -20,10 +19,9 @@ const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 type DebateTickerItem = { topic: string; votes: string; href?: string };
 
 interface PollsConfig {
-  hero?: { titleLine1?: string; titleLine2?: string; subtitle?: string };
-  punctuations?: string[];
   ticker?: { enabled?: boolean; source?: string };
   emptyState?: { title?: string; body?: string };
+  sections?: { enabled?: boolean; order?: number }[];
 }
 
 const TICKER_SOURCE_TO_FILTER: Record<string, "latest" | "trending" | "editors_picks"> = {
@@ -47,7 +45,7 @@ export default function Polls() {
     return params.get("category") || undefined;
   }, [search]);
 
-  const { data: config } = usePageConfig<PollsConfig>("polls");
+  const { data: config, isLoading: configLoading } = usePageConfig<PollsConfig>("polls");
   const tickerEnabled = config?.ticker?.enabled !== false;
   const tickerFilter = TICKER_SOURCE_TO_FILTER[config?.ticker?.source ?? "trending_debates"] ?? "trending";
 
@@ -125,8 +123,9 @@ export default function Polls() {
     : (categoryPolls?.polls ?? []);
   const filteredTotal = searchQuery.trim() ? searchTotal : (categoryPolls?.total ?? 0);
   const filteredLoading = isSearching || (!!category && catLoading);
-
-  const hero = config?.hero;
+  const hasConfiguredSections = Array.isArray(config?.sections)
+    ? config.sections.some((section) => section && section.enabled !== false)
+    : false;
 
   const DEBATE_TICKER = useMemo<DebateTickerItem[]>(() => {
     if (!tickerData?.polls?.length) return [];
@@ -148,137 +147,72 @@ export default function Polls() {
 
   return (
     <Layout>
-      <div className="bg-foreground text-background border-b border-border">
-        <motion.div
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-10"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
-        >
-          <p
+      {tickerEnabled &&
+        (tickerLoading && DEBATE_TICKER.length === 0 ? (
+          <TickerSkeleton />
+        ) : DEBATE_TICKER.length > 0 ? (
+          <div
             style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 700,
-              fontSize: "0.78rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.28em",
-              color: "#DC143C",
-              marginBottom: "0.5rem",
+              background: "#0D0D0D",
+              borderTop: "1px solid rgba(255,255,255,0.06)",
+              borderBottom: "1px solid rgba(255,255,255,0.06)",
+              overflow: "hidden",
             }}
           >
-            Debates
-          </p>
-          <motion.h1
-            style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 900,
-              fontSize: "clamp(2rem, 5vw, 3.5rem)",
-              textTransform: "uppercase",
-              color: "var(--background)",
-              letterSpacing: "-0.01em",
-              lineHeight: 1.05,
-              marginBottom: "0.5rem",
-            }}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
-          >
-            {hero?.titleLine1 || "What do people"}
-            <br />
-            {hero?.titleLine2 || "really believe?"}
-            <TitlePunctuation punctuations={config?.punctuations} />
-          </motion.h1>
-          <p
-            className="text-text2/60 pl-2"
-            style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 700,
-              fontSize: "0.90rem",
-              textTransform: "uppercase",
-            }}
-          >
-            {hero?.subtitle ||
-              "Private votes on the questions people usually avoid in public."}
-          </p>
-          <p
-            className="text-text2/60 pl-2 mt-2 italic"
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: "0.85rem",
-              opacity: 0.7,
-            }}
-          >
-            Your vote is private. The result is public.
-          </p>
-        </motion.div>
-
-        {tickerEnabled &&
-          (tickerLoading && DEBATE_TICKER.length === 0 ? (
-            <TickerSkeleton />
-          ) : DEBATE_TICKER.length > 0 ? (
-            <div
-              style={{
-                background: "#0D0D0D",
-                borderTop: "1px solid rgba(255,255,255,0.06)",
-                borderBottom: "1px solid rgba(255,255,255,0.06)",
-                overflow: "hidden",
-              }}
-            >
-              <div className="tmh-ticker-scroll">
-                {doubled.map((item, i) => (
-                  <Link
-                    key={i}
-                    href={item.href ?? "/debates"}
+            <div className="tmh-ticker-scroll">
+              {doubled.map((item, i) => (
+                <Link
+                  key={i}
+                  href={item.href ?? "/debates"}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.6rem",
+                    padding: "0.7rem 2rem",
+                    borderRight: "1px solid rgba(255,255,255,0.1)",
+                    cursor: "pointer",
+                    textDecoration: "none",
+                  }}
+                >
+                  <span
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "0.6rem",
-                      padding: "0.7rem 2rem",
-                      borderRight: "1px solid rgba(255,255,255,0.1)",
-                      cursor: "pointer",
-                      textDecoration: "none",
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 700,
+                      fontSize: "0.80rem",
+                      textTransform: "uppercase",
+                      letterSpacing: "0.08em",
+                      color: "rgba(250,250,250,0.75)",
                     }}
                   >
-                    <span
-                      style={{
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontWeight: 700,
-                        fontSize: "0.80rem",
-                        textTransform: "uppercase",
-                        letterSpacing: "0.08em",
-                        color: "rgba(250,250,250,0.75)",
-                      }}
-                    >
-                      {item.topic}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontWeight: 700,
-                        fontSize: "0.85rem",
-                        color: "#fff",
-                      }}
-                    >
-                      {item.votes}
-                    </span>
-                    <span
-                      style={{
-                        fontFamily: "'Barlow Condensed', sans-serif",
-                        fontWeight: 700,
-                        fontSize: "0.83rem",
-                        color: "#DC143C",
-                      }}
-                    >
-                      VOTES
-                    </span>
-                  </Link>
-                ))}
-              </div>
+                    {item.topic}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 700,
+                      fontSize: "0.85rem",
+                      color: "#fff",
+                    }}
+                  >
+                    {item.votes}
+                  </span>
+                  <span
+                    style={{
+                      fontFamily: "'Barlow Condensed', sans-serif",
+                      fontWeight: 700,
+                      fontSize: "0.83rem",
+                      color: "#DC143C",
+                    }}
+                  >
+                    VOTES
+                  </span>
+                </Link>
+              ))}
             </div>
-          ) : null)}
-      </div>
+          </div>
+        ) : null)}
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex flex-col lg:flex-row gap-8 lg:gap-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-8 lg:gap-12">
         <FilterSidebar
           search={{
             value: searchQuery,
@@ -312,6 +246,18 @@ export default function Polls() {
               loading={filteredLoading}
               isSearching={isSearching}
               searchQuery={searchQuery}
+              onClear={() => {
+                setSearchQuery("");
+                setCategory(undefined);
+              }}
+            />
+          ) : !configLoading && !hasConfiguredSections ? (
+            <FilteredView
+              polls={filteredPolls}
+              total={filteredTotal}
+              loading={catLoading}
+              isSearching={false}
+              searchQuery=""
               onClear={() => {
                 setSearchQuery("");
                 setCategory(undefined);
@@ -386,9 +332,11 @@ function FilteredView({
         {polls.length} of {total} debate{total === 1 ? "" : "s"}
         {searchQuery ? ` for "${searchQuery}"` : ""}
       </p>
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+      <div className="columns-1 [column-gap:2rem] xl:columns-2">
         {polls.map((poll) => (
-          <PollCard key={poll.id} poll={poll} />
+          <div key={poll.id} className="mb-8 inline-block w-full break-inside-avoid align-top">
+            <PollCard poll={poll} />
+          </div>
         ))}
       </div>
     </div>

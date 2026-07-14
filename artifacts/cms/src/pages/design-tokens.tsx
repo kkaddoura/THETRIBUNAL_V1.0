@@ -75,7 +75,7 @@ export default function DesignTokensPage() {
   if (loading) return <div className="text-center py-12 text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold uppercase tracking-wide flex items-center gap-2">
           <Palette className="w-6 h-6 text-primary" /> Design Tokens<span className="text-primary">.</span>

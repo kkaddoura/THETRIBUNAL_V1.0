@@ -1,13 +1,13 @@
 import { useI18n } from "@/lib/i18n"
 
-const PRINCIPLES = [
-  { title: "Private votes. Public results", body: "Your name and email are not shown with your vote." },
-  { title: "Human reviewed questions", body: "Questions are curated before they go live." },
-  { title: "No manufactured consensus", body: "No bots. No sponsored sentiment. No fake activity." },
-  { title: "Not scientific polling", body: "Results are opinion signals from people who choose to participate." },
-  { title: "Save your own record", body: "If you sign up, you can view your previous activity and return to it later." },
-  { title: "The sharper the question, the clearer the signal", body: "Soft questions produce soft answers." },
+const ETHOS_PARAGRAPHS = [
+  "The Tribunal exists because the Middle East and North Africa is the most opinionated, least surveyed region on earth. There are 541 million people here - builders, dreamers, troublemakers - and no one has ever given them a single platform to say what they really think.",
+  "We are not a news outlet. We are not a think tank. We do not do sponsored polls or PR research. Every question on this platform is designed to surface the truth - not a narrative.",
+  "We believe that anonymous, honest data from real people is more valuable than any op-ed, any government report, any think-tank white paper. We believe the region knows itself better than anyone watching from the outside.",
+  "The questions are provocative because the region deserves provocative questions. The data is honest because anything less is a waste of everyone's time.",
 ]
+
+const ETHOS_CLOSING = "This is MENA's living dataset - and it grows with every vote."
 
 const CREAM = "#F5F0EB"
 const CRIMSON = "#DC143C"
@@ -38,116 +38,77 @@ export default function AboutSection() {
       />
 
       <style>{`
-        .tmh-deck {
-          position: relative;
-          max-width: 46rem;
-          margin: 0 auto;
-          display: flex;
-          flex-direction: column;
-          gap: clamp(0.6rem, 1.6vw, 0.9rem);
+        .tmh-ethos-copy {
+          color: rgba(245, 240, 235, 0.62);
+          font-family: 'DM Sans', sans-serif;
+          font-size: clamp(0.94rem, 1.05vw, 1.06rem);
+          line-height: 1.68;
+          letter-spacing: 0;
+          max-width: 60rem;
         }
-        .tmh-card {
-          display: grid;
-          grid-template-columns: clamp(2.6rem, 8vw, 3.75rem) 1fr;
-          gap: clamp(0.85rem, 3vw, 1.75rem);
-          align-items: start;
-          width: 100%;
-          text-align: left;
-          background: linear-gradient(180deg, #1c1c1c, #141414);
-          border: 1px solid rgba(245,240,235,0.14);
-          border-left: 3px solid #DC143C;
-          border-radius: 12px;
-          padding: clamp(1rem, 2.6vw, 1.5rem) clamp(1rem, 3vw, 1.75rem);
-          color: inherit;
-          box-shadow: 0 16px 40px -28px rgba(0,0,0,0.9);
+        .tmh-ethos-copy p {
+          margin: 0 0 clamp(1rem, 1.8vw, 1.35rem);
         }
-        .tmh-card .tmh-body { display: block; }
+        .tmh-ethos-rail {
+          position: absolute;
+          top: clamp(2.75rem, 5vw, 4.25rem);
+          bottom: clamp(2.75rem, 5vw, 4.25rem);
+          right: clamp(1.25rem, 4vw, 2rem);
+          width: 2px;
+          border-radius: 999px;
+          background: linear-gradient(180deg, transparent, rgba(245,240,235,0.14), transparent);
+        }
+        @media (max-width: 768px) {
+          .tmh-ethos-copy {
+            font-size: clamp(0.9rem, 3.8vw, 1rem);
+            line-height: 1.65;
+          }
+          .tmh-ethos-rail { display: none; }
+        }
       `}</style>
 
       <div
         style={{
-          maxWidth: "64rem",
+          maxWidth: "86rem",
           margin: "0 auto",
-          padding: "clamp(3rem, 7vw, 5.5rem) clamp(1.25rem, 5vw, 3rem)",
+          padding: "clamp(2.5rem, 4.5vw, 3.5rem) clamp(1.25rem, 5vw, 3rem)",
+          position: "relative",
         }}
       >
-        {/* ── Section header with rules ──────────────────────────────── */}
-        <div
+        <div className="tmh-ethos-rail" aria-hidden="true" />
+
+        <p
           style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "clamp(0.75rem, 2.5vw, 1.5rem)",
-            marginBottom: "clamp(1.25rem, 3vw, 2rem)",
+            fontFamily: "'Barlow Condensed', sans-serif",
+            fontWeight: 900,
+            fontSize: "clamp(0.75rem, 1vw, 0.86rem)",
+            textTransform: "uppercase",
+            letterSpacing: "0.3em",
+            color: CRIMSON,
+            margin: "0 0 clamp(1.25rem, 2vw, 1.75rem)",
           }}
         >
-          <span style={{ flex: 1, height: 1, background: "rgba(245,240,235,0.18)" }} />
+          {t("Our Ethos")}
+        </p>
+
+        <div className="tmh-ethos-copy">
+          {ETHOS_PARAGRAPHS.map((paragraph) => (
+            <p key={paragraph}>{t(paragraph)}</p>
+          ))}
           <p
             style={{
+              color: CREAM,
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 900,
-              fontSize: "clamp(1.05rem, 2.4vw, 1.45rem)",
-              textTransform: "uppercase",
-              letterSpacing: "0.32em",
-              color: CRIMSON,
-              margin: 0,
-              whiteSpace: "nowrap",
+              fontSize: "clamp(1rem, 1.35vw, 1.2rem)",
+              lineHeight: 1.3,
+              letterSpacing: "0.02em",
+              textTransform: "none",
+              marginBottom: 0,
             }}
           >
-            {t("How We Keep It Honest")}
+            {t(ETHOS_CLOSING)}
           </p>
-          <span style={{ flex: 1, height: 1, background: "rgba(245,240,235,0.18)" }} />
-        </div>
-
-        {/* ── Principle cards — all text always visible (mobile-safe) ── */}
-        <div className="tmh-deck">
-          {PRINCIPLES.map((item, idx) => {
-            return (
-              <div key={idx} className="tmh-card">
-                <span
-                  style={{
-                    fontFamily: "'Barlow Condensed', sans-serif",
-                    fontWeight: 900,
-                    fontSize: "clamp(1.9rem, 5.5vw, 2.9rem)",
-                    lineHeight: 0.85,
-                    color: CRIMSON,
-                    letterSpacing: "-0.02em",
-                    fontVariantNumeric: "tabular-nums",
-                  }}
-                >
-                  {String(idx + 1).padStart(2, "0")}
-                </span>
-                <span style={{ display: "block", minWidth: 0 }}>
-                  <span
-                    style={{
-                      fontFamily: "'Barlow Condensed', sans-serif",
-                      fontWeight: 800,
-                      fontSize: "clamp(1rem, 2.5vw, 1.35rem)",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.04em",
-                      color: CREAM,
-                      display: "block",
-                      lineHeight: 1.15,
-                    }}
-                  >
-                    {t(item.title)}
-                    <span style={{ color: CRIMSON }}>.</span>
-                  </span>
-                  <span
-                    className="tmh-body"
-                    style={{
-                      fontFamily: "'DM Sans', sans-serif",
-                      fontSize: "clamp(0.95rem, 1.7vw, 1.1rem)",
-                      color: "rgba(245,240,235,0.6)",
-                      lineHeight: 1.55,
-                      display: "block",
-                    }}
-                  >
-                    {t(item.body)}
-                  </span>
-                </span>
-              </div>
-            )
-          })}
         </div>
       </div>
     </section>

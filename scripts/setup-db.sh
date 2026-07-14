@@ -88,8 +88,12 @@ node -e "
 " 2>/dev/null || \
 pnpm --filter @workspace/api-server exec tsx -e "
   import { seedCmsData } from '@workspace/db/seed-cms';
-  await seedCmsData();
-  process.exit(0);
+  seedCmsData()
+    .then(() => process.exit(0))
+    .catch((err) => {
+      console.error(err);
+      process.exit(1);
+    });
 "
 
 echo ""

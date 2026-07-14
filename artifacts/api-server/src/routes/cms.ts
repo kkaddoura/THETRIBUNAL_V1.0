@@ -98,6 +98,32 @@ export interface MockPrediction {
 
 export const mockPredictions: MockPrediction[] = [];
 
+const DEFAULT_FEATURE_TOGGLES = {
+  majlis: { enabled: false },
+  voices: { enabled: true },
+  pulse: { enabled: true },
+  shareGate: { enabled: true },
+  emailCapture: { enabled: true },
+  ipConsent: { enabled: false },
+  chatbot: { enabled: true },
+};
+
+function withSiteSettingsDefaults(value: any = {}) {
+  const featureToggles = value?.featureToggles ?? {};
+  return {
+    ...value,
+    featureToggles: {
+      majlis: { ...DEFAULT_FEATURE_TOGGLES.majlis, ...featureToggles.majlis },
+      voices: { ...DEFAULT_FEATURE_TOGGLES.voices, ...featureToggles.voices },
+      pulse: { ...DEFAULT_FEATURE_TOGGLES.pulse, ...featureToggles.pulse },
+      shareGate: { ...DEFAULT_FEATURE_TOGGLES.shareGate, ...featureToggles.shareGate },
+      emailCapture: { ...DEFAULT_FEATURE_TOGGLES.emailCapture, ...featureToggles.emailCapture },
+      ipConsent: { ...DEFAULT_FEATURE_TOGGLES.ipConsent, ...featureToggles.ipConsent },
+      chatbot: { ...DEFAULT_FEATURE_TOGGLES.chatbot, ...featureToggles.chatbot },
+    },
+  };
+}
+
 router.post("/cms/auth/login", async (req, res) => {
   if (hasAnyDefaultCred && process.env.NODE_ENV === "production") {
     return res.status(503).json({ error: "CMS login disabled — default credentials detected. Set CMS_USERNAME and CMS_PIN environment variables." });
@@ -1730,6 +1756,7 @@ router.get("/public/pulse-topics", async (_req, res) => {
 
 router.get("/public/homepage", async (_req, res) => {
   try {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     const [row] = await db.select().from(cmsConfigsTable).where(eq(cmsConfigsTable.key, "homepage"));
     if (!row) return res.json({});
     return res.json(row.value);
@@ -1916,6 +1943,7 @@ router.get("/pulse-topics", async (_req, res) => {
 
 router.get("/homepage", async (_req, res) => {
   try {
+    res.set("Cache-Control", "no-store, no-cache, must-revalidate");
     const [row] = await db.select().from(cmsConfigsTable).where(eq(cmsConfigsTable.key, "homepage"));
     if (!row) return res.json({});
     return res.json(row.value);
@@ -1949,8 +1977,7 @@ router.get("/design-tokens", async (_req, res) => {
 router.get("/public/site-settings", async (_req, res) => {
   try {
     const [row] = await db.select().from(cmsConfigsTable).where(eq(cmsConfigsTable.key, "site_settings"));
-    if (!row) return res.json({});
-    return res.json(row.value);
+    return res.json(withSiteSettingsDefaults(row?.value));
   } catch (err) {
     console.error("Public site settings error:", err);
     return res.status(500).json({ error: "Failed to fetch site settings" });
@@ -1960,8 +1987,7 @@ router.get("/public/site-settings", async (_req, res) => {
 router.get("/site-settings", async (_req, res) => {
   try {
     const [row] = await db.select().from(cmsConfigsTable).where(eq(cmsConfigsTable.key, "site_settings"));
-    if (!row) return res.json({});
-    return res.json(row.value);
+    return res.json(withSiteSettingsDefaults(row?.value));
   } catch (err) {
     console.error("Public site settings error:", err);
     return res.status(500).json({ error: "Failed to fetch site settings" });
@@ -2013,8 +2039,7 @@ router.get("/live-counts", async (_req, res) => {
 router.get("/cms/site-settings", requireCmsAuth, async (_req, res) => {
   try {
     const [row] = await db.select().from(cmsConfigsTable).where(eq(cmsConfigsTable.key, "site_settings"));
-    if (!row) return res.json({});
-    return res.json(row.value);
+    return res.json(withSiteSettingsDefaults(row?.value));
   } catch (err) {
     console.error("Site settings error:", err);
     return res.status(500).json({ error: "Failed to fetch site settings" });

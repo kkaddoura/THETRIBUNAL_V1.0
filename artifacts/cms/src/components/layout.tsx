@@ -2,6 +2,7 @@ import type React from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation, Link } from "wouter";
 import { LayoutDashboard, MessageSquare, TrendingUp, Users, LogOut, Home, Mail, FileText, BarChart3, Activity, Info, HelpCircle, ScrollText, Phone, Shield, Palette, Sparkles, Lightbulb, Settings, Vote, UserPlus, Tags } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const NAV_SECTIONS = [
   {
@@ -110,9 +111,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="p-3 border-t border-border">
           <div className="flex items-center justify-between">
             <span className="text-xs text-muted-foreground">{username}</span>
-            <button onClick={logout} className="text-muted-foreground hover:text-foreground transition-colors">
-              <LogOut className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <button
+                onClick={logout}
+                className="inline-flex h-8 w-8 items-center justify-center border border-border bg-background text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                aria-label="Log out"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </aside>

@@ -95,7 +95,7 @@ export default function EditVoicePage() {
   if (loading) return <div className="text-center py-12 text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="w-full max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold uppercase tracking-wide">{isNew ? "New Voice" : "Edit Voice"}</h1>
         <button onClick={() => setShowPreview(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80">

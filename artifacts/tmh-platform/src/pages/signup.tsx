@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react"
 import { Layout } from "@/components/layout/Layout"
 import { useLocation, Link } from "wouter"
-import { Eye, EyeOff, Vote, ShieldCheck, Mail, Sparkles, ArrowRight } from "lucide-react"
+import { Eye, EyeOff, ArrowRight } from "lucide-react"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { useSignup } from "@/hooks/use-auth"
 import { track } from "@/lib/analytics"
+import { AuthVisualPanel } from "@/components/auth/AuthVisualPanel"
 
 export default function Signup() {
   usePageTitle({
@@ -64,132 +65,18 @@ export default function Signup() {
   }
 
   return (
-    <Layout>
-      <div className="min-h-[calc(100vh-4rem)] grid lg:grid-cols-2">
-        {/* ── Left: editorial pitch — always dark, theme-independent ─── */}
-        <aside
-          className="relative overflow-hidden hidden lg:flex flex-col justify-between p-10 xl:p-16"
-          style={{ backgroundColor: "#0A0A0A", color: "#F2EDE4" }}
-        >
-          {/* Subtle backdrop accent */}
-          <div
-            aria-hidden="true"
-            className="absolute -top-32 -right-32 w-[480px] h-[480px] rounded-full bg-primary/10 blur-3xl pointer-events-none"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
-          />
-
-          <div className="relative">
-            <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-5 font-serif">
-              The Tribunal
-            </p>
-            <h1
-              className="font-display font-black uppercase tracking-tight leading-[0.95] text-5xl xl:text-6xl mb-6"
-              style={{ color: "#F2EDE4" }}
-            >
-              Save your<br />
-              activity<span className="text-primary">.</span>
-            </h1>
-            <p className="text-base xl:text-lg leading-relaxed max-w-md" style={{ color: "rgba(242,237,228,0.7)" }}>
-              Create a simple account to keep your voting history, track your predictions, and continue from any device.
-            </p>
-          </div>
-
-          {/* Value props */}
-          <ul className="relative space-y-5 my-10 max-w-md">
-            <li className="flex items-start gap-4">
-              <div
-                className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
-                style={{ borderWidth: 1, borderColor: "rgba(242,237,228,0.25)" }}
-              >
-                <Vote className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="font-bold uppercase text-sm tracking-tight" style={{ color: "#F2EDE4" }}>
-                  Save your votes.
-                </p>
-                <p className="text-xs leading-relaxed mt-0.5" style={{ color: "rgba(242,237,228,0.6)" }}>
-                  View your previous votes and predictions across devices.
-                </p>
-              </div>
-            </li>
-            <li className="flex items-start gap-4">
-              <div
-                className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
-                style={{ borderWidth: 1, borderColor: "rgba(242,237,228,0.25)" }}
-              >
-                <ShieldCheck className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="font-bold uppercase text-sm tracking-tight" style={{ color: "#F2EDE4" }}>
-                  Your vote is private.
-                </p>
-                <p className="text-xs leading-relaxed mt-0.5" style={{ color: "rgba(242,237,228,0.6)" }}>
-                  Your name and email are not shown with your vote. Your account helps you save your activity.
-                </p>
-              </div>
-            </li>
-            <li className="flex items-start gap-4">
-              <div
-                className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
-                style={{ borderWidth: 1, borderColor: "rgba(242,237,228,0.25)" }}
-              >
-                <Mail className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="font-bold uppercase text-sm tracking-tight" style={{ color: "#F2EDE4" }}>
-                  Updates, if you want them.
-                </p>
-                <p className="text-xs leading-relaxed mt-0.5" style={{ color: "rgba(242,237,228,0.6)" }}>
-                  Get the sharpest questions, results and prediction shifts from The Tribunal. Unsubscribe anytime.
-                </p>
-              </div>
-            </li>
-            <li className="flex items-start gap-4">
-              <div
-                className="flex-shrink-0 w-9 h-9 flex items-center justify-center"
-                style={{ borderWidth: 1, borderColor: "rgba(242,237,228,0.25)" }}
-              >
-                <Sparkles className="w-4 h-4 text-primary" />
-              </div>
-              <div>
-                <p className="font-bold uppercase text-sm tracking-tight" style={{ color: "#F2EDE4" }}>
-                  Pick a username.
-                </p>
-                <p className="text-xs leading-relaxed mt-0.5" style={{ color: "rgba(242,237,228,0.6)" }}>
-                  A handle for your account. It is not shown with your individual votes.
-                </p>
-              </div>
-            </li>
-          </ul>
-
-          {/* Pull quote */}
-          <figure className="relative border-l-2 border-primary pl-5 max-w-md">
-            <blockquote
-              className="text-base xl:text-lg leading-relaxed font-serif italic"
-              style={{ color: "rgba(242,237,228,0.92)" }}
-            >
-              "Your vote is private. The result is public."
-            </blockquote>
-            <figcaption
-              className="text-[12px] uppercase tracking-[0.25em] font-bold mt-3 font-serif"
-              style={{ color: "rgba(242,237,228,0.5)" }}
-            >
-              — The Tribunal
-            </figcaption>
-          </figure>
-        </aside>
+    <Layout hideFooter>
+      <div className="min-h-[calc(100vh-4rem)] grid lg:min-h-[calc(100vh-3.5rem)] lg:grid-cols-2">
+        <AuthVisualPanel
+          title="Save your activity"
+          body="Create a simple account to keep your voting history, track your predictions, and continue from any device."
+        />
 
         {/* ── Right: form ─────────────────────────────────────────────── */}
         <main className="flex items-center justify-center bg-background py-10 px-4 sm:px-6 md:py-16">
           <div className="w-full max-w-md">
             {/* Mobile-only headline (the left aside is desktop-only) */}
             <div className="lg:hidden text-center mb-8">
-              <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
-                The Tribunal
-              </p>
               <h1 className="font-display font-black uppercase tracking-tight text-4xl leading-[0.95]">
                 Save your<br />
                 activity<span className="text-primary">.</span>
@@ -308,15 +195,6 @@ export default function Signup() {
                   </Link>
                 </p>
               </form>
-            </div>
-
-            {/* Trust strip */}
-            <div className="mt-6 flex items-center justify-center gap-5 text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground/70 font-serif">
-              <span>Private votes</span>
-              <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-              <span>Free</span>
-              <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-              <span>No spam</span>
             </div>
           </div>
         </main>

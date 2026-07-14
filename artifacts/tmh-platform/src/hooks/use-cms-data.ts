@@ -2,8 +2,8 @@ import { useQuery } from "@tanstack/react-query"
 
 const API_BASE = import.meta.env?.VITE_API_BASE_URL ?? ""
 
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(`${API_BASE}${url}`)
+async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const res = await fetch(`${API_BASE}${url}`, init)
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
 }
@@ -156,8 +156,9 @@ export function usePageConfig<T = Record<string, unknown>>(page: string) {
 export function useHomepageConfig<T = Record<string, unknown>>() {
   return useQuery<T>({
     queryKey: ["homepage-config"],
-    queryFn: () => fetchJson("/api/public/homepage"),
-    staleTime: 120_000,
+    queryFn: () => fetchJson("/api/public/homepage", { cache: "no-store" }),
+    staleTime: 0,
+    refetchOnWindowFocus: "always",
     retry: 1,
   })
 }

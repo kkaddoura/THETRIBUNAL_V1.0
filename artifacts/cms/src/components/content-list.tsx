@@ -256,7 +256,7 @@ export default function ContentList({ type, title, getItems, getTitle, getCatego
 }
 
 function getJsonTemplate(type: string): string {
-  if (type === "debates") return `[\n  {\n    "question": "Will X happen by 2026?",\n    "context": "Background context...",\n    "category": "Economy",\n    "categorySlug": "economy",\n    "tags": ["finance", "mena"],\n    "pollType": "binary",\n    "options": ["Yes", "No"],\n    "isFeatured": false\n  }\n]`;
+  if (type === "debates") return `[\n  {\n    "question": "Will X happen by 2026?",\n    "context": "Background context...",\n    "category": "Economy",\n    "categorySlug": "economy",\n    "tags": ["finance", "mena"],\n    "pollType": "binary",\n    "options": ["Yes", "No"]\n  }\n]`;
   if (type === "predictions") return `[\n  {\n    "question": "Will X happen?",\n    "category": "Business",\n    "categorySlug": "business",\n    "resolvesAt": "2026-12-31",\n    "yesPercentage": 65,\n    "noPercentage": 35,\n    "momentum": 1.5,\n    "momentumDirection": "up",\n    "trendData": [60, 62, 63, 65],\n    "tags": ["startup"]\n  }\n]`;
   return `[\n  {\n    "name": "John Doe",\n    "headline": "Building the future...",\n    "role": "Founder & CEO",\n    "company": "Acme Inc",\n    "sector": "Technology",\n    "country": "UAE",\n    "city": "Dubai",\n    "summary": "Short summary...",\n    "story": "Full story...",\n    "lessonsLearned": ["Lesson 1", "Lesson 2"],\n    "quote": "A great quote"\n  }\n]`;
 }

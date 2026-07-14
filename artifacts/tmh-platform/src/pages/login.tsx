@@ -1,9 +1,10 @@
 import { useState } from "react"
 import { Layout } from "@/components/layout/Layout"
 import { useLocation, Link } from "wouter"
-import { Eye, EyeOff, ArrowRight, Vote } from "lucide-react"
+import { Eye, EyeOff, ArrowRight } from "lucide-react"
 import { usePageTitle } from "@/hooks/use-page-title"
 import { useLogin } from "@/hooks/use-auth"
+import { AuthVisualPanel } from "@/components/auth/AuthVisualPanel"
 
 export default function Login() {
   usePageTitle({
@@ -37,72 +38,17 @@ export default function Login() {
   }
 
   return (
-    <Layout>
-      <div className="min-h-[calc(100vh-4rem)] grid lg:grid-cols-2">
-        {/* ── Left: welcome-back panel — always dark, theme-independent ─ */}
-        <aside
-          className="relative overflow-hidden hidden lg:flex flex-col justify-between p-10 xl:p-16"
-          style={{ backgroundColor: "#0A0A0A", color: "#F2EDE4" }}
-        >
-          <div
-            aria-hidden="true"
-            className="absolute -bottom-32 -left-32 w-[480px] h-[480px] rounded-full bg-primary/10 blur-3xl pointer-events-none"
-          />
-          <div
-            aria-hidden="true"
-            className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-primary/40 to-transparent"
-          />
-
-          <div className="relative">
-            <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-5 font-serif">
-              Welcome back
-            </p>
-            <h1
-              className="font-display font-black uppercase tracking-tight leading-[0.95] text-5xl xl:text-6xl mb-6"
-              style={{ color: "#F2EDE4" }}
-            >
-              Welcome<br />
-              back<span className="text-primary">.</span>
-            </h1>
-            <p
-              className="text-base xl:text-lg leading-relaxed max-w-md"
-              style={{ color: "rgba(242,237,228,0.7)" }}
-            >
-              Sign in to view your previous votes and predictions, and continue from any device.
-            </p>
-          </div>
-
-          <div className="relative space-y-6 max-w-md">
-            <div
-              className="flex items-center gap-3 backdrop-blur-sm px-4 py-3"
-              style={{
-                borderWidth: 1,
-                borderColor: "rgba(242,237,228,0.15)",
-                backgroundColor: "rgba(242,237,228,0.04)",
-              }}
-            >
-              <Vote className="w-4 h-4 text-primary flex-shrink-0" />
-              <p className="text-xs leading-relaxed" style={{ color: "rgba(242,237,228,0.85)" }}>
-                Your vote is private. Your account helps you save your activity.
-              </p>
-            </div>
-
-            <p
-              className="text-[12px] uppercase tracking-[0.25em] font-bold font-serif"
-              style={{ color: "rgba(242,237,228,0.45)" }}
-            >
-              The Tribunal
-            </p>
-          </div>
-        </aside>
+    <Layout hideFooter>
+      <div className="min-h-[calc(100vh-4rem)] grid lg:min-h-[calc(100vh-3.5rem)] lg:grid-cols-2">
+        <AuthVisualPanel
+          title="Welcome back"
+          body="Sign in to view your previous votes and predictions, and continue from any device."
+        />
 
         {/* ── Right: login form ────────────────────────────────────────── */}
         <main className="flex items-center justify-center bg-background py-10 px-4 sm:px-6 md:py-16">
           <div className="w-full max-w-md">
             <div className="lg:hidden text-center mb-8">
-              <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-3 font-serif">
-                Welcome back
-              </p>
               <h1 className="font-display font-black uppercase tracking-tight text-4xl leading-[0.95]">
                 Welcome<br />
                 back<span className="text-primary">.</span>
@@ -186,14 +132,6 @@ export default function Login() {
                   </Link>
                 </p>
               </form>
-            </div>
-
-            <div className="mt-6 flex items-center justify-center gap-5 text-[12px] uppercase tracking-[0.2em] font-bold text-muted-foreground/70 font-serif">
-              <span>Secure session</span>
-              <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-              <span>30-day login</span>
-              <span className="w-1 h-1 rounded-full bg-muted-foreground/30" />
-              <span>No tracking</span>
             </div>
           </div>
         </main>

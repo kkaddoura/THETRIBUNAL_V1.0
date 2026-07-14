@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useLocation } from "wouter"
 import { MapPin, ExternalLink } from "lucide-react"
 import type { Profile } from "@workspace/api-client-react"
@@ -60,15 +60,51 @@ export function getCompanyUrl(company?: string | null): string {
   return ""
 }
 
+const PROFILE_IMAGE_OVERRIDES: Record<string, string> = {
+  "Ghassan R. Haddad": "/profiles/Ghassan_Haddad.jpg",
+  "Mohammed Al Zaben": "/profiles/Mohammad_Al_Zaben.jpg",
+  "Nahla Atié": "/profiles/nahla_atie.jpg",
+}
+
+const PROFILE_IMAGE_PLACEHOLDER = "/images/avatar-placeholder.png"
+
+function profileNameImagePath(name: string) {
+  const filename = name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.'’]/g, "")
+    .trim()
+    .replace(/[^A-Za-z0-9-]+/g, "_")
+    .replace(/^_+|_+$/g, "")
+  return filename ? `/profiles/${filename}.jpg` : ""
+}
+
+export function getProfileImageCandidates(profile: Pick<Profile, "name" | "imageUrl">) {
+  const candidates = [
+    profile.imageUrl || "",
+    PROFILE_IMAGE_OVERRIDES[profile.name] || "",
+    profileNameImagePath(profile.name),
+    PROFILE_IMAGE_PLACEHOLDER,
+  ].filter(Boolean)
+  return Array.from(new Set(candidates))
+}
+
 export function ProfileCard({ profile }: { profile: Profile }) {
   const [, navigate] = useLocation()
-  const [imgError, setImgError] = useState(false)
+  const [imgIndex, setImgIndex] = useState(0)
   const [imgLoaded, setImgLoaded] = useState(false)
   const getInitials = (name: string) =>
     name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase()
 
   const companyUrl = profile.companyUrl || getCompanyUrl(profile.company)
   const profileUrl = `/voices/${profile.id}`
+  const imageCandidates = getProfileImageCandidates(profile)
+  const imageUrl = imageCandidates[imgIndex]
+
+  useEffect(() => {
+    setImgIndex(0)
+    setImgLoaded(false)
+  }, [profile.id, profile.imageUrl])
 
   return (
     <div
@@ -77,7 +113,7 @@ export function ProfileCard({ profile }: { profile: Profile }) {
       role="article"
     >
       {/* Photo or initials — fixed aspect ratio for alignment */}
-      {profile.imageUrl && !imgError ? (
+      {imageUrl ? (
         <div className="w-full aspect-[3/4] relative overflow-hidden flex-shrink-0 bg-secondary flex items-center justify-center">
           {/* Skeleton shimmer while image loads */}
           {!imgLoaded && (
@@ -86,11 +122,18 @@ export function ProfileCard({ profile }: { profile: Profile }) {
             </div>
           )}
           <img
-            src={profile.imageUrl}
+            src={imageUrl}
             alt={profile.name}
             className={`w-full h-full object-cover object-top grayscale group-hover:grayscale-0 transition-all duration-300 ${imgLoaded ? 'opacity-100' : 'opacity-0'}`}
             onLoad={() => setImgLoaded(true)}
-            onError={() => setImgError(true)}
+            onError={() => {
+              if (imgIndex < imageCandidates.length - 1) {
+                setImgIndex((index) => index + 1)
+                setImgLoaded(false)
+              } else {
+                setImgIndex(imageCandidates.length)
+              }
+            }}
           />
           {profile.isFeatured && (
             <span className="absolute top-2 left-2 sm:top-3 sm:left-3 bg-primary text-background text-[9px] sm:text-[10px] uppercase tracking-widest px-1.5 py-0.5 sm:px-2 sm:py-1 font-bold">

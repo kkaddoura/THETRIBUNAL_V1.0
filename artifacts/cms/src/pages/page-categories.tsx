@@ -85,7 +85,7 @@ export default function PageCategories() {
   const disabledCount = categories.filter((c) => c.disabled).length;
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="w-full max-w-6xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold uppercase tracking-wide">Categories<span className="text-primary">.</span></h1>
         <button onClick={saveVisibility} disabled={saving} className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-sm text-sm hover:bg-primary/90 disabled:opacity-50">

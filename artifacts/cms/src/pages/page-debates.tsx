@@ -246,7 +246,7 @@ export default function PageDebates() {
   if (!config) return <div className="text-center py-12 text-red-500">Failed to load debates page config</div>;
 
   return (
-    <div className="space-y-6 max-w-4xl">
+    <div className="w-full max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold uppercase tracking-wide">Debates Page Config<span className="text-primary">.</span></h1>
         <div className="flex items-center gap-2">

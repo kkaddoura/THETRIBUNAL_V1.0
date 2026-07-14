@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Link } from "wouter"
 import { motion, AnimatePresence } from "motion/react"
 import { ArrowRight, Share2, Lock, CheckCircle2, Flame } from "lucide-react"
@@ -17,6 +17,8 @@ import type { DebateShareContext } from "@/lib/share"
 interface PollCardProps {
   poll: Poll
   featured?: boolean
+  stacked?: boolean
+  onVoteComplete?: (pollId: number) => void
 }
 
 type Phase = "vote" | "gate" | "results"
@@ -47,7 +49,7 @@ function generateInsight(
   return `${Math.round(votedPct)}% of voters agree with you on this one.`
 }
 
-export function PollCard({ poll, featured = false }: PollCardProps) {
+export function PollCard({ poll, featured = false, stacked = false, onVoteComplete }: PollCardProps) {
   const { hasVoted, getVotedOption, recordVote, token, currentStreak, isFirstTimer, markWelcomed, totalVotesAllTime } = useVoter()
   const { toast } = useToast()
   const { data: siteSettings } = useSiteSettings()
@@ -60,6 +62,8 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
   const [wasFirstTimer, setWasFirstTimer] = useState(false)
   const [showShareModal, setShowShareModal] = useState(false)
   const [showGateModal, setShowGateModal] = useState(true)
+  const completionNotifiedRef = useRef(false)
+  const votedThisMountRef = useRef(false)
 
   const isVoted = hasVoted(poll.id)
   const votedOptionId = getVotedOption(poll.id)
@@ -67,6 +71,13 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
   // Re-evaluate phase when vote status changes or shareGate setting loads from CMS
   useEffect(() => {
     if (isVoted && phase === "vote") {
+      // A share gate is an immediate post-vote interaction, not a recurring
+      // session gate. Votes restored from localStorage should always reopen on
+      // their results rather than showing the modal again after a reload.
+      if (!votedThisMountRef.current) {
+        setPhase("results")
+        return
+      }
       if (!shareGateEnabled) {
         setPhase("results")
       } else {
@@ -86,6 +97,10 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
   const unlock = () => {
     localStorage.setItem(`tmh_unlocked_${poll.id}`, "true")
     setPhase("results")
+    if (!completionNotifiedRef.current) {
+      completionNotifiedRef.current = true
+      onVoteComplete?.(poll.id)
+    }
   }
 
   const handleVote = (optionId: number) => {
@@ -96,6 +111,7 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
     const previousOptionId = votedOptionId
 
     if (!isChangeVote) {
+      votedThisMountRef.current = true
       const firstVote = isFirstTimer
       setWasFirstTimer(firstVote)
     }
@@ -168,10 +184,15 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
     <>
       <div className={cn(
         "bg-card border border-border flex flex-col transition-all duration-300",
-        featured ? "md:flex-row md:items-stretch" : ""
+        featured && !stacked ? "md:flex-row md:items-stretch" : "",
+        featured && stacked && "border-t-2 border-t-primary"
       )}>
         {/* Left: question + metadata */}
-        <div className={cn("p-6 sm:p-8 flex-1 flex flex-col", featured ? "md:p-12 md:w-1/2" : "")}>
+        <div className={cn(
+          "p-6 sm:p-8 flex-1 flex flex-col",
+          featured && !stacked ? "md:p-12 md:w-1/2" : "",
+          featured && stacked && "md:p-8"
+        )}>
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-3">
               <span className="px-2.5 py-1 bg-foreground text-background text-[13px] font-bold uppercase tracking-[0.18em]">
@@ -213,7 +234,8 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
           <Link href={`/debates/${poll.id}`}>
             <h3 className={cn(
               "font-serif font-black text-foreground uppercase tracking-tight hover:text-primary transition-colors cursor-pointer mb-4",
-              featured ? "text-4xl md:text-5xl leading-none" : "text-3xl leading-none"
+              featured ? "text-4xl md:text-5xl leading-none" : "text-3xl leading-none",
+              featured && stacked && "max-w-4xl text-3xl leading-[0.95] md:text-4xl"
             )}>
               {poll.question}
             </h3>
@@ -251,7 +273,8 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
         {/* Right: voting / gate / results panel */}
         <div className={cn(
           "p-6 sm:p-8 bg-background border-t border-border flex flex-col justify-center",
-          featured ? "md:w-1/2 md:border-t-0 md:border-l" : ""
+          featured && !stacked ? "md:w-1/2 md:border-t-0 md:border-l" : "",
+          featured && stacked && "md:p-8"
         )}>
           <AnimatePresence mode="wait">
 
@@ -311,23 +334,40 @@ export function PollCard({ poll, featured = false }: PollCardProps) {
 
                 {/* MULTIPLE CHOICE + DEFAULT: Standard stacked option buttons */}
                 {!isBinaryPair && ptype !== "scale" && (
-                  <div className="space-y-3">
-                    {localOptions.map((option) => (
+                  <div className={cn(
+                    "space-y-3",
+                    featured && stacked && "grid gap-3 space-y-0",
+                    featured && stacked && localOptions.length === 3 && "md:grid-cols-3",
+                    featured && stacked && localOptions.length !== 3 && "sm:grid-cols-2"
+                  )}>
+                    {localOptions.map((option, index) => (
                       <button
                         key={option.id}
                         onClick={() => handleVote(option.id)}
                         disabled={!isLive}
                         className={cn(
                           "tmh-vote-option group w-full text-left px-5 py-4 border border-border transition-colors duration-150 font-medium text-sm font-sans",
+                          featured && stacked && "min-h-24 p-4",
                           "bg-background text-foreground",
                           "hover:bg-foreground hover:text-background hover:border-foreground",
                           "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                           !isLive && "opacity-50 cursor-not-allowed"
                         )}
                       >
-                        <span className="block transition-transform duration-150 group-hover:translate-x-1">
-                          {option.text}
-                        </span>
+                        {featured && stacked ? (
+                          <span className="flex h-full flex-col justify-between gap-4">
+                            <span className="font-display text-[10px] font-black uppercase tracking-[0.22em] text-primary group-hover:text-background">
+                              Position {String.fromCharCode(65 + index)}
+                            </span>
+                            <span className="font-serif text-sm font-bold uppercase leading-snug transition-transform duration-150 group-hover:translate-x-1">
+                              {option.text}
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="block transition-transform duration-150 group-hover:translate-x-1">
+                            {option.text}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </div>

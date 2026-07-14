@@ -45,9 +45,8 @@ import {
   PREDICTION_CATEGORIES as FALLBACK_CATEGORIES,
   type PredictionCard,
 } from "@/data/predictions-data";
-import { usePredictions, usePageConfig, type ApiPrediction } from "@/hooks/use-cms-data";
+import { usePredictions, type ApiPrediction } from "@/hooks/use-cms-data";
 import { usePageTitle } from "@/hooks/use-page-title";
-import { TitlePunctuation } from "@/components/TitlePunctuation";
 
 function apiToPredictionCard(p: ApiPrediction): PredictionCard {
   return {
@@ -1481,7 +1480,6 @@ export default function Predictions() {
     title: "Predictions",
     description: "A prediction market for MENA's biggest questions. Track confidence, watch consensus shift, and see where the region is headed.",
   });
-  const { data: pageConfig } = usePageConfig<{ hero?: { titleLine1?: string; titleLine2?: string; subtitle?: string }; punctuations?: string[] }>("predictions_page");
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("ALL");
 
@@ -1640,156 +1638,6 @@ export default function Predictions() {
 
   return (
     <Layout>
-      {/* Section header */}
-      <div className="bg-foreground text-background py-12 border-b border-border">
-        <motion.div
-          className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, ease: EASE_OUT_EXPO }}
-        >
-          <p
-            style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 700,
-              fontSize: "0.78rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.28em",
-              color: "#DC143C",
-              marginBottom: "0.5rem",
-            }}
-          >
-            Predictions
-          </p>
-          <motion.h1
-            style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 900,
-              fontSize: "clamp(2rem, 5vw, 3.5rem)",
-              textTransform: "uppercase",
-              color: "var(--background)",
-              letterSpacing: "-0.01em",
-              lineHeight: 1.05,
-              marginBottom: "0.5rem",
-            }}
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.7, ease: EASE_OUT_EXPO, delay: 0.1 }}
-          >
-            {pageConfig?.hero?.titleLine1 || "What do people"}<br />
-            {pageConfig?.hero?.titleLine2 || "think happens next?"}<TitlePunctuation punctuations={pageConfig?.punctuations} />
-          </motion.h1>
-          <p
-            className="text-text2"
-            style={{
-              fontFamily: "'Barlow Condensed', sans-serif",
-              fontWeight: 700,
-              fontSize: "0.90rem",
-              textTransform: "uppercase",
-              letterSpacing: "0.18em",
-            }}
-          >
-            {pageConfig?.hero?.subtitle || "Future facing questions on where the region is heading."}
-          </p>
-          <p
-            className="text-text2/70 mt-2 italic"
-            style={{
-              fontFamily: "'DM Sans', sans-serif",
-              fontSize: "0.85rem",
-            }}
-          >
-            Predictions are opinion forecasts, not financial bets.
-          </p>
-        </motion.div>
-      </div>
-
-      {/* Stats bar */}
-      <div
-        style={{
-          background: "#0D0D0D",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
-          padding: "0.65rem 0",
-          display: "flex",
-          alignItems: "center",
-          gap: "2.5rem",
-          justifyContent: "center",
-          flexWrap: "wrap",
-        }}
-      >
-        <span
-          style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
-            fontWeight: 700,
-            fontSize: "0.83rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            color: "rgba(250,250,250,0.75)",
-          }}
-        >
-          <span
-            style={{
-              color: "#DC143C",
-              fontWeight: 900,
-              fontSize: "0.85rem",
-              marginRight: 6,
-            }}
-          >
-            {PREDICTIONS.length}
-          </span>{" "}
-          Predictions
-        </span>
-        <span
-          style={{ width: 1, height: 14, background: "rgba(255,255,255,0.1)" }}
-        />
-        <span
-          style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
-            fontWeight: 700,
-            fontSize: "0.83rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            color: "rgba(250,250,250,0.75)",
-          }}
-        >
-          <span
-            style={{
-              color: "#DC143C",
-              fontWeight: 900,
-              fontSize: "0.85rem",
-              marginRight: 6,
-            }}
-          >
-            {PREDICTION_CATEGORIES.length}
-          </span>{" "}
-          Categories
-        </span>
-        <span
-          style={{ width: 1, height: 14, background: "rgba(255,255,255,0.1)" }}
-        />
-        <span
-          style={{
-            fontFamily: "'Barlow Condensed', sans-serif",
-            fontWeight: 700,
-            fontSize: "0.83rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.15em",
-            color: "rgba(250,250,250,0.75)",
-          }}
-        >
-          <span
-            style={{
-              color: "#DC143C",
-              fontWeight: 900,
-              fontSize: "0.85rem",
-              marginRight: 6,
-            }}
-          >
-            19
-          </span>{" "}
-          Countries
-        </span>
-      </div>
-
       {/* Momentum ticker */}
       <MomentumTicker tickerData={tickerData} isLoading={isLoading} />
 

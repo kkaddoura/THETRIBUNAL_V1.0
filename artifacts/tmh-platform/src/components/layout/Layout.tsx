@@ -5,7 +5,13 @@ import { Footer } from "./Footer"
 import { ScrollToTop } from "./ScrollToTop"
 import { useEmailVerifyBanner } from "@/hooks/use-email-verify-banner"
 
-export function Layout({ children }: { children: ReactNode }) {
+export function Layout({
+  children,
+  hideFooter = false,
+}: {
+  children: ReactNode
+  hideFooter?: boolean
+}) {
   const [location] = useLocation()
   const { visible: verifyBannerVisible } = useEmailVerifyBanner()
 
@@ -23,7 +29,7 @@ export function Layout({ children }: { children: ReactNode }) {
       <main className={`flex-1 ${topPad}`}>
         {children}
       </main>
-      <Footer />
+      {!hideFooter && <Footer />}
       <ScrollToTop />
     </div>
   )

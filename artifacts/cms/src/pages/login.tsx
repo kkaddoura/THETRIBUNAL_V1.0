@@ -2,6 +2,7 @@ import type React from "react";
 import { useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { useLocation } from "wouter";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -27,6 +28,9 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
+      <div className="absolute right-4 top-4">
+        <ThemeToggle />
+      </div>
       <div className="w-full max-w-sm p-8">
         <div className="text-center mb-8">
           <h1 style={{ fontFamily: "'Playfair Display', Georgia, serif", fontWeight: 900, fontSize: "1.8rem", letterSpacing: "-0.02em", lineHeight: 1 }}>

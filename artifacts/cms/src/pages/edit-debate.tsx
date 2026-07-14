@@ -5,7 +5,7 @@ import { api } from "@/lib/api";
 import TagInput from "@/components/tag-input";
 import ComboSelect from "@/components/combo-select";
 import PreviewPanel from "@/components/preview-panel";
-import { Save, Send, Check, Archive, RotateCcw, Eye, Flag, XCircle, FileEdit } from "lucide-react";
+import { Save, Send, Check, Archive, RotateCcw, Eye, Flag, XCircle, FileEdit, CalendarDays } from "lucide-react";
 import { toast } from "sonner";
 
 const ALLOWED_TRANSITIONS: Record<string, string[]> = {
@@ -28,6 +28,27 @@ interface Taxonomy {
   tags: string[];
 }
 
+interface HomepageSection {
+  id: string;
+  type: string;
+  title?: string;
+  enabled?: boolean;
+  order?: number;
+  config: Record<string, unknown>;
+}
+
+interface LeadDebateScheduleSlot {
+  id: string;
+  debateId: number | null;
+  startsAt: string;
+  endsAt: string;
+  enabled: boolean;
+}
+
+function localDateInputValue(date = new Date()) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+}
+
 export default function EditDebatePage() {
   const params = useParams<{ id: string }>();
   const [, navigate] = useLocation();
@@ -37,9 +58,12 @@ export default function EditDebatePage() {
   const [showPreview, setShowPreview] = useState(false);
   const [voices, setVoices] = useState<VoiceOption[]>([]);
   const [taxonomy, setTaxonomy] = useState<Taxonomy>({ debateCategories: [], tags: [] });
+  const [leadSaving, setLeadSaving] = useState(false);
+  const [leadStartsAt, setLeadStartsAt] = useState(() => localDateInputValue());
+  const [leadEndsAt, setLeadEndsAt] = useState(() => localDateInputValue());
   const [form, setForm] = useState({
     question: "", context: "", category: "", categorySlug: "", tags: [] as string[],
-    pollType: "binary", cardLayout: "standard", isFeatured: false, isEditorsPick: false, editorialStatus: "draft",
+    pollType: "binary", cardLayout: "standard", editorialStatus: "draft",
     endsAt: "", relatedProfileIds: [] as number[], options: [{ text: "Yes", voteCount: 0 }, { text: "No", voteCount: 0 }],
   });
 
@@ -55,7 +79,7 @@ export default function EditDebatePage() {
         setForm({
           question: data.question || "", context: data.context || "", category: data.category || "",
           categorySlug: data.categorySlug || "", tags: data.tags || [], pollType: data.pollType || "binary",
-          cardLayout: data.cardLayout || "standard", isFeatured: data.isFeatured || false, isEditorsPick: data.isEditorsPick || false,
+          cardLayout: data.cardLayout || "standard",
           editorialStatus: data.editorialStatus || "draft", endsAt: data.endsAt ? data.endsAt.split("T")[0] : "",
           relatedProfileIds: data.relatedProfileIds || [], options: data.options || [],
         });
@@ -65,6 +89,144 @@ export default function EditDebatePage() {
   }, [params.id, isNew, navigate]);
 
   const update = (field: string, value: unknown) => setForm(f => ({ ...f, [field]: value }));
+
+  const updateHomepageLeadSection = async (updater: (section: HomepageSection) => HomepageSection) => {
+    const homepage = await api.getHomepage();
+    const sections: HomepageSection[] = Array.isArray(homepage.sections) ? homepage.sections : [];
+    const existing = sections.find((section) => section.type === "lead_debate");
+    const leadSection: HomepageSection = existing ?? {
+      id: "lead-debate",
+      type: "lead_debate",
+      title: "Today's Lead Debate",
+      enabled: true,
+      order: 1,
+      config: { showSidebar: true, showOpinionBubbles: true },
+    };
+    const updated = updater({ ...leadSection, config: { ...(leadSection.config ?? {}) } });
+    const nextSections = existing
+      ? sections.map((section) => (section.id === updated.id ? updated : section))
+      : [updated, ...sections];
+    await api.updateHomepage({ ...homepage, sections: nextSections });
+  };
+
+  const setAsFallbackLead = async () => {
+    if (isNew) {
+      toast.error("Save the debate before setting it as lead.");
+      return;
+    }
+    setLeadSaving(true);
+    try {
+      await updateHomepageLeadSection((section) => ({
+        ...section,
+        config: { ...section.config, selectedDebateId: Number(params.id) },
+      }));
+      toast.success("Fallback lead debate updated.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to update lead debate");
+    } finally {
+      setLeadSaving(false);
+    }
+  };
+
+  const scheduleAsLead = async () => {
+    if (isNew) {
+      toast.error("Save the debate before scheduling it as lead.");
+      return;
+    }
+    if (!leadStartsAt && !leadEndsAt) {
+      toast.error("Pick at least one schedule date.");
+      return;
+    }
+    setLeadSaving(true);
+    try {
+      await updateHomepageLeadSection((section) => {
+        const raw = Array.isArray(section.config.leadDebateSchedule)
+          ? section.config.leadDebateSchedule
+          : [];
+        const schedule: LeadDebateScheduleSlot[] = raw.map((slot, index) => {
+          const item = slot as Partial<LeadDebateScheduleSlot>;
+          return {
+            id: typeof item.id === "string" && item.id ? item.id : `lead-${index}`,
+            debateId: typeof item.debateId === "number" ? item.debateId : null,
+            startsAt: typeof item.startsAt === "string" ? item.startsAt : "",
+            endsAt: typeof item.endsAt === "string" ? item.endsAt : "",
+            enabled: item.enabled !== false,
+          };
+        });
+        return {
+          ...section,
+          config: {
+            ...section.config,
+            leadDebateSchedule: [
+              ...schedule,
+              {
+                id: `lead-${Date.now()}`,
+                debateId: Number(params.id),
+                startsAt: leadStartsAt,
+                endsAt: leadEndsAt,
+                enabled: true,
+              },
+            ],
+          },
+        };
+      });
+      toast.success("Lead debate scheduled.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to schedule lead debate");
+    } finally {
+      setLeadSaving(false);
+    }
+  };
+
+  const setAsTodaysLead = async () => {
+    if (isNew) {
+      toast.error("Save the debate before setting it as today's lead.");
+      return;
+    }
+    const today = localDateInputValue();
+    setLeadSaving(true);
+    try {
+      await updateHomepageLeadSection((section) => {
+        const raw = Array.isArray(section.config.leadDebateSchedule)
+          ? section.config.leadDebateSchedule
+          : [];
+        const schedule: LeadDebateScheduleSlot[] = raw.map((slot, index) => {
+          const item = slot as Partial<LeadDebateScheduleSlot>;
+          return {
+            id: typeof item.id === "string" && item.id ? item.id : `lead-${index}`,
+            debateId: typeof item.debateId === "number" ? item.debateId : null,
+            startsAt: typeof item.startsAt === "string" ? item.startsAt : "",
+            endsAt: typeof item.endsAt === "string" ? item.endsAt : "",
+            enabled: item.enabled !== false,
+          };
+        });
+        const withoutTodaySlots = schedule.filter((slot) => !(slot.startsAt === today && slot.endsAt === today));
+        return {
+          ...section,
+          config: {
+            ...section.config,
+            leadDebateSchedule: [
+              ...withoutTodaySlots,
+              {
+                id: `lead-today-${Date.now()}`,
+                debateId: Number(params.id),
+                startsAt: today,
+                endsAt: today,
+                enabled: true,
+              },
+            ],
+          },
+        };
+      });
+      setLeadStartsAt(today);
+      setLeadEndsAt(today);
+      toast.success("Set as today's lead debate.");
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Failed to set today's lead debate");
+    } finally {
+      setLeadSaving(false);
+    }
+  };
 
   const save = async (status?: string) => {
     const errors: string[] = [];
@@ -90,7 +252,7 @@ export default function EditDebatePage() {
   if (loading) return <div className="text-center py-12 text-muted-foreground">Loading...</div>;
 
   return (
-    <div className="max-w-2xl space-y-6">
+    <div className="w-full max-w-5xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="font-serif text-2xl font-bold uppercase tracking-wide">{isNew ? "New Debate" : "Edit Debate"}</h1>
         <button onClick={() => setShowPreview(true)} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80">
@@ -200,9 +362,43 @@ export default function EditDebatePage() {
           </div>
         </Field>
 
-        <div className="flex gap-6">
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isFeatured} onChange={e => update("isFeatured", e.target.checked)} className="accent-primary" /> Featured</label>
-          <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={form.isEditorsPick} onChange={e => update("isEditorsPick", e.target.checked)} className="accent-primary" /> Editor's Pick</label>
+        <div className="rounded-md border border-border bg-secondary/20 p-4 space-y-3">
+          <div className="flex items-start gap-3">
+            <CalendarDays className="w-4 h-4 text-primary mt-0.5" />
+            <div>
+              <p className="text-sm font-medium">Lead Debate</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                This replaces the old Featured / Editor's Pick flags for the homepage lead block. Use a single-day range for today's lead, or a wider range for a weekly lead.
+              </p>
+            </div>
+          </div>
+          {isNew ? (
+            <p className="text-xs text-muted-foreground border border-dashed border-border rounded-sm px-3 py-2">
+              Save this debate first, then reopen it to set or schedule it as the lead debate.
+            </p>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="Starts">
+                  <input type="date" value={leadStartsAt} onChange={(e) => setLeadStartsAt(e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+                </Field>
+                <Field label="Ends">
+                  <input type="date" value={leadEndsAt} onChange={(e) => setLeadEndsAt(e.target.value)} className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-primary" />
+                </Field>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" onClick={setAsTodaysLead} disabled={leadSaving} className="flex items-center gap-1.5 px-3 py-1.5 bg-primary text-primary-foreground rounded-md text-sm hover:bg-primary/90 disabled:opacity-50">
+                  Set as Today's Lead
+                </button>
+                <button type="button" onClick={scheduleAsLead} disabled={leadSaving} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80 disabled:opacity-50">
+                  <CalendarDays className="w-3.5 h-3.5" /> Schedule as Lead
+                </button>
+                <button type="button" onClick={setAsFallbackLead} disabled={leadSaving} className="flex items-center gap-1.5 px-3 py-1.5 bg-secondary text-secondary-foreground rounded-md text-sm hover:bg-secondary/80 disabled:opacity-50">
+                  Set as Fallback Lead
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
 
