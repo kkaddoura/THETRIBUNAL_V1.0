@@ -3,17 +3,15 @@ import {
   useGetPoll,
   useListPolls,
   useListProfiles,
-  useListCategories,
 } from "@workspace/api-client-react";
 import type { Poll } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout/Layout";
 import { PollCard } from "@/components/poll/PollCard";
 import { ProfileCard } from "@/components/profile/ProfileCard";
-import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
 const AboutSection = lazy(() => import("@/components/home/AboutSection"));
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
-import { ArrowDown, ArrowRight, Share2, Lock, Mail, CheckCircle2, X } from "lucide-react";
+import { ArrowRight, Share2, Lock, Mail, CheckCircle2, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import {
   motion,
@@ -45,25 +43,7 @@ interface HomeSectionConfig {
   };
 }
 
-type TickerItem = { topic: string; badge: string; stat: string; href: string };
-
-const TICKER_MIN_VOTES = 1;
 const HOMEPAGE_DEBATE_LIMIT = 5;
-const TICKER_LIVE_STATUSES = new Set(["approved", "published", "live", "active"]);
-
-function isLiveEditorialStatus(status?: string | null) {
-  return !!status && TICKER_LIVE_STATUSES.has(status.toLowerCase());
-}
-
-function cleanTickerTopic(value?: string | null) {
-  return value?.replace(/\s+/g, " ").trim() ?? "";
-}
-
-function isOpenTickerWindow(value?: string | null) {
-  if (!value) return true;
-  const time = new Date(value).getTime();
-  return Number.isNaN(time) || time >= Date.now();
-}
 
 function resolveActiveLeadDebateId(section?: HomeSectionConfig): number | undefined {
   if (!section) return undefined;
@@ -857,129 +837,6 @@ function LiveActivity() {
   );
 }
 
-function LiveResultsSnapshot({
-  polls,
-  loading,
-  topics,
-}: {
-  polls?: Poll[];
-  loading: boolean;
-  topics?: Array<{ slug: string; name: string; pollCount?: number }>;
-}) {
-  const { t } = useI18n();
-  const items = (polls ?? [])
-    .filter((poll) => Array.isArray(poll.options) && poll.options.length > 0)
-    .slice(0, 4);
-
-  if (!loading && items.length === 0) return null;
-
-  return (
-    <section className="bg-background dark:bg-[#0A0A0A] border-b border-border">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-7">
-        <div className="flex items-center justify-between gap-4 mb-5">
-          <div>
-            <p className="text-[11px] uppercase tracking-[0.3em] font-bold text-primary font-serif">
-              {t("Live Results")}
-            </p>
-            <h2 className="font-display font-black uppercase text-xl sm:text-2xl text-foreground mt-1">
-              {t("Where opinion is splitting now")}
-            </h2>
-          </div>
-          <Link
-            href="/debates"
-            className="hidden sm:inline-flex text-[11px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"
-          >
-            {t("View all")}
-          </Link>
-        </div>
-
-        {loading && items.length === 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            {[1, 2, 3, 4].map((i) => (
-              <div key={i} className="h-36 bg-secondary/70 dark:bg-secondary/40 border border-border animate-pulse" />
-            ))}
-          </div>
-        ) : (
-          <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3">
-            {items.map((poll) => {
-              const topOptions = [...poll.options]
-                .sort((a, b) => (b.percentage ?? 0) - (a.percentage ?? 0))
-                .slice(0, 2);
-              return (
-                <motion.div key={poll.id} variants={staggerItem}>
-                  <Link
-                    href={`/debates/${poll.id}`}
-                    className="group block h-full border border-border bg-card/80 hover:bg-secondary/50 dark:bg-card/70 dark:hover:bg-card transition-colors p-4"
-                  >
-                    <div className="flex items-center justify-between gap-3 mb-3">
-                      <p className="text-[11px] uppercase tracking-[0.2em] text-primary font-serif font-bold truncate">
-                        {poll.category}
-                      </p>
-                      <p className="text-[11px] text-muted-foreground font-serif whitespace-nowrap">
-                        {(poll.totalVotes ?? 0).toLocaleString()} votes
-                      </p>
-                    </div>
-                    <h3 className="font-serif font-black uppercase text-[15px] leading-tight text-foreground group-hover:text-primary transition-colors line-clamp-2 min-h-[2.4rem]">
-                      {poll.question}
-                    </h3>
-                    <div className="mt-4 space-y-2.5">
-                      {topOptions.map((option) => (
-                        <div key={option.id}>
-                          <div className="flex items-center justify-between gap-2 mb-1">
-                            <span className="text-xs text-muted-foreground truncate">{option.text}</span>
-                            <span className="font-serif font-bold text-sm text-foreground">
-                              {Math.round(option.percentage ?? 0)}%
-                            </span>
-                          </div>
-                          <div className="h-1.5 bg-secondary overflow-hidden">
-                            <motion.div
-                              className="h-full bg-primary"
-                              initial={{ width: 0 }}
-                              whileInView={{ width: `${Math.max(0, Math.min(100, option.percentage ?? 0))}%` }}
-                              viewport={{ once: true, amount: 0.5 }}
-                              transition={{ duration: 0.7, ease: EASE_OUT_EXPO }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </Link>
-                </motion.div>
-              );
-            })}
-          </StaggerGrid>
-        )}
-
-        {topics && topics.length > 0 && (
-          <div className="mt-7 border-t border-border pt-6">
-            <div className="mb-4">
-              <h3 className="font-serif text-base font-black uppercase tracking-[0.16em] text-foreground">
-                {t("Explore Topics")}
-              </h3>
-            </div>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
-              {topics.map((topic) => (
-                <Link
-                  key={topic.slug}
-                  href={`/debates?category=${topic.slug}`}
-                  className="group flex items-center justify-between gap-3 border border-border bg-secondary/60 px-4 py-3 transition-colors hover:border-foreground hover:bg-foreground hover:text-background"
-                >
-                  <span className="font-serif text-sm font-bold uppercase tracking-wide leading-tight">
-                    {topic.name}
-                  </span>
-                  <span className="shrink-0 font-serif text-[10px] font-bold uppercase tracking-widest text-muted-foreground group-hover:text-background/65">
-                    {topic.pollCount ?? 0}
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
 interface FeaturedPredProps {
   featured: PredictionCard;
   chartW: number;
@@ -1758,44 +1615,65 @@ function SidebarPredictionItem({
   );
 }
 
-function MixedTicker({ items }: { items: TickerItem[] }) {
-  if (items.length === 0) return null;
-  const doubled = [...items, ...items];
-
+function SignalRail({
+  counts,
+}: {
+  counts?: {
+    debates: number;
+    predictions: number;
+    totalVotes: number;
+  };
+}) {
+  const { t } = useI18n();
   return (
-    <div
-      className="min-h-[48px] overflow-hidden border-y border-white/10 bg-[#0D0D0D]"
-      aria-label="Live questions and predictions"
+    <section
+      className="border-y border-white/10 bg-[#0D0D0D] text-white"
+      aria-label={t("The Tribunal live snapshot")}
     >
-      <div className="tmh-ticker-scroll">
-        {doubled.map((item, i) => (
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3 sm:px-6 lg:px-8">
+        <div className="flex items-center gap-2.5">
+          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.65)]" aria-hidden="true" />
+          <span className="font-display text-[11px] font-black uppercase tracking-[0.18em] text-white">
+            {t("The room right now")}
+          </span>
+        </div>
+
+        <div className="flex min-w-0 flex-1 items-center gap-4 text-[11px] text-white/60 sm:text-xs">
+          <span className="whitespace-nowrap">
+            <strong className="font-display text-sm font-black text-white">
+              {counts ? counts.totalVotes.toLocaleString() : "—"}
+            </strong>{" "}
+            {t("private votes")}
+          </span>
+          <span className="hidden h-4 w-px bg-white/15 sm:block" aria-hidden="true" />
+          <span className="hidden whitespace-nowrap sm:inline">
+            <strong className="font-display font-black text-white">{counts?.debates ?? "—"}</strong>{" "}
+            {t("open debates")}
+          </span>
+          <span className="hidden h-4 w-px bg-white/15 md:block" aria-hidden="true" />
+          <span className="hidden whitespace-nowrap md:inline">
+            <strong className="font-display font-black text-white">{counts?.predictions ?? "—"}</strong>{" "}
+            {t("active predictions")}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-4">
           <Link
-            key={`${item.href}-${i}`}
-            href={item.href}
-            className="flex items-center gap-2.5 border-r border-white/10 px-8 py-3 no-underline"
+            href="/predictions"
+            className="hidden font-serif text-[10px] font-bold uppercase tracking-[0.14em] text-white/55 transition-colors hover:text-white sm:inline"
           >
-            <span
-              className={cn(
-                "whitespace-nowrap border px-1.5 py-0.5 font-display text-[10px] font-extrabold uppercase tracking-[0.12em]",
-                item.badge === "DEBATE"
-                  ? "border-primary/30 bg-primary/15 text-primary"
-                  : item.badge === "PREDICTION"
-                    ? "border-blue-500/30 bg-blue-500/15 text-blue-400"
-                    : "border-green-500/30 bg-green-500/15 text-green-400",
-              )}
-            >
-              {item.badge}
-            </span>
-            <span className="whitespace-nowrap font-display text-[13px] font-bold uppercase tracking-[0.08em] text-white/75">
-              {item.topic}
-            </span>
-            <span className="whitespace-nowrap font-display text-sm font-bold text-white">
-              {item.stat}
-            </span>
+            {t("Make a prediction")}
           </Link>
-        ))}
+          <Link
+            href="/debates"
+            className="group inline-flex items-center gap-2 font-serif text-[10px] font-bold uppercase tracking-[0.16em] text-primary transition-colors hover:text-white"
+          >
+            {t("Join a debate")}
+            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" aria-hidden="true" />
+          </Link>
+        </div>
       </div>
-    </div>
+    </section>
   );
 }
 
@@ -1918,9 +1796,8 @@ export default function Home() {
   }, [completedLeadIds, leadDebateDeck]);
   const { data: featuredProfiles, isLoading: profilesLoading } =
     useListProfiles({ filter: "featured", limit: 8 });
-  const { data: categories } = useListCategories();
-  const { data: apiPredictions, isLoading: predictionsLoading } = usePredictions();
-  const { data: apiPulseTopics, isLoading: pulseLoading } = usePulseTopics();
+  const { data: apiPredictions } = usePredictions();
+  const { data: apiPulseTopics } = usePulseTopics();
   const { data: liveCounts } = useLiveCounts();
   const { data: siteSettings } = useSiteSettings();
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false;
@@ -1952,84 +1829,6 @@ export default function Home() {
     const topId = topPost?.topPrediction?.id;
     return (topId != null && PREDICTIONS.find((p) => p.id === topId)) || PREDICTIONS[0];
   }, [PREDICTIONS, topPost]);
-
-  const debateItems = useMemo<TickerItem[]>(() => {
-    const byId = new Map<number, Poll>();
-    if (selectedPoll) byId.set(selectedPoll.id, selectedPoll);
-    for (const poll of trendingPolls?.polls ?? []) byId.set(poll.id, poll);
-
-    return [...byId.values()]
-      .filter((poll) => {
-        const topic = cleanTickerTopic(poll.question);
-        return (
-          topic.length > 0 &&
-          isOpenTickerWindow(poll.endsAt) &&
-          (poll.totalVotes ?? 0) >= TICKER_MIN_VOTES
-        );
-      })
-      .slice(0, 4)
-      .map((poll) => ({
-        topic: cleanTickerTopic(poll.question),
-        badge: "DEBATE",
-        stat: `${(poll.totalVotes ?? 0).toLocaleString()} votes`,
-        href: `/debates/${poll.id}`,
-      }));
-  }, [selectedPoll, trendingPolls]);
-
-  const predictionItems = useMemo<TickerItem[]>(() => {
-    if (!apiPredictions?.items?.length) return [];
-    const topPredictionId = topPost?.topPrediction?.id;
-    const sorted = [...apiPredictions.items].sort((a, b) => {
-      if (a.id === topPredictionId) return -1;
-      if (b.id === topPredictionId) return 1;
-      if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
-      return (b.totalCount ?? 0) - (a.totalCount ?? 0);
-    });
-
-    return sorted
-      .filter((prediction) => {
-        const topic = cleanTickerTopic(prediction.question);
-        return (
-          topic.length > 0 &&
-          isLiveEditorialStatus(prediction.editorialStatus) &&
-          isOpenTickerWindow(prediction.resolvesAt) &&
-          (prediction.totalCount ?? 0) >= TICKER_MIN_VOTES
-        );
-      })
-      .slice(0, 3)
-      .map((prediction) => ({
-        topic: cleanTickerTopic(prediction.question),
-        badge: "PREDICTION",
-        stat: `${prediction.yesPercentage}% yes`,
-        href: `/predictions/${prediction.id}`,
-      }));
-  }, [apiPredictions, topPost]);
-
-  const pulseItems = useMemo<TickerItem[]>(() => {
-    if (!pulseEnabled) return [];
-    if (!apiPulseTopics?.items?.length) return [];
-    return apiPulseTopics.items
-      .filter((topic) => cleanTickerTopic(topic.title).length > 0 && isLiveEditorialStatus(topic.editorialStatus))
-      .slice(0, 3)
-      .map((topic) => ({
-        topic: cleanTickerTopic(topic.title),
-        badge: "PULSE",
-        stat: `${topic.deltaUp ? "↑" : "↓"} ${topic.delta}`,
-        href: `/pulse?shared=${encodeURIComponent(topic.topicId)}`,
-      }));
-  }, [apiPulseTopics, pulseEnabled]);
-  const maxLen = Math.max(
-    debateItems.length,
-    predictionItems.length,
-    pulseItems.length,
-  );
-  const interleaved: TickerItem[] = [];
-  for (let i = 0; i < maxLen; i++) {
-    if (debateItems[i]) interleaved.push(debateItems[i]);
-    if (predictionItems[i]) interleaved.push(predictionItems[i]);
-    if (pulseItems[i]) interleaved.push(pulseItems[i]);
-  }
-  const tickerItems = interleaved.length >= 2 ? interleaved : [];
 
   return (
     <Layout>
@@ -2095,30 +1894,9 @@ export default function Home() {
       </motion.div>
       )}
 
-      {/* ── HERO TO BALLOT TRANSITION ── */}
-      {showSection("lead_debate") && (
-      <a
-        href="#debates"
-        className="group relative block overflow-hidden bg-foreground text-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset"
-      >
-        <motion.div
-          className="absolute inset-y-0 left-0 w-[38%] bg-primary [clip-path:polygon(0_0,86%_0,100%_100%,0_100%)] sm:w-[30%]"
-          initial={{ x: "-100%" }}
-          animate={{ x: 0 }}
-          transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.45 }}
-        />
-        <div className="relative mx-auto grid min-h-20 max-w-7xl grid-cols-[auto_1fr_auto] items-center gap-4 px-4 py-4 sm:gap-8 sm:px-6 lg:px-8">
-          <span className="relative z-10 font-display text-xs font-black uppercase tracking-[0.22em] text-white sm:text-sm">
-            Enter the debate
-          </span>
-          <span className="justify-self-center font-serif text-sm font-bold uppercase tracking-[0.12em] text-background/70 transition-colors group-hover:text-background sm:text-base">
-            Read the question. Choose your position.
-          </span>
-          <span className="flex h-10 w-10 items-center justify-center border border-background/30 transition-colors group-hover:border-primary group-hover:bg-primary group-hover:text-white">
-            <ArrowDown className="h-4 w-4 transition-transform group-hover:translate-y-1" aria-hidden="true" />
-          </span>
-        </div>
-      </a>
+      {/* ── LIVE PARTICIPATION SNAPSHOT ── */}
+      {showSection("lead_debate") && showSection("ticker") && (
+        <SignalRail counts={liveCounts} />
       )}
 
       {/* ── FRONT PAGE: Lead Debate + Sidebar ── */}
@@ -2254,21 +2032,6 @@ export default function Home() {
         </div>
         </FadeUp>
       </section>
-      )}
-
-      {/* ── LIVE EDITORIAL RAIL ── */}
-      {showSection("ticker") && (
-        (trendingLoading || predictionsLoading || pulseLoading) && tickerItems.length === 0
-          ? <TickerSkeleton />
-          : <MixedTicker items={tickerItems} />
-      )}
-
-      {showSection("debates") && (
-        <LiveResultsSnapshot
-          polls={trendingPolls?.polls}
-          loading={trendingLoading}
-          topics={showSection("explore_topics") ? categories?.categories : undefined}
-        />
       )}
 
       {/* ── PREDICTIONS ── */}
