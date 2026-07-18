@@ -166,7 +166,7 @@ export default function MajlisPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold" style={{ fontFamily: "'Playfair Display', Georgia, serif" }}>
-            The Majlis<span className="text-primary">.</span>
+            The Gallery<span className="text-primary">.</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-1">Manage private chat room for Voices</p>
         </div>
@@ -217,7 +217,7 @@ export default function MajlisPage() {
       ) : tab === "invites" ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">Issue invite codes to verified Voices for Majlis registration</p>
+            <p className="text-sm text-muted-foreground">Issue invite codes to verified Voices for Gallery registration</p>
             <button
               onClick={() => setShowInviteForm(!showInviteForm)}
               className="flex items-center gap-2 text-sm bg-primary text-white px-4 py-2 hover:bg-primary/90 transition-colors"
@@ -422,7 +422,7 @@ export default function MajlisPage() {
               ))}
               {users.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="text-center text-muted-foreground py-8">No Majlis users yet</td>
+                  <td colSpan={5} className="text-center text-muted-foreground py-8">No Gallery users yet</td>
                 </tr>
               )}
             </tbody>

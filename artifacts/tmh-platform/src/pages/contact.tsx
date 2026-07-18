@@ -247,7 +247,7 @@ export default function Contact() {
       {/* Bottom CTA */}
       <div className="bg-secondary/20 border-t border-border py-12">
         <div className="max-w-3xl mx-auto px-4 text-center">
-          <p className="font-display text-xl text-foreground mb-2 leading-snug">
+          <p className="font-serif text-xl text-foreground mb-2 leading-snug">
             {t("The region, on record.")}
           </p>
           <p className="text-sm text-muted-foreground font-sans mb-6">

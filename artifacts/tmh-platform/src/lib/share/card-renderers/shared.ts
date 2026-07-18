@@ -92,10 +92,6 @@ export function drawBrandHeader(
   ctx.fillStyle = RED
   ctx.fillText(".", x + brandWidth, y + 26 * scale)
 
-  // Tagline
-  ctx.font = `600 ${11 * scale}px ${DM_SANS}`
-  ctx.fillStyle = MUTED
-  ctx.fillText("BY THE MIDDLE EAST HUSTLE", x, y + 44 * scale)
 }
 
 // ── Results bars (up to 4 options with percentage fill) ─────

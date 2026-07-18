@@ -49,7 +49,7 @@ export default function Login() {
         <main className="flex items-center justify-center bg-background py-10 px-4 sm:px-6 md:py-16">
           <div className="w-full max-w-md">
             <div className="lg:hidden text-center mb-8">
-              <h1 className="font-display font-black uppercase tracking-tight text-4xl leading-[0.95]">
+              <h1 className="font-serif font-black uppercase tracking-tight text-4xl leading-[0.95]">
                 Welcome<br />
                 back<span className="text-primary">.</span>
               </h1>
@@ -59,7 +59,7 @@ export default function Login() {
               <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
                 Sign in
               </p>
-              <h2 className="font-display font-black uppercase tracking-tight text-2xl md:text-3xl mb-6">
+              <h2 className="font-serif font-black uppercase tracking-tight text-2xl md:text-3xl mb-6">
                 Save your votes<span className="text-primary">.</span>
               </h2>
 

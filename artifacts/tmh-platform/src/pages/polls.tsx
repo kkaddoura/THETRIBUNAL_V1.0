@@ -11,6 +11,7 @@ import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
 import { DebateGridSkeleton } from "@/components/skeletons/DebateCardSkeleton";
 import { LoadingDots } from "@/components/ui/loading-dots";
 import { FilterSidebar } from "@/components/layout/FilterSidebar";
+import { EditorialPageHero } from "@/components/layout/EditorialPageHero";
 import { DebatesSections } from "@/components/debates/DebatesSections";
 import { track } from "@/lib/analytics";
 
@@ -19,6 +20,8 @@ const EASE_OUT_EXPO = [0.16, 1, 0.3, 1] as const;
 type DebateTickerItem = { topic: string; votes: string; href?: string };
 
 interface PollsConfig {
+  hero?: { titleLine1?: string; titleLine2?: string; subtitle?: string };
+  punctuations?: string[];
   ticker?: { enabled?: boolean; source?: string };
   emptyState?: { title?: string; body?: string };
   sections?: { enabled?: boolean; order?: number }[];
@@ -144,73 +147,44 @@ export default function Polls() {
   const allCount = categoriesData?.categories
     ? categoriesData.categories.reduce((s, c) => s + (c.pollCount ?? 0), 0)
     : 0;
+  const heroStats = [
+    { value: allCount, label: "Debates" },
+    { value: categoriesData?.categories?.length ?? 0, label: "Categories" },
+    { value: 19, label: "Countries" },
+  ];
 
   return (
     <Layout>
-      {tickerEnabled &&
-        (tickerLoading && DEBATE_TICKER.length === 0 ? (
-          <TickerSkeleton />
-        ) : DEBATE_TICKER.length > 0 ? (
-          <div
-            style={{
-              background: "#0D0D0D",
-              borderTop: "1px solid rgba(255,255,255,0.06)",
-              borderBottom: "1px solid rgba(255,255,255,0.06)",
-              overflow: "hidden",
-            }}
-          >
-            <div className="tmh-ticker-scroll">
-              {doubled.map((item, i) => (
-                <Link
-                  key={i}
-                  href={item.href ?? "/debates"}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.6rem",
-                    padding: "0.7rem 2rem",
-                    borderRight: "1px solid rgba(255,255,255,0.1)",
-                    cursor: "pointer",
-                    textDecoration: "none",
-                  }}
-                >
-                  <span
-                    style={{
-                      fontFamily: "'Barlow Condensed', sans-serif",
-                      fontWeight: 700,
-                      fontSize: "0.80rem",
-                      textTransform: "uppercase",
-                      letterSpacing: "0.08em",
-                      color: "rgba(250,250,250,0.75)",
-                    }}
+      <EditorialPageHero
+        eyebrow="THE DEBATES"
+        titleLine1={config?.hero?.titleLine1 || "What people"}
+        titleLine2={config?.hero?.titleLine2 || "believe"}
+        subtitle={config?.hero?.subtitle || "Private voting on the questions the region avoids in public."}
+        note="Vote privately. See where the region stands."
+        punctuations={config?.punctuations ?? ["."]}
+        stats={heroStats}
+      >
+        {tickerEnabled &&
+          (tickerLoading && DEBATE_TICKER.length === 0 ? (
+            <TickerSkeleton />
+          ) : DEBATE_TICKER.length > 0 ? (
+            <div className="overflow-hidden border-y border-white/[0.06] bg-[#0D0D0D]">
+              <div className="tmh-ticker-scroll">
+                {doubled.map((item, i) => (
+                  <Link
+                    key={i}
+                    href={item.href ?? "/debates"}
+                    className="flex cursor-pointer items-center gap-2.5 border-r border-white/10 px-8 py-[0.7rem] no-underline"
                   >
-                    {item.topic}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "'Barlow Condensed', sans-serif",
-                      fontWeight: 700,
-                      fontSize: "0.85rem",
-                      color: "#fff",
-                    }}
-                  >
-                    {item.votes}
-                  </span>
-                  <span
-                    style={{
-                      fontFamily: "'Barlow Condensed', sans-serif",
-                      fontWeight: 700,
-                      fontSize: "0.83rem",
-                      color: "#DC143C",
-                    }}
-                  >
-                    VOTES
-                  </span>
-                </Link>
-              ))}
+                    <span className="font-serif text-[0.8rem] font-bold uppercase tracking-[0.08em] text-white/75">{item.topic}</span>
+                    <span className="font-serif text-[0.85rem] font-bold text-white">{item.votes}</span>
+                    <span className="font-serif text-[0.83rem] font-bold text-primary">VOTES</span>
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>
-        ) : null)}
+          ) : null)}
+      </EditorialPageHero>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex flex-col lg:flex-row gap-8 lg:gap-12">
         <FilterSidebar

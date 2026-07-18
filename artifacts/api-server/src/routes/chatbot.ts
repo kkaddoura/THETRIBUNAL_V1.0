@@ -150,7 +150,7 @@ async function getPlatformContext(): Promise<PlatformContext> {
 
 function buildSystemPrompt(ctx: PlatformContext): string {
   const majlisSection = ctx.majlisEnabled
-    ? "- Majlis: private invite-only chat for verified voices"
+    ? "- Gallery: private invite-only chat for verified voices"
     : "";
 
   const topDebatesList = ctx.topDebates

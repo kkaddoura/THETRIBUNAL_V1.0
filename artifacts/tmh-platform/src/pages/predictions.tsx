@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Layout } from "@/components/layout/Layout";
 import { Share2, CheckCircle2, MessageSquare, Info } from "lucide-react";
 import { FilterSidebar } from "@/components/layout/FilterSidebar";
+import { EditorialPageHero } from "@/components/layout/EditorialPageHero";
 import { Link } from "wouter";
 import { motion } from "motion/react";
 import { useToast } from "@/hooks/use-toast";
@@ -45,7 +46,7 @@ import {
   PREDICTION_CATEGORIES as FALLBACK_CATEGORIES,
   type PredictionCard,
 } from "@/data/predictions-data";
-import { usePredictions, type ApiPrediction } from "@/hooks/use-cms-data";
+import { usePageConfig, usePredictions, type ApiPrediction } from "@/hooks/use-cms-data";
 import { usePageTitle } from "@/hooks/use-page-title";
 
 function apiToPredictionCard(p: ApiPrediction): PredictionCard {
@@ -65,6 +66,12 @@ function apiToPredictionCard(p: ApiPrediction): PredictionCard {
     options: p.options,
     optionResults: p.optionResults,
   };
+}
+
+interface PredictionsPageConfig {
+  hero?: { titleLine1?: string; titleLine2?: string; subtitle?: string };
+  punctuations?: string[];
+  ticker?: { enabled?: boolean; source?: string };
 }
 
 const MONTHS = [
@@ -501,7 +508,7 @@ function PredMajlisShareBtn({ card }: { card: PredictionCard }) {
     <>
       <button
         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setShow(true); }}
-        title="Share to Majlis"
+        title="Share to Gallery"
         style={{
           background: "none",
           border: "none",
@@ -800,7 +807,7 @@ function FeaturedPrediction({ card, onVote }: { card: PredictionCard; onVote?: (
             style={{
               fontFamily: "'Barlow Condensed', sans-serif",
               fontWeight: 700,
-              fontSize: "0.78rem",
+              fontSize: "0.84rem",
               textTransform: "uppercase",
               letterSpacing: "0.18em",
               color: "var(--muted-foreground)",
@@ -1482,6 +1489,7 @@ export default function Predictions() {
   });
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("ALL");
+  const { data: predictionsConfig } = usePageConfig<PredictionsPageConfig>("predictions_page");
 
   // Server-side search with 400ms debounce
   const [searchResults, setSearchResults] = useState<PredictionCard[] | null>(null);
@@ -1635,11 +1643,27 @@ export default function Predictions() {
   }, [highlightedId, filteredCards]);
 
   const isFiltering = searchQuery || activeCategory !== "ALL";
+  const heroStats = [
+    { value: PREDICTIONS.length, label: "Predictions" },
+    { value: PREDICTION_CATEGORIES.length, label: "Categories" },
+    { value: 19, label: "Countries" },
+  ];
 
   return (
     <Layout>
-      {/* Momentum ticker */}
-      <MomentumTicker tickerData={tickerData} isLoading={isLoading} />
+      <EditorialPageHero
+        eyebrow="THE PREDICTIONS"
+        titleLine1={predictionsConfig?.hero?.titleLine1 || "What people think"}
+        titleLine2={predictionsConfig?.hero?.titleLine2 || "will happen"}
+        subtitle={predictionsConfig?.hero?.subtitle || "Track confidence, make your call, and see where consensus is moving."}
+        note="Predictions resolve against a clear outcome and date."
+        punctuations={predictionsConfig?.punctuations ?? ["."]}
+        stats={heroStats}
+      >
+        {predictionsConfig?.ticker?.enabled !== false && (
+          <MomentumTicker tickerData={tickerData} isLoading={isLoading} />
+        )}
+      </EditorialPageHero>
 
       {/* Content */}
       <div className="py-12">

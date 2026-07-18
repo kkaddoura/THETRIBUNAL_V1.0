@@ -12,6 +12,7 @@ type Mode = "explore" | "focused";
 type PillarType = "debates" | "predictions" | "pulse";
 type ViewTab = "generate" | "prompts" | "exclusions" | "history" | "rejections";
 type Recency = "day" | "week" | "month" | "year";
+type PollType = "binary" | "multiple_choice" | "scale" | "hot_take";
 
 const RECENCY_OPTIONS: { value: Recency; label: string; hint: string }[] = [
   { value: "day", label: "Latest", hint: "Past 24 hours" },
@@ -142,6 +143,7 @@ interface IdeationPersistedState {
   selectedTags: string[];
   selectedRegions: string[];
   recency: Recency;
+  pollType: PollType;
   guardrails: string[];
   currentStep: number;
   session: Session | null;
@@ -172,6 +174,7 @@ export default function IdeationPage() {
   const [selectedTags, setSelectedTags] = useState<string[]>(() => loadPersistedState()?.selectedTags ?? []);
   const [selectedRegions, setSelectedRegions] = useState<string[]>(() => loadPersistedState()?.selectedRegions ?? []);
   const [recency, setRecency] = useState<Recency>(() => loadPersistedState()?.recency ?? "week");
+  const [pollType, setPollType] = useState<PollType>(() => loadPersistedState()?.pollType ?? "multiple_choice");
   const [taxonomy, setTaxonomy] = useState<Taxonomy | null>(null);
   const [guardrails, setGuardrails] = useState<string[]>(() => loadPersistedState()?.guardrails ?? DEFAULT_GUARDRAILS);
   const [showGuardrails, setShowGuardrails] = useState(false);
@@ -209,12 +212,12 @@ export default function IdeationPage() {
       data: {
         activeTab, mode, focusedPillar, batchSize, pillarCounts,
         usePillarCounts, selectedCategories, selectedTags, selectedRegions,
-        recency, guardrails, currentStep, session, ideas, researchData,
+        recency, pollType, guardrails, currentStep, session, ideas, researchData,
       },
     };
     localStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
   }, [activeTab, mode, focusedPillar, batchSize, pillarCounts, usePillarCounts,
-      selectedCategories, selectedTags, selectedRegions, recency, guardrails,
+      selectedCategories, selectedTags, selectedRegions, recency, pollType, guardrails,
       currentStep, session, ideas, researchData]);
 
   useEffect(() => {
@@ -242,6 +245,7 @@ export default function IdeationPage() {
         tags: selectedTags,
         regions: selectedRegions,
         recency,
+        pollType,
         batchSize: mode === "explore" && usePillarCounts
           ? pillarCounts.debates + pillarCounts.predictions + pillarCounts.pulse
           : batchSize,
@@ -277,7 +281,7 @@ export default function IdeationPage() {
     } finally {
       setIsProcessing(false);
     }
-  }, [mode, focusedPillar, batchSize, pillarCounts, usePillarCounts, selectedCategories, selectedTags, selectedRegions, recency, exclusionList, guardrails]);
+  }, [mode, focusedPillar, batchSize, pillarCounts, usePillarCounts, selectedCategories, selectedTags, selectedRegions, recency, pollType, exclusionList, guardrails]);
 
   const handleCherryPick = async (ideaId: number, action: string, tag?: string) => {
     try {
@@ -365,6 +369,7 @@ export default function IdeationPage() {
     setSelectedCategories([]);
     setSelectedTags([]);
     setSelectedRegions([]);
+    setPollType("multiple_choice");
     setGuardrails(DEFAULT_GUARDRAILS);
     setCurrentStep(-1);
     setSession(null);
@@ -494,6 +499,8 @@ export default function IdeationPage() {
               setSelectedRegions={setSelectedRegions}
               recency={recency}
               setRecency={setRecency}
+              pollType={pollType}
+              setPollType={setPollType}
               guardrails={guardrails}
               setGuardrails={setGuardrails}
               showGuardrails={showGuardrails}
@@ -600,12 +607,13 @@ export default function IdeationPage() {
   );
 }
 
-function MultiSelectDropdown({ label, items, selected, setSelected, placeholder }: {
+function MultiSelectDropdown({ label, items, selected, setSelected, placeholder, hint }: {
   label: string;
   items: string[];
   selected: string[];
   setSelected: (s: string[]) => void;
   placeholder?: string;
+  hint?: string;
 }) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -701,6 +709,7 @@ function MultiSelectDropdown({ label, items, selected, setSelected, placeholder 
           ))}
         </div>
       )}
+      {hint && <p className="mt-1 text-[10px] leading-relaxed text-muted-foreground">{hint}</p>}
     </div>
   );
 }
@@ -713,6 +722,7 @@ function ConfigPanel({
   tags, selectedTags, setSelectedTags,
   regions, selectedRegions, setSelectedRegions,
   recency, setRecency,
+  pollType, setPollType,
   guardrails, setGuardrails, showGuardrails, setShowGuardrails,
   onStart, isProcessing, onReset,
 }: {
@@ -726,6 +736,7 @@ function ConfigPanel({
   tags: string[]; selectedTags: string[]; setSelectedTags: (t: string[]) => void;
   regions: string[]; selectedRegions: string[]; setSelectedRegions: (r: string[]) => void;
   recency: Recency; setRecency: (r: Recency) => void;
+  pollType: PollType; setPollType: (p: PollType) => void;
   guardrails: string[]; setGuardrails: (g: string[]) => void;
   showGuardrails: boolean; setShowGuardrails: (b: boolean) => void;
   onStart: () => void; isProcessing: boolean;
@@ -780,6 +791,32 @@ function ConfigPanel({
               );
             })}
           </div>
+        </div>
+      )}
+
+      {(mode === "explore" || focusedPillar !== "pulse") && (
+        <div>
+          <label
+            htmlFor="ideation-poll-type"
+            className="text-xs text-muted-foreground uppercase tracking-wider block mb-1.5"
+            style={{ fontFamily: "'Barlow Condensed', sans-serif" }}
+          >
+            Poll / Prediction Type
+          </label>
+          <select
+            id="ideation-poll-type"
+            value={pollType}
+            onChange={e => setPollType(e.target.value as PollType)}
+            className="w-full bg-secondary border border-border px-2.5 py-2 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+          >
+            <option value="binary">Binary (Yes/No)</option>
+            <option value="multiple_choice">Multiple Choice</option>
+            <option value="scale">Scale (Rating)</option>
+            <option value="hot_take">Hot Take (Agree/Disagree)</option>
+          </select>
+          <p className="text-[10px] text-muted-foreground mt-1">
+            Applies to generated Debates and Predictions. Pulse cards are unchanged.
+          </p>
         </div>
       )}
 
@@ -842,7 +879,14 @@ function ConfigPanel({
       )}
 
       <MultiSelectDropdown label="Categories" items={categories} selected={selectedCategories} setSelected={setSelectedCategories} placeholder="Filter by categories..." />
-      <MultiSelectDropdown label="Tags" items={tags} selected={selectedTags} setSelected={setSelectedTags} placeholder="Filter by tags..." />
+      <MultiSelectDropdown
+        label="Tags"
+        items={tags}
+        selected={selectedTags}
+        setSelected={setSelectedTags}
+        placeholder="Filter by tags..."
+        hint="Cross-cutting metadata used for search, filtering, and CMS section grouping. Selected tags are distributed across the generated batch and saved on each matching draft."
+      />
       <MultiSelectDropdown label="Regions" items={regions} selected={selectedRegions} setSelected={setSelectedRegions} placeholder="Filter by regions..." />
 
       <div>

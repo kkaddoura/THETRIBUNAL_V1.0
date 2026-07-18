@@ -44,25 +44,23 @@ export function PollTeaserCard({ poll }: Props) {
     if (!expanded) setJustVoted(false);
   }, [expanded]);
 
-  // Anchor the portaled panel under the card. Resize/RO update its position.
-  // Small scrolls just re-anchor (user may need to scroll to bring the panel
-  // into view); collapse only after passing a threshold.
+  // Anchor the portaled panel under the card. Scrolling and resizing only
+  // re-anchor it; a vertical swipe must never be treated as a dismissal on
+  // mobile. Horizontal movement still closes the panel when its carousel card
+  // has been swiped away.
   useEffect(() => {
     if (!expanded || !cardRef.current) return;
     const node = cardRef.current;
     const initialRect = node.getBoundingClientRect();
-    const initialScrollY = window.scrollY;
     setRect(initialRect);
 
-    const VERTICAL_THRESHOLD = 140;
     const HORIZONTAL_THRESHOLD = 40;
 
     const onScroll = () => {
       const newRect = node.getBoundingClientRect();
       setRect(newRect);
-      const verticalDelta = Math.abs(window.scrollY - initialScrollY);
       const horizontalDelta = Math.abs(newRect.left - initialRect.left);
-      if (verticalDelta > VERTICAL_THRESHOLD || horizontalDelta > HORIZONTAL_THRESHOLD) {
+      if (horizontalDelta > HORIZONTAL_THRESHOLD) {
         setExpanded(false);
       }
     };

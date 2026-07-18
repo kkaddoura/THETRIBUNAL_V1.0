@@ -356,7 +356,7 @@ export function PollCard({ poll, featured = false, stacked = false, onVoteComple
                       >
                         {featured && stacked ? (
                           <span className="flex h-full flex-col justify-between gap-4">
-                            <span className="font-display text-[10px] font-black uppercase tracking-[0.22em] text-primary group-hover:text-background">
+                            <span className="font-serif text-[10px] font-black uppercase tracking-[0.22em] text-primary group-hover:text-background">
                               Position {String.fromCharCode(65 + index)}
                             </span>
                             <span className="font-serif text-sm font-bold uppercase leading-snug transition-transform duration-150 group-hover:translate-x-1">

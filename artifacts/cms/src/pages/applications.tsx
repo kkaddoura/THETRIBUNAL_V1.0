@@ -162,7 +162,7 @@ export default function ApplicationsPage() {
                   </span>
                   {app.wantsMajlis && (
                     <span className="flex items-center gap-1 text-xs bg-purple-500/20 text-purple-400 px-2 py-0.5 shrink-0">
-                      <MessageSquare className="w-3 h-3" /> Majlis
+                      <MessageSquare className="w-3 h-3" /> Gallery
                     </span>
                   )}
                 </div>
@@ -235,7 +235,7 @@ export default function ApplicationsPage() {
                       disabled={inviting || !!(inviteResult && inviteResult.token && expandedId === app.id)}
                       className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-600 text-white text-sm hover:bg-purple-700 transition-colors disabled:opacity-50 ml-auto"
                     >
-                      <Send className="w-3.5 h-3.5" /> {inviting ? "Inviting..." : inviteResult?.token && expandedId === app.id ? "Invited" : "Invite to Majlis"}
+                      <Send className="w-3.5 h-3.5" /> {inviting ? "Inviting..." : inviteResult?.token && expandedId === app.id ? "Invited" : "Invite to Gallery"}
                     </button>
                   )}
                 </div>

@@ -55,7 +55,7 @@ const NAV_SECTIONS = [
   {
     label: "COMMUNITY",
     items: [
-      { path: "/majlis", label: "The Majlis", icon: Shield },
+      { path: "/majlis", label: "The Gallery", icon: Shield },
     ],
   },
   {

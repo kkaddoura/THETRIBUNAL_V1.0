@@ -96,7 +96,7 @@ const HOME_CONTENT_DEFAULTS: HomeContent = {
       { key: "predictions", title: "Predictions", subtitle: "What people think will happen.", body: "Not what should happen. What people expect will happen. Track how confidence shifts over time. Sign up if you want to save your calls and come back to them later.", cta: "Make a Prediction" },
       { key: "pulse", title: "Pulse", subtitle: "What is actually happening.", body: "Sourced public signals that give context to the questions people are voting on.", cta: "Read The Pulse" },
       { key: "voices", title: "Voices", subtitle: "People with something to say.", body: "Curated profiles of people connected to the region through their work, choices and positions.", cta: "Explore Voices" },
-      { key: "majlis", title: "The Majlis", subtitle: "A private room for serious conversation.", body: "A members only space for selected participants. No open comments. No algorithmic noise. No public performance.", cta: "Enter The Majlis" },
+      { key: "majlis", title: "The Gallery", subtitle: "A private room for serious conversation.", body: "A members only space for selected participants. No open comments. No algorithmic noise. No public performance.", cta: "Enter The Gallery" },
     ],
   },
   voices: { heading: "The Voices", subcopy: "Curated profiles of people with a clear connection to the region and a body of work we can verify." },
@@ -115,10 +115,13 @@ function resolveContent(cfg?: Partial<HomeContent>): HomeContent {
   const d = HOME_CONTENT_DEFAULTS; const c = (cfg ?? {}) as any;
   const cardsHeading =
     c.cards?.heading === "What you'll find here" ? d.cards.heading : c.cards?.heading;
+  const cards = (c.cards?.items?.length ? c.cards.items : d.cards.items).map((item: HomeContent["cards"]["items"][number]) =>
+    item.key === "majlis" ? { ...item, title: "The Gallery", cta: "Enter The Gallery" } : item
+  );
   return {
     hero: { ...d.hero, ...c.hero, stats: c.hero?.stats?.length ? c.hero.stats : d.hero.stats },
     intro: { ...d.intro, ...c.intro, negations: c.intro?.negations?.length ? c.intro.negations : d.intro.negations },
-    cards: { ...d.cards, ...c.cards, heading: cardsHeading ?? d.cards.heading, items: c.cards?.items?.length ? c.cards.items : d.cards.items },
+    cards: { ...d.cards, ...c.cards, heading: cardsHeading ?? d.cards.heading, items: cards },
     voices: { ...d.voices, ...c.voices },
     exploreTopics: { ...d.exploreTopics, ...c.exploreTopics },
     newsletter: { ...d.newsletter, ...c.newsletter, bullets: c.newsletter?.bullets?.length ? c.newsletter.bullets : d.newsletter.bullets },

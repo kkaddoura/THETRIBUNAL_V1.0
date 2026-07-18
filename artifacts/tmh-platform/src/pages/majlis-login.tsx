@@ -8,8 +8,8 @@ const API_BASE = import.meta.env?.VITE_API_BASE_URL ?? "";
 
 export default function MajlisLogin() {
   usePageTitle({
-    title: "The Majlis",
-    description: "Log in to The Majlis -- a private community for MENA's sharpest voices.",
+    title: "The Gallery",
+    description: "Log in to The Gallery -- a private community for MENA's sharpest voices.",
   });
   const [, navigate] = useLocation();
   const [mode, setMode] = useState<"login" | "register">("login");
@@ -88,8 +88,8 @@ export default function MajlisLogin() {
                 Private Forum
               </span>
             </div>
-            <h1 className="font-display text-4xl font-black uppercase tracking-tight text-foreground leading-none">
-              The Majlis<span className="text-primary">.</span>
+            <h1 className="font-serif text-4xl font-black uppercase tracking-tight text-foreground leading-none">
+              The Gallery<span className="text-primary">.</span>
             </h1>
             <p className="text-[12px] font-serif uppercase tracking-[0.2em] text-muted-foreground mt-2">
               المجلس — For Verified Voices Only
@@ -221,7 +221,7 @@ export default function MajlisLogin() {
                   "Authenticating..."
                 ) : (
                   <>
-                    {mode === "login" ? "Enter The Majlis" : "Register & Enter"}
+                    {mode === "login" ? "Enter The Gallery" : "Register & Enter"}
                     <ArrowRight className="w-3.5 h-3.5" />
                   </>
                 )}

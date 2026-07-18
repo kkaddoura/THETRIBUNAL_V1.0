@@ -185,7 +185,7 @@ export default function ProfileDetail() {
                 href="/majlis"
                 className="inline-flex items-center gap-2 mt-4 text-primary hover:text-primary/80 text-[12px] font-bold uppercase tracking-widest transition-colors"
               >
-                <MessageSquare className="w-3.5 h-3.5" /> Message in The Majlis
+                <MessageSquare className="w-3.5 h-3.5" /> Message in The Gallery
               </Link>
             </div>
           </div>

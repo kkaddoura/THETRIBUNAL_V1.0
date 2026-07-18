@@ -168,7 +168,7 @@ export default function Apply() {
             <div className="inline-flex items-center justify-center w-16 h-16 border-2 border-primary mb-8">
               <CheckCircle2 className="w-8 h-8 text-primary" />
             </div>
-            <h2 className="font-display font-black text-4xl uppercase tracking-tight text-foreground mb-4">
+            <h2 className="font-serif font-black text-4xl uppercase tracking-tight text-foreground mb-4">
               {successMsg?.title || "Application Received."}
             </h2>
             {refNumber && (
@@ -346,7 +346,7 @@ export default function Apply() {
                   className="mt-1 w-4 h-4 accent-primary flex-shrink-0"
                 />
                 <div>
-                  <span className="text-sm font-bold text-foreground">Join The Majlis</span>
+                  <span className="text-sm font-bold text-foreground">Join The Gallery</span>
                   <p className="text-xs text-muted-foreground mt-0.5">
                     Get access to our private chat room for verified voices across MENA. If approved, you'll receive an invite via email.
                   </p>

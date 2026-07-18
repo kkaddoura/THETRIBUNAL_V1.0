@@ -188,7 +188,7 @@ export function ShareModal({
       case "majlis":
         if (o === "sent")
           toast({
-            title: "Shared to Majlis!",
+            title: "Shared to Gallery!",
             description: "Your message has been sent.",
           })
         break
@@ -635,7 +635,7 @@ export function ShareModal({
                 className="w-full flex items-center justify-center gap-2 px-4 py-2.5 text-[12px] uppercase tracking-widest font-bold font-serif border border-border text-muted-foreground hover:border-primary hover:text-primary transition-colors rounded-sm cursor-pointer disabled:opacity-50"
               >
                 <Hash className="w-3.5 h-3.5" />
-                Share to Majlis
+                Share to Gallery
               </button>
             )}
 

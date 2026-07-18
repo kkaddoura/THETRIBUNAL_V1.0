@@ -8,6 +8,7 @@ import type { Poll } from "@workspace/api-client-react";
 import { Layout } from "@/components/layout/Layout";
 import { PollCard } from "@/components/poll/PollCard";
 import { ProfileCard } from "@/components/profile/ProfileCard";
+import { TickerSkeleton } from "@/components/skeletons/TickerSkeleton";
 const AboutSection = lazy(() => import("@/components/home/AboutSection"));
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
@@ -44,6 +45,25 @@ interface HomeSectionConfig {
 }
 
 const HOMEPAGE_DEBATE_LIMIT = 5;
+
+type TickerItem = { topic: string; badge: string; stat: string; href: string };
+
+const TICKER_MIN_VOTES = 1;
+const TICKER_LIVE_STATUSES = new Set(["approved", "published", "live", "active"]);
+
+function isLiveEditorialStatus(status?: string | null) {
+  return !!status && TICKER_LIVE_STATUSES.has(status.toLowerCase());
+}
+
+function cleanTickerTopic(value?: string | null) {
+  return value?.replace(/\s+/g, " ").trim() ?? "";
+}
+
+function isOpenTickerWindow(value?: string | null) {
+  if (!value) return true;
+  const time = new Date(value).getTime();
+  return Number.isNaN(time) || time >= Date.now();
+}
 
 function resolveActiveLeadDebateId(section?: HomeSectionConfig): number | undefined {
   if (!section) return undefined;
@@ -403,7 +423,6 @@ import {
   usePredictions,
   usePulseTopics,
   useHomepageConfig,
-  useLiveCounts,
   useSiteSettings,
   useTopPost,
   type ApiPrediction,
@@ -648,7 +667,7 @@ const HOME_CONTENT_DEFAULTS: HomeContent = {
       { key: "predictions", title: "Predictions", subtitle: "What people think will happen.", body: "Not what should happen. What people expect will happen. Track how confidence shifts over time. Sign up if you want to save your calls and come back to them later.", cta: "Make a Prediction" },
       { key: "pulse", title: "Pulse", subtitle: "What is actually happening.", body: "Sourced public signals that give context to the questions people are voting on.", cta: "Read The Pulse" },
       { key: "voices", title: "Voices", subtitle: "People with something to say.", body: "Curated profiles of people connected to the region through their work, choices and positions.", cta: "Explore Voices" },
-      { key: "majlis", title: "The Majlis", subtitle: "A private room for serious conversation.", body: "A members only space for selected participants. No open comments. No algorithmic noise. No public performance.", cta: "Enter The Majlis" },
+      { key: "majlis", title: "The Gallery", subtitle: "A private room for serious conversation.", body: "A members only space for selected participants. No open comments. No algorithmic noise. No public performance.", cta: "Enter The Gallery" },
     ],
   },
   voices: {
@@ -672,10 +691,13 @@ function resolveHomeContent(cfg?: Partial<HomeContent>): HomeContent {
   const c = (cfg ?? {}) as any;
   const cardsHeading =
     c.cards?.heading === "What you'll find here" ? d.cards.heading : c.cards?.heading;
+  const cards = (c.cards?.items?.length ? c.cards.items : d.cards.items).map((item: HomeContent["cards"]["items"][number]) =>
+    item.key === "majlis" ? { ...item, title: "The Gallery", cta: "Enter The Gallery" } : item
+  );
   return {
     hero: { ...d.hero, ...c.hero, stats: c.hero?.stats?.length ? c.hero.stats : d.hero.stats },
     intro: { ...d.intro, ...c.intro, negations: c.intro?.negations?.length ? c.intro.negations : d.intro.negations },
-    cards: { ...d.cards, ...c.cards, heading: cardsHeading ?? d.cards.heading, items: c.cards?.items?.length ? c.cards.items : d.cards.items },
+    cards: { ...d.cards, ...c.cards, heading: cardsHeading ?? d.cards.heading, items: cards },
     voices: { ...d.voices, ...c.voices },
     exploreTopics: { ...d.exploreTopics, ...c.exploreTopics },
     newsletter: { ...d.newsletter, ...c.newsletter, bullets: c.newsletter?.bullets?.length ? c.newsletter.bullets : d.newsletter.bullets },
@@ -946,8 +968,8 @@ function FeaturedPredictionCard({
       className="bg-card border border-border rounded-[4px] flex flex-col lg:flex-row gap-0 overflow-hidden"
       style={{ borderWidth: "1.5px" }}
     >
-      <div className="flex-1 p-6 sm:p-8">
-        <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
+      <div className="flex-1 px-6 pb-7 pt-4 sm:px-8 sm:pb-8 sm:pt-5">
+        <p className="mb-1 text-left font-serif text-[13px] font-bold uppercase tracking-[0.15em] text-muted-foreground sm:text-sm">
           Confidence Over Time — Yes %
         </p>
         <svg
@@ -976,7 +998,7 @@ function FeaturedPredictionCard({
                 x={padL - 4}
                 y={toY(v) + 3}
                 fill="rgba(255,255,255,0.25)"
-                fontSize="6"
+                fontSize="7"
                 textAnchor="end"
                 fontFamily="'Barlow Condensed', sans-serif"
               >
@@ -993,7 +1015,7 @@ function FeaturedPredictionCard({
                 x={toX(i)}
                 y={chartH - 4}
                 fill="rgba(255,255,255,0.3)"
-                fontSize="5.5"
+                fontSize="6.5"
                 textAnchor="middle"
                 fontFamily="'Barlow Condensed', sans-serif"
               >
@@ -1073,7 +1095,7 @@ function FeaturedPredictionCard({
               x={toX(featured.data.length - 1) + 1}
               y={toY(featured.data[featured.data.length - 1]) - 4}
               fill="#10B981"
-              fontSize="6"
+              fontSize="7"
               fontWeight="700"
               fontFamily="'Barlow Condensed', sans-serif"
             >
@@ -1120,7 +1142,7 @@ function FeaturedPredictionCard({
                     x={tipX + 4}
                     y={tipY + 9}
                     fill="rgba(255,255,255,0.6)"
-                    fontSize="5.5"
+                    fontSize="6.5"
                     fontFamily="'Barlow Condensed', sans-serif"
                   >
                     {months[hovIdx % 12]} 2026
@@ -1129,7 +1151,7 @@ function FeaturedPredictionCard({
                     x={tipX + 4}
                     y={tipY + 18}
                     fill="#10B981"
-                    fontSize="7"
+                    fontSize="8"
                     fontWeight="700"
                     fontFamily="'Barlow Condensed', sans-serif"
                   >
@@ -1139,7 +1161,7 @@ function FeaturedPredictionCard({
                     x={tipX + 4}
                     y={tipY + 26}
                     fill={delta >= 0 ? "#10B981" : "#DC143C"}
-                    fontSize="5.5"
+                    fontSize="6.5"
                     fontFamily="'Barlow Condensed', sans-serif"
                   >
                     {delta >= 0 ? "▲" : "▼"} {Math.abs(delta).toFixed(1)}% vs
@@ -1149,7 +1171,10 @@ function FeaturedPredictionCard({
               );
             })()}
         </svg>
-        <p className="text-[10px] font-serif mt-2" style={{ color: "#10B981" }}>
+        <p
+          className="mt-4 w-fit text-left font-serif text-[13px] font-bold tracking-[0.04em] sm:mt-5 sm:text-sm"
+          style={{ color: featured.up ? "#10B981" : "#DC143C" }}
+        >
           {featured.up ? "▲" : "▼"} Confidence moved {featured.up ? "+" : "-"}
           {featured.momentum}% in the last 30 days
         </p>
@@ -1161,7 +1186,7 @@ function FeaturedPredictionCard({
               {featured.category}
             </span>
             <span
-              className="px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.1em] font-serif rounded-sm"
+              className="px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em] font-serif rounded-sm"
               style={{
                 background: "rgba(59,130,246,0.15)",
                 border: "1px solid rgba(59,130,246,0.3)",
@@ -1615,65 +1640,44 @@ function SidebarPredictionItem({
   );
 }
 
-function SignalRail({
-  counts,
-}: {
-  counts?: {
-    debates: number;
-    predictions: number;
-    totalVotes: number;
-  };
-}) {
-  const { t } = useI18n();
+function MixedTicker({ items }: { items: TickerItem[] }) {
+  if (items.length === 0) return null;
+  const doubled = [...items, ...items];
+
   return (
-    <section
-      className="border-y border-white/10 bg-[#0D0D0D] text-white"
-      aria-label={t("The Tribunal live snapshot")}
+    <div
+      className="min-h-[48px] overflow-hidden border-y border-white/10 bg-[#0D0D0D]"
+      aria-label="Live questions and predictions"
     >
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-x-5 gap-y-3 px-4 py-3 sm:px-6 lg:px-8">
-        <div className="flex items-center gap-2.5">
-          <span className="h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.65)]" aria-hidden="true" />
-          <span className="font-display text-[11px] font-black uppercase tracking-[0.18em] text-white">
-            {t("The room right now")}
-          </span>
-        </div>
-
-        <div className="flex min-w-0 flex-1 items-center gap-4 text-[11px] text-white/60 sm:text-xs">
-          <span className="whitespace-nowrap">
-            <strong className="font-display text-sm font-black text-white">
-              {counts ? counts.totalVotes.toLocaleString() : "—"}
-            </strong>{" "}
-            {t("private votes")}
-          </span>
-          <span className="hidden h-4 w-px bg-white/15 sm:block" aria-hidden="true" />
-          <span className="hidden whitespace-nowrap sm:inline">
-            <strong className="font-display font-black text-white">{counts?.debates ?? "—"}</strong>{" "}
-            {t("open debates")}
-          </span>
-          <span className="hidden h-4 w-px bg-white/15 md:block" aria-hidden="true" />
-          <span className="hidden whitespace-nowrap md:inline">
-            <strong className="font-display font-black text-white">{counts?.predictions ?? "—"}</strong>{" "}
-            {t("active predictions")}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-4">
+      <div className="tmh-ticker-scroll">
+        {doubled.map((item, i) => (
           <Link
-            href="/predictions"
-            className="hidden font-serif text-[10px] font-bold uppercase tracking-[0.14em] text-white/55 transition-colors hover:text-white sm:inline"
+            key={`${item.href}-${i}`}
+            href={item.href}
+            className="flex items-center gap-2.5 border-r border-white/10 px-8 py-3 no-underline"
           >
-            {t("Make a prediction")}
+            <span
+              className={cn(
+                "whitespace-nowrap border px-1.5 py-0.5 font-serif text-[10px] font-extrabold uppercase tracking-[0.12em]",
+                item.badge === "DEBATE"
+                  ? "border-primary/30 bg-primary/15 text-primary"
+                  : item.badge === "PREDICTION"
+                    ? "border-blue-500/30 bg-blue-500/15 text-blue-400"
+                    : "border-green-500/30 bg-green-500/15 text-green-400",
+              )}
+            >
+              {item.badge}
+            </span>
+            <span className="whitespace-nowrap font-serif text-[13px] font-bold uppercase tracking-[0.08em] text-white/75">
+              {item.topic}
+            </span>
+            <span className="whitespace-nowrap font-serif text-sm font-bold text-white">
+              {item.stat}
+            </span>
           </Link>
-          <Link
-            href="/debates"
-            className="group inline-flex items-center gap-2 font-serif text-[10px] font-bold uppercase tracking-[0.16em] text-primary transition-colors hover:text-white"
-          >
-            {t("Join a debate")}
-            <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" aria-hidden="true" />
-          </Link>
-        </div>
+        ))}
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -1796,9 +1800,8 @@ export default function Home() {
   }, [completedLeadIds, leadDebateDeck]);
   const { data: featuredProfiles, isLoading: profilesLoading } =
     useListProfiles({ filter: "featured", limit: 8 });
-  const { data: apiPredictions } = usePredictions();
-  const { data: apiPulseTopics } = usePulseTopics();
-  const { data: liveCounts } = useLiveCounts();
+  const { data: apiPredictions, isLoading: predictionsLoading } = usePredictions();
+  const { data: apiPulseTopics, isLoading: pulseLoading } = usePulseTopics();
   const { data: siteSettings } = useSiteSettings();
   const majlisEnabled = siteSettings?.featureToggles?.majlis?.enabled ?? false;
   const voicesEnabled = siteSettings?.featureToggles?.voices?.enabled ?? false;
@@ -1829,6 +1832,84 @@ export default function Home() {
     const topId = topPost?.topPrediction?.id;
     return (topId != null && PREDICTIONS.find((p) => p.id === topId)) || PREDICTIONS[0];
   }, [PREDICTIONS, topPost]);
+
+  const debateItems = useMemo<TickerItem[]>(() => {
+    const byId = new Map<number, Poll>();
+    if (selectedPoll) byId.set(selectedPoll.id, selectedPoll);
+    for (const poll of trendingPolls?.polls ?? []) byId.set(poll.id, poll);
+
+    return [...byId.values()]
+      .filter((poll) => {
+        const topic = cleanTickerTopic(poll.question);
+        return (
+          topic.length > 0 &&
+          isOpenTickerWindow(poll.endsAt) &&
+          (poll.totalVotes ?? 0) >= TICKER_MIN_VOTES
+        );
+      })
+      .slice(0, 4)
+      .map((poll) => ({
+        topic: cleanTickerTopic(poll.question),
+        badge: "DEBATE",
+        stat: `${(poll.totalVotes ?? 0).toLocaleString()} votes`,
+        href: `/debates/${poll.id}`,
+      }));
+  }, [selectedPoll, trendingPolls]);
+
+  const predictionItems = useMemo<TickerItem[]>(() => {
+    if (!apiPredictions?.items?.length) return [];
+    const topPredictionId = topPost?.topPrediction?.id;
+    const sorted = [...apiPredictions.items].sort((a, b) => {
+      if (a.id === topPredictionId) return -1;
+      if (b.id === topPredictionId) return 1;
+      if (a.isFeatured !== b.isFeatured) return a.isFeatured ? -1 : 1;
+      return (b.totalCount ?? 0) - (a.totalCount ?? 0);
+    });
+
+    return sorted
+      .filter((prediction) => {
+        const topic = cleanTickerTopic(prediction.question);
+        return (
+          topic.length > 0 &&
+          isLiveEditorialStatus(prediction.editorialStatus) &&
+          isOpenTickerWindow(prediction.resolvesAt) &&
+          (prediction.totalCount ?? 0) >= TICKER_MIN_VOTES
+        );
+      })
+      .slice(0, 3)
+      .map((prediction) => ({
+        topic: cleanTickerTopic(prediction.question),
+        badge: "PREDICTION",
+        stat: `${prediction.yesPercentage}% yes`,
+        href: `/predictions/${prediction.id}`,
+      }));
+  }, [apiPredictions, topPost]);
+
+  const pulseItems = useMemo<TickerItem[]>(() => {
+    if (!pulseEnabled) return [];
+    if (!apiPulseTopics?.items?.length) return [];
+    return apiPulseTopics.items
+      .filter((topic) => cleanTickerTopic(topic.title).length > 0 && isLiveEditorialStatus(topic.editorialStatus))
+      .slice(0, 3)
+      .map((topic) => ({
+        topic: cleanTickerTopic(topic.title),
+        badge: "PULSE",
+        stat: `${topic.deltaUp ? "↑" : "↓"} ${topic.delta}`,
+        href: `/pulse?shared=${encodeURIComponent(topic.topicId)}`,
+      }));
+  }, [apiPulseTopics, pulseEnabled]);
+  const maxTickerLength = Math.max(
+    debateItems.length,
+    predictionItems.length,
+    pulseItems.length,
+  );
+  const tickerItems: TickerItem[] = [];
+  for (let index = 0; index < maxTickerLength; index += 1) {
+    if (debateItems[index]) tickerItems.push(debateItems[index]);
+    if (predictionItems[index]) tickerItems.push(predictionItems[index]);
+    if (pulseItems[index]) tickerItems.push(pulseItems[index]);
+  }
+  const visibleTickerItems = tickerItems.length >= 2 ? tickerItems : [];
 
   return (
     <Layout>
@@ -1876,6 +1957,21 @@ export default function Home() {
                 className="flex flex-col items-center justify-center w-full text-center"
                 style={{ opacity: heroReady ? 1 : 0, transition: "opacity 0.35s ease" }}
               >
+                {/* Eyebrow */}
+                <motion.div
+                  className="flex items-center gap-2.5 mb-5"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ duration: 0.5, delay: 0.15 }}
+                >
+                  <span className="relative flex w-2 h-2">
+                    <span className="absolute inline-flex w-full h-full rounded-full bg-[#10B981] opacity-60 animate-ping" />
+                    <span className="relative inline-flex w-2 h-2 rounded-full bg-[#10B981]" />
+                  </span>
+                  <span className="font-serif font-bold text-[12px] tracking-[0.32em] uppercase text-[#10B981]">
+                    {t(C.hero.eyebrow)}
+                  </span>
+                </motion.div>
                 {/* Headline */}
                 <motion.h1
                   className="font-serif font-black uppercase tracking-[-0.01em] text-foreground text-center max-w-5xl"
@@ -1885,6 +1981,7 @@ export default function Home() {
                   transition={{ duration: 0.75, ease: EASE_OUT_EXPO, delay: 0.1 }}
                 >
                   {t(C.hero.headline)}
+                  <span className="text-primary">.</span>
                 </motion.h1>
               </div>
 
@@ -1894,14 +1991,40 @@ export default function Home() {
       </motion.div>
       )}
 
-      {/* ── LIVE PARTICIPATION SNAPSHOT ── */}
+      {/* ── SUBTLE PARTICIPATION CTAS ── */}
       {showSection("lead_debate") && showSection("ticker") && (
-        <SignalRail counts={liveCounts} />
+        <nav
+          className="border-b border-border/60 bg-background"
+          aria-label={t("Choose how to participate")}
+        >
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-8 gap-y-5 px-4 pb-10 pt-5 sm:gap-x-14 sm:px-6 sm:pb-12 sm:pt-6 lg:px-8">
+            <Link
+              href="/debates"
+              className="group inline-flex min-h-10 items-center gap-2 bg-primary px-6 py-3 font-serif text-[12px] font-bold uppercase tracking-[0.14em] text-primary-foreground transition-colors hover:bg-primary/85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 sm:px-8"
+            >
+              {t("Join a debate")}
+              <ArrowRight className="h-3 w-3 text-current transition-transform group-hover:translate-x-0.5" aria-hidden="true" />
+            </Link>
+            <Link
+              href="/predictions"
+              className="group inline-flex min-h-10 items-center border-b-2 border-primary/70 px-2 py-2.5 font-serif text-[12px] font-bold uppercase tracking-[0.14em] text-muted-foreground transition-colors hover:border-primary hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+            >
+              {t("Make a prediction")}
+            </Link>
+          </div>
+        </nav>
+      )}
+
+      {/* ── LIVE EDITORIAL TICKER ── */}
+      {showSection("lead_debate") && showSection("ticker") && (
+        (trendingLoading || predictionsLoading || pulseLoading) && visibleTickerItems.length === 0
+          ? <TickerSkeleton />
+          : <MixedTicker items={visibleTickerItems} />
       )}
 
       {/* ── FRONT PAGE: Lead Debate + Sidebar ── */}
       {showSection("lead_debate") && (
-      <section id="debates" className="scroll-mt-20 bg-background py-10 border-b border-border relative">
+      <section id="debates" className="scroll-mt-20 bg-background py-8 border-b border-border relative">
         <FadeUp>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
@@ -1910,7 +2033,7 @@ export default function Home() {
               <div className="mb-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 font-serif text-sm font-bold uppercase tracking-[0.22em] text-primary">
                   <span className="h-2 w-2 rounded-full bg-[#10B981] animate-pulse" />
-                  {t("CURRENT LEAD DEBATE")}
+                  {t("TODAY'S LEAD DEBATE")}
                 </div>
                 {completedLeadIds.length > 0 && (
                   <span className="font-serif text-[10px] font-bold uppercase tracking-widest text-muted-foreground" aria-live="polite">
@@ -1933,7 +2056,6 @@ export default function Home() {
                     <PollCard
                       poll={activeLeadDebate}
                       featured
-                      stacked
                       onVoteComplete={handleLeadVoteComplete}
                     />
                   </motion.div>
@@ -1943,12 +2065,12 @@ export default function Home() {
 
             <aside className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border" aria-label="Upcoming debates">
               <FadeIn delay={0.15}>
-              <div className="mb-4 flex items-end justify-between gap-3 border-b-2 border-foreground pb-3">
-                <div>
-                  <p className="font-serif text-[10px] font-bold uppercase tracking-[0.28em] text-primary">
+              <div className="mb-5 flex items-start justify-between gap-3 border-l-4 border-primary pl-4">
+                <div className="py-0.5">
+                  <p className="font-serif text-[11px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
                     Ballot queue
                   </p>
-                  <h2 className="mt-1 font-display text-xl font-black uppercase leading-none text-foreground">
+                  <h2 className="mt-1.5 font-serif text-2xl font-black uppercase leading-none text-foreground">
                     Up next
                   </h2>
                 </div>
@@ -1959,9 +2081,6 @@ export default function Home() {
                   {t("View All")}
                 </Link>
               </div>
-              <p className="mb-4 font-sans text-xs leading-relaxed text-muted-foreground">
-                Pick any question, or vote on the current lead to bring the next one forward.
-              </p>
               </FadeIn>
 
               {trendingLoading ? (
@@ -1986,7 +2105,7 @@ export default function Home() {
                   </Link>
                 </div>
               ) : (
-                <div className="max-h-[38rem] space-y-3 overflow-y-auto pr-1 [scrollbar-width:thin]" role="list" aria-live="polite">
+                <div className="max-h-[46rem] space-y-4 overflow-y-auto pr-1 [scrollbar-width:thin]" role="list" aria-live="polite">
                   <AnimatePresence initial={false}>
                     {queuedLeadDebates.map((poll, index) => (
                       <motion.button
@@ -1999,24 +2118,24 @@ export default function Home() {
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, x: 36 }}
                         transition={{ duration: 0.3, ease: EASE_OUT_EXPO }}
-                        className="group w-full border border-border bg-card p-4 text-left transition-colors hover:border-primary hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                        className="group w-full border border-border bg-card px-5 py-6 text-left transition-colors hover:border-primary hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <span className="font-serif text-[10px] font-bold uppercase tracking-[0.2em] text-primary">
+                          <span className="font-serif text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
                             {poll.category}
                           </span>
-                          <span className="font-display text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                            {index === 0 ? "Next" : `In queue`}
+                          <span className="font-serif text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                            {index === 0 ? "Next" : "In queue"}
                           </span>
                         </div>
-                        <p className="mt-2 font-serif text-[15px] font-black uppercase leading-tight text-foreground transition-colors group-hover:text-primary">
+                        <p className="mt-4 font-serif text-[15px] font-black uppercase leading-tight text-foreground transition-colors group-hover:text-primary">
                           {poll.question.length > 90
                             ? poll.question.slice(0, 90) + "..."
                             : poll.question}
                         </p>
-                        <div className="mt-3 flex items-center justify-between border-t border-border pt-3">
-                          <span className="font-sans text-[11px] text-muted-foreground">
-                            {poll.options.length} positions
+                        <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
+                          <span className="font-serif text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                            {(poll.totalVotes ?? 0).toLocaleString()} votes
                           </span>
                           <span className="flex items-center gap-1 font-serif text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors group-hover:text-primary">
                             Make lead <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" aria-hidden="true" />
@@ -2247,7 +2366,7 @@ export default function Home() {
                     style={{ borderWidth: "1.5px" }}
                   >
                     <div className="flex-1 p-5">
-                      <p className="text-[10px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
+                      <p className="text-[11px] uppercase tracking-[0.15em] font-bold text-muted-foreground font-serif mb-2">
                         Trend Over 12 Months
                       </p>
                       <svg
@@ -2460,7 +2579,7 @@ export default function Home() {
                       </Link>
                       <div className="flex items-baseline gap-2">
                         <span
-                          className="font-display font-black text-2xl"
+                          className="font-serif font-black text-2xl"
                           style={{ color: topic.tagColor }}
                         >
                           {topic.stat}
@@ -2653,7 +2772,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-end justify-between mb-4">
             <div>
-              <h2 className="font-display font-black text-4xl md:text-5xl uppercase tracking-tight text-background leading-none">
+              <h2 className="font-serif font-black text-4xl md:text-5xl uppercase tracking-tight text-background leading-none">
                 {t(C.voices.heading)}
               </h2>
               <SlideReveal color="#DC143C" height={4} className="mt-3" delay={0.3} />
@@ -2712,7 +2831,7 @@ export default function Home() {
                 className="inline-flex items-center gap-2 border border-background/30 text-background font-bold uppercase tracking-widest text-xs px-8 py-3 hover:bg-background/10 transition-colors font-serif"
               >
                 <Lock className="w-3 h-3" />
-                {t("Enter The Majlis")}
+                {t("Enter The Gallery")}
               </Link>
               </motion.div>
             )}
@@ -2769,7 +2888,7 @@ export default function Home() {
               </p>
               <h2
                 id="more-debates-title"
-                className="mt-3 max-w-md font-display text-3xl font-black uppercase leading-none text-foreground sm:text-4xl"
+                className="mt-3 max-w-md font-serif text-3xl font-black uppercase leading-none text-foreground sm:text-4xl"
               >
                 Looking for more debates?
               </h2>

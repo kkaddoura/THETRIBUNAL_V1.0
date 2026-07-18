@@ -1489,8 +1489,8 @@ router.post("/cms/applications/:id/invite-majlis", requireCmsAuth, async (req, r
     const emailResult = await sendEmail({
       label: "majlis-invite",
       to: app.email,
-      subject: "You're invited to The Majlis",
-      text: `Hi ${app.name},\n\nYou've been approved to join The Majlis — our private chat room for verified voices across MENA.\n\nYour invite code: ${token}\n\nUse it to register at: https://themiddleeasthustle.com/majlis/register\n\nThis code expires in 30 days.\n\nThe Tribunal, by The Middle East Hustle`,
+      subject: "You're invited to The Gallery",
+      text: `Hi ${app.name},\n\nYou've been approved to join The Gallery — our private chat room for verified voices across MENA.\n\nYour invite code: ${token}\n\nUse it to register at: https://themiddleeasthustle.com/majlis/register\n\nThis code expires in 30 days.\n\nThe Tribunal`,
     });
     const emailSent = emailResult.ok;
 
@@ -1498,7 +1498,7 @@ router.post("/cms/applications/:id/invite-majlis", requireCmsAuth, async (req, r
     return res.json({ success: true, token, profileId: profile.id, emailSent });
   } catch (err) {
     console.error("Invite Majlis error:", err);
-    return res.status(500).json({ error: "Failed to create Majlis invite" });
+    return res.status(500).json({ error: "Failed to create Gallery invite" });
   }
 });
 

@@ -77,7 +77,7 @@ export default function Signup() {
           <div className="w-full max-w-md">
             {/* Mobile-only headline (the left aside is desktop-only) */}
             <div className="lg:hidden text-center mb-8">
-              <h1 className="font-display font-black uppercase tracking-tight text-4xl leading-[0.95]">
+              <h1 className="font-serif font-black uppercase tracking-tight text-4xl leading-[0.95]">
                 Save your<br />
                 activity<span className="text-primary">.</span>
               </h1>
@@ -87,7 +87,7 @@ export default function Signup() {
               <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-2 font-serif">
                 Create account
               </p>
-              <h2 className="font-display font-black uppercase tracking-tight text-2xl md:text-3xl mb-6">
+              <h2 className="font-serif font-black uppercase tracking-tight text-2xl md:text-3xl mb-6">
                 Save your votes<span className="text-primary">.</span>
               </h2>
 

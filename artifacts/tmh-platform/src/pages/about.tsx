@@ -92,7 +92,7 @@ export const DEFAULT_ABOUT_SECTIONS: AboutSection[] = [
       { num: "02", title: "Vote privately.", body: "Your name and email are not shown with your vote." },
       { num: "03", title: "See the result.", body: "Results are shown publicly in aggregate, with country and topic breakdowns where enough data exists." },
       { num: "04", title: "Save your activity.", body: "You can vote without an account. If you sign up, you can view previous votes, track predictions and continue from another device." },
-      { num: "05", title: "Go deeper.", body: "Pulse adds sourced public signals. Voices profiles people with a view worth recording. The Majlis creates a private room for serious conversation." },
+      { num: "05", title: "Go deeper.", body: "Pulse adds sourced public signals. Voices profiles people with a view worth recording. The Gallery creates a private room for serious conversation." },
       { num: "06", title: "Trust the process.", body: "Questions are human reviewed. Results are opinion signals, not scientific polling. No bots. No sponsored sentiment. No fake activity." },
     ],
   },
@@ -264,7 +264,7 @@ function AboutSectionView({
                 const isNumeric = /[0-9]/.test(stat.value)
                 return (
                   <div key={i}>
-                    <div className={`font-display font-black leading-none mb-2 ${isNumeric ? "text-4xl md:text-5xl" : "text-2xl md:text-3xl pt-2"}`}>
+                    <div className={`font-serif font-black leading-none mb-2 ${isNumeric ? "text-4xl md:text-5xl" : "text-2xl md:text-3xl pt-2"}`}>
                       {isNumeric ? stat.value : t(stat.value)}
                     </div>
                     <div className="text-[12px] uppercase tracking-[0.2em] font-serif text-primary">{t(stat.label)}</div>
@@ -289,7 +289,7 @@ function AboutSectionView({
           <div className="grid md:grid-cols-2 gap-10">
             {steps.map((s, i) => (
               <div key={i} className="relative">
-                <span className="text-6xl font-display font-black text-gray-900/20 dark:text-gray-100/20 leading-none select-none block">{s.num}</span>
+                <span className="text-6xl font-serif font-black text-gray-900/20 dark:text-gray-100/20 leading-none select-none block">{s.num}</span>
                 <div className="-mt-3">
                   <h3 className="font-serif font-black uppercase text-lg border-b border-border pb-2 mb-3 text-foreground tracking-wide">{t(s.title)}</h3>
                   <p className="text-sm text-muted-foreground font-sans leading-relaxed">{t(s.body)}</p>
@@ -312,7 +312,7 @@ function AboutSectionView({
           <p key={i} className={`text-${i === 0 ? "xl" : "base"} ${i === 0 ? "text-foreground" : "text-muted-foreground"} font-sans leading-relaxed mb-6`}>{t(p)}</p>
         ))}
         {section.quote?.trim() && (
-          <blockquote className="font-display text-2xl md:text-3xl border-l-4 border-primary pl-6 py-4 my-12 text-foreground leading-snug">{t(section.quote)}</blockquote>
+          <blockquote className="font-serif text-2xl md:text-3xl border-l-4 border-primary pl-6 py-4 my-12 text-foreground leading-snug">{t(section.quote)}</blockquote>
         )}
         {section.author?.trim() && (
           <p className="text-base font-sans leading-relaxed text-foreground font-bold">{t(`— ${section.author}`)}</p>
@@ -349,7 +349,7 @@ function AboutSectionView({
             <Link href="/voices" className="border border-primary text-primary px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white transition-colors font-serif">{t("Explore Voices")}</Link>
           )}
           {majlisEnabled && (
-            <Link href="/majlis" className="border border-primary text-primary px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white transition-colors font-serif">{t("Enter The Majlis")}</Link>
+            <Link href="/majlis" className="border border-primary text-primary px-8 py-3 font-bold uppercase tracking-widest text-xs hover:bg-primary hover:text-white transition-colors font-serif">{t("Enter The Gallery")}</Link>
           )}
         </div>
       </div>

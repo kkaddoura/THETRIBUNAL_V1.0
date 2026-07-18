@@ -76,10 +76,7 @@ export default function Join() {
     <Layout>
       {/* Hero */}
       <section className="bg-foreground text-background px-5 py-20 md:py-28 text-center">
-        <p className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
-          By the Middle East Hustle
-        </p>
-        <h1 className="font-display text-primary text-4xl md:text-6xl uppercase tracking-tight leading-none mb-5 max-w-3xl mx-auto">
+        <h1 className="font-serif text-primary text-4xl md:text-6xl uppercase tracking-tight leading-none mb-5 max-w-3xl mx-auto">
           Where the region<br />
           actually speaks<span className="text-primary">.</span>
         </h1>
@@ -95,7 +92,7 @@ export default function Join() {
           <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-primary mb-3 font-serif">
             Create an account
           </p>
-          <h2 className="font-display font-black uppercase text-3xl md:text-4xl tracking-tight text-foreground mb-3">
+          <h2 className="font-serif font-black uppercase text-3xl md:text-4xl tracking-tight text-foreground mb-3">
             Vote with a name<span className="text-primary">.</span>
           </h2>
           <p className="text-sm md:text-base text-muted-foreground font-sans mb-6 leading-relaxed">
@@ -139,7 +136,7 @@ export default function Join() {
           <p className="text-[12px] uppercase tracking-[0.25em] font-bold text-muted-foreground mb-2 font-serif">
             Or just the digest
           </p>
-          <h3 className="font-display font-black uppercase text-xl md:text-2xl tracking-tight text-foreground mb-2">
+          <h3 className="font-serif font-black uppercase text-xl md:text-2xl tracking-tight text-foreground mb-2">
             Join the Weekly Pulse<span className="text-primary">.</span>
           </h3>
           <p className="text-xs md:text-sm text-muted-foreground font-sans mb-5 leading-relaxed">

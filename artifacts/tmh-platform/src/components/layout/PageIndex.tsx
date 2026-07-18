@@ -79,7 +79,7 @@ export function PageIndex({ sections, scrollOffset = 80, title = "On This Page" 
           <p className="font-serif font-black uppercase text-xs tracking-[0.2em] text-foreground">
             {title}<span className="text-primary">.</span>
           </p>
-          <span className="font-display text-xs font-bold text-muted-foreground tabular-nums">
+          <span className="font-serif text-xs font-bold text-muted-foreground tabular-nums">
             {String(Math.max(activeIndex + 1, 1)).padStart(2, "0")}
             <span className="opacity-50">/{String(sections.length).padStart(2, "0")}</span>
           </span>
@@ -114,7 +114,7 @@ export function PageIndex({ sections, scrollOffset = 80, title = "On This Page" 
                 >
                   <span
                     className={cn(
-                      "font-display text-[13px] font-bold tabular-nums tracking-wider transition-colors",
+                      "font-serif text-[13px] font-bold tabular-nums tracking-wider transition-colors",
                       isActive ? "text-primary" : "text-muted-foreground/60 group-hover:text-foreground",
                     )}
                   >

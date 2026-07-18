@@ -38,7 +38,7 @@ export class ErrorBoundary extends Component<Props, State> {
         </div>
 
         <div className="max-w-3xl mx-auto px-4 sm:px-6 py-20 text-center">
-          <p className="font-display text-6xl md:text-8xl font-black text-foreground/5 select-none leading-none mb-6">
+          <p className="font-serif text-6xl md:text-8xl font-black text-foreground/5 select-none leading-none mb-6">
             !
           </p>
           <p className="text-xl font-sans text-foreground leading-relaxed mb-4 -mt-8">

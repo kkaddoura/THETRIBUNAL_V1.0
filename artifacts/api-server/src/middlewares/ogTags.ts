@@ -36,7 +36,7 @@ function isBot(ua: string): boolean {
 const INTERNAL_API_BASE = process.env.INTERNAL_API_URL ?? `http://127.0.0.1:${process.env.PORT ?? 8080}`;
 const SITE = "https://themiddleeasthustle.com"
 const DEFAULT_IMAGE = `${SITE}/og-cover.jpg`
-const SITE_NAME = "The Tribunal, by The Middle East Hustle"
+const SITE_NAME = "The Tribunal"
 
 function buildHtml(meta: {
   title: string

@@ -106,22 +106,6 @@ function brandHeader(tokens: BrandTokens, category?: string): SatoriElement {
                   ],
                 },
               },
-              {
-                type: "div",
-                props: {
-                  style: {
-                    display: "flex",
-                    fontSize: "12px",
-                    fontWeight: 600,
-                    fontFamily: tokens.bodyFont,
-                    color: tokens.muted,
-                    letterSpacing: "3px",
-                    textTransform: "uppercase" as const,
-                    marginTop: "4px",
-                  },
-                  children: "BY THE MIDDLE EAST HUSTLE",
-                },
-              },
             ],
           },
         },

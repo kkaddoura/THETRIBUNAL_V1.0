@@ -11,7 +11,7 @@ const FALLBACK_SOCIALS = [
 ]
 
 const FALLBACK_TAGLINE = "The region, on record."
-const FALLBACK_COPYRIGHT = "© 2026 The Middle East Hustle. The Tribunal is operated under The Middle East Hustle brand. All rights reserved."
+const FALLBACK_COPYRIGHT = "© 2026 The Tribunal. All rights reserved."
 
 export function Footer() {
   const { t } = useI18n()
@@ -52,16 +52,21 @@ export function Footer() {
       : FALLBACK_SOCIALS
 
   const tagline = footerSettings?.tagline || FALLBACK_TAGLINE
-  const copyright = footerSettings?.copyright || FALLBACK_COPYRIGHT
+  const copyright = footerSettings?.copyright?.includes("Middle East Hustle")
+    ? FALLBACK_COPYRIGHT
+    : footerSettings?.copyright || FALLBACK_COPYRIGHT
 
   const NAV = (footerSettings?.links?.length
-    ? footerSettings.links.map(link => ({ label: t(link.label), href: link.href }))
+    ? footerSettings.links.map(link => ({
+        label: link.href?.startsWith("/majlis") ? t("The Gallery") : t(link.label),
+        href: link.href,
+      }))
     : [
         { label: t("Debates"), href: "/debates" },
         { label: t("Predictions"), href: "/predictions" },
         { label: t("Pulse"), href: "/pulse" },
         { label: t("Voices"), href: "/voices" },
-        { label: t("The Majlis"), href: "/majlis" },
+        { label: t("The Gallery"), href: "/majlis" },
         { label: t("About"), href: "/about" },
         { label: t("FAQ"), href: "/faq" },
         { label: t("Terms"), href: "/terms" },
@@ -79,11 +84,8 @@ export function Footer() {
         <div className="flex flex-col md:flex-row justify-between gap-12 mb-12 pb-12 border-b border-background/10">
           <div className="flex-1">
             <Link href="/">
-              <span className="font-display font-black text-3xl uppercase tracking-tight text-background leading-none block hover:text-primary transition-colors">
+              <span className="font-wordmark font-black text-3xl uppercase tracking-tight text-background leading-none block hover:text-primary transition-colors">
                 {siteSettings?.seo?.siteTitle?.split(" by ")?.[0] || "The Tribunal"}
-              </span>
-              <span className="text-[12px] font-serif tracking-[0.2em] uppercase text-background/75 mt-1 block">
-                {t(siteSettings?.seo?.siteTitle?.includes(" by ") ? `by ${siteSettings.seo.siteTitle.split(" by ")[1]}` : "by The Middle East Hustle")}
               </span>
             </Link>
             <p className="text-background/75 font-sans text-sm mt-4 max-w-xs leading-relaxed">

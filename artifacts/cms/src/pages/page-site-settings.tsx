@@ -138,7 +138,7 @@ export default function PageSiteSettings() {
                   className="mt-1 accent-primary"
                 />
                 <div className="flex-1">
-                  <p className="font-bold text-sm">Majlis</p>
+                  <p className="font-bold text-sm">Gallery</p>
                   <p className="text-xs text-muted-foreground">Private community chat. When off: hidden from nav, footer, homepage, share buttons, and /majlis routes redirect to home.</p>
                 </div>
               </label>

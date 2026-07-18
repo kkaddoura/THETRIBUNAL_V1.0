@@ -302,11 +302,11 @@ export function buildNewsletterHtml(c: NewsletterContent, opts: RenderOptions = 
     opts.omitFooter
       ? `<tr><td class="px" style="padding:30px 24px 8px;border-top:1px solid ${BORDER};text-align:center;">
     <p style="margin:0;color:${FG};font-size:13px;letter-spacing:1px;">Vote privately. See the result publicly.</p>
-    <p style="margin:14px 0 0;color:${MUTED};font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">The Tribunal &middot; by The Middle East Hustle</p>
+    <p style="margin:14px 0 0;color:${MUTED};font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">The Tribunal</p>
   </td></tr>`
       : `<tr><td class="px" style="padding:36px 24px 40px;border-top:1px solid ${BORDER};text-align:center;">
     <p style="margin:0;color:${FG};font-size:13px;letter-spacing:1px;">Vote privately. See the result publicly.</p>
-    <p style="margin:14px 0 0;color:${MUTED};font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">The Tribunal &middot; by The Middle East Hustle</p>
+    <p style="margin:14px 0 0;color:${MUTED};font-size:12px;font-weight:700;letter-spacing:2px;text-transform:uppercase;">The Tribunal</p>
     <p style="margin:14px 0 0;color:#6A655F;font-size:11px;line-height:1.5;">
       You're receiving this because you subscribed at ${esc(c.siteUrl.replace(/^https?:\/\//, ""))}.<br/>
       <a href="{{unsubscribe_link}}" style="color:#6A655F;text-decoration:underline;">Unsubscribe</a>

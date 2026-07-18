@@ -233,6 +233,7 @@ router.post("/cms/ideation/sessions/:id/generate", requireCmsAuth, async (req, r
     const config = session.configSnapshot as {
       batchSize: number;
       pillarCounts?: { debates: number; predictions: number; pulse: number };
+      pollType?: "binary" | "multiple_choice" | "scale" | "hot_take";
       exclusionList: string[];
       guardrails?: string[];
       categories: string[];
@@ -279,6 +280,7 @@ router.post("/cms/ideation/sessions/:id/generate", requireCmsAuth, async (req, r
       mode: session.mode,
       batchSize: config.batchSize || 15,
       pillarCounts: config.pillarCounts,
+      pollType: config.pollType,
       promptTemplate,
       exclusionList,
       guardrails: config.guardrails || [],
@@ -411,20 +413,32 @@ router.post("/cms/ideation/ideas/:id/refine", requireCmsAuth, async (req, res) =
     const [idea] = await db.select().from(ideationIdeasTable).where(eq(ideationIdeasTable.id, ideaId));
     if (!idea) return res.status(404).json({ error: "Idea not found" });
 
+    const originalContent = idea.content as Record<string, unknown>;
     const refined = await runRefinement({
       pillarType: idea.pillarType,
       idea: {
         pillarType: idea.pillarType,
         title: idea.title,
-        content: idea.content as Record<string, unknown>,
+        content: originalContent,
       },
     });
+    const originalPollType = originalContent.pollType;
+    const originalTags = Array.isArray(originalContent.tags) ? originalContent.tags.filter((tag): tag is string => typeof tag === "string") : [];
+    const refinedTags = Array.isArray(refined.tags) ? refined.tags.filter((tag): tag is string => typeof tag === "string") : [];
+    const refinedWithFormat = {
+      ...refined,
+      pollType: refined.pollType || originalPollType,
+      options: originalPollType && originalPollType !== "multiple_choice"
+        ? originalContent.options
+        : refined.options || originalContent.options,
+      tags: [...new Set([...originalTags, ...refinedTags])].slice(0, 4),
+    };
 
     await db.update(ideationIdeasTable)
-      .set({ refinedContent: refined, status: "refined" })
+      .set({ refinedContent: refinedWithFormat, status: "refined" })
       .where(eq(ideationIdeasTable.id, ideaId));
 
-    return res.json({ refinedContent: refined });
+    return res.json({ refinedContent: refinedWithFormat });
   } catch (err) {
     console.error("Refinement error:", err);
     return res.status(500).json({ error: "Refinement step failed" });
@@ -455,11 +469,30 @@ router.post("/cms/ideation/ideas/:id/publish-draft", requireCmsAuth, async (req,
     if (!idea) return res.status(404).json({ error: "Idea not found" });
     pillarType = idea.pillarType;
 
-    const content = (idea.refinedContent || idea.content) as Record<string, unknown>;
+    const originalContent = idea.content as Record<string, unknown>;
+    const refinedContent = (idea.refinedContent as Record<string, unknown> | null) || {};
+    const originalTags = Array.isArray(originalContent.tags) ? originalContent.tags.filter((tag): tag is string => typeof tag === "string") : [];
+    const refinedTags = Array.isArray(refinedContent.tags) ? refinedContent.tags.filter((tag): tag is string => typeof tag === "string") : [];
+    const content: Record<string, unknown> = {
+      ...originalContent,
+      ...refinedContent,
+      tags: [...new Set([...originalTags, ...refinedTags])].slice(0, 4),
+    };
 
     if (idea.pillarType === "debates") {
       const categorySlug = ((content.category as string) || "general")
         .toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+      const requestedPollType = content.pollType;
+      const pollType = requestedPollType === "binary" || requestedPollType === "multiple_choice" || requestedPollType === "scale" || requestedPollType === "hot_take"
+        ? requestedPollType
+        : "multiple_choice";
+      const defaultOptions: Record<typeof pollType, string[]> = {
+        binary: ["Yes", "No"],
+        multiple_choice: ["Strongly agree", "Strongly disagree", "It depends", "The premise is wrong"],
+        scale: ["1", "2", "3", "4", "5"],
+        hot_take: ["Agree", "Disagree"],
+      };
 
       const poll = await db.transaction(async (tx) => {
         const [createdPoll] = await tx.insert(pollsTable).values({
@@ -468,7 +501,7 @@ router.post("/cms/ideation/ideas/:id/publish-draft", requireCmsAuth, async (req,
           category: (content.category as string) || "General",
           categorySlug,
           tags: (content.tags as string[]) || ["ai-generated"],
-          pollType: "multiple_choice",
+          pollType,
           editorialStatus: "draft",
         }).returning();
 
@@ -476,7 +509,10 @@ router.post("/cms/ideation/ideas/:id/publish-draft", requireCmsAuth, async (req,
           throw new Error("Failed to create poll");
         }
 
-        const options = (content.options as string[]) || ["Strongly agree — this is undeniable", "Disagree — the data is misleading", "It's complicated — both sides have a point", "Asking the wrong question entirely"];
+        const providedOptions = Array.isArray(content.options)
+          ? content.options.filter((option): option is string => typeof option === "string" && option.trim().length > 0)
+          : [];
+        const options = providedOptions.length > 0 ? providedOptions : defaultOptions[pollType];
         for (const opt of options) {
           await tx.insert(pollOptionsTable).values({
             pollId: createdPoll.id,

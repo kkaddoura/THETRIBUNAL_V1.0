@@ -60,7 +60,7 @@ export function AuthVisualPanel({ title, body }: AuthVisualPanelProps) {
       <div className="relative z-10 flex h-full w-full flex-col justify-between p-10 text-[#F2EDE4] xl:p-16">
         <div className="max-w-md pt-6 xl:pt-10">
           <h1
-            className="font-display text-5xl font-black uppercase leading-[0.95] tracking-tight text-white drop-shadow-[0_3px_18px_rgba(0,0,0,0.65)] xl:text-6xl"
+            className="font-serif text-5xl font-black uppercase leading-[0.95] tracking-tight text-white drop-shadow-[0_3px_18px_rgba(0,0,0,0.65)] xl:text-6xl"
           >
             {title}
             <span className="text-primary">.</span>

@@ -765,7 +765,7 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
           animation: hg-fade-up 900ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards;
         }
         .hg-tl-lbl {
-          font-family: var(--font-serif, 'Playfair Display', serif);
+          font-family: var(--font-serif, 'Barlow Condensed', 'Arial Narrow', sans-serif);
           font-weight: 800;
           font-size: 10px;
           letter-spacing: 0.3em;
@@ -778,7 +778,7 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
           content: ""; width: 20px; height: 1px; background: currentColor;
         }
         .hg-tl-val {
-          font-family: var(--font-display, 'Playfair Display', serif);
+          font-family: var(--font-serif, 'Barlow Condensed', 'Arial Narrow', sans-serif);
           font-weight: 900;
           font-size: clamp(28px, 4.5vw, 40px);
           line-height: 1;
@@ -797,7 +797,7 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
           position: absolute;
           bottom: 22px; right: 22px;
           z-index: 22;
-          font-family: var(--font-serif, 'Playfair Display', serif);
+          font-family: var(--font-serif, 'Barlow Condensed', 'Arial Narrow', sans-serif);
           font-weight: 800;
           font-size: 9.5px;
           letter-spacing: 0.3em;
@@ -849,7 +849,7 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
         }
         .hg-card-flag { font-size: 14px; line-height: 1; }
         .hg-card-city {
-          font-family: var(--font-serif, 'Playfair Display', serif);
+          font-family: var(--font-serif, 'Barlow Condensed', 'Arial Narrow', sans-serif);
           font-weight: 800;
           font-size: 9px;
           letter-spacing: 0.22em;
@@ -858,7 +858,7 @@ export function HeroGlobe({ className = "" }: HeroGlobeProps) {
         }
         .hg-card-time {
           margin-left: auto;
-          font-family: var(--font-serif, 'Playfair Display', serif);
+          font-family: var(--font-serif, 'Barlow Condensed', 'Arial Narrow', sans-serif);
           font-weight: 700;
           font-size: 8px;
           letter-spacing: 0.15em;

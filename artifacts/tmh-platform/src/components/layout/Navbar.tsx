@@ -70,7 +70,7 @@ export function Navbar() {
     { label: t("About"), href: "/about" },
     ...(pulseEnabled ? [{ label: t("Pulse"), href: "/pulse" }] : []),
     ...(voicesEnabled ? [{ label: t("Voices"), href: "/voices" }] : []),
-    ...(majlisEnabled ? [{ label: t("The Majlis"), href: "/majlis", icon: "lock" }] : []),
+    ...(majlisEnabled ? [{ label: t("The Gallery"), href: "/majlis", icon: "lock" }] : []),
   ]
 
   // Match on normalized href + label so CMS entries with different casing,
@@ -87,6 +87,7 @@ export function Navbar() {
     && (pulseEnabled || !matchesFeature(link, "pulse")))
   const navLinks = (cmsLinks?.length ? cmsLinks : defaultLinks).map(link => ({
     ...link,
+    label: matchesFeature(link, "majlis") ? t("The Gallery") : link.label,
     icon: link.icon === "lock" ? Lock : undefined,
   }))
 
@@ -111,9 +112,6 @@ export function Navbar() {
 
   const seoSettings = settings?.seo
   const brandName = seoSettings?.siteTitle?.split(" by ")?.[0] || "The Tribunal"
-  const brandSub = seoSettings?.siteTitle?.includes(" by ")
-    ? `by ${seoSettings.siteTitle.split(" by ")[1]}`
-    : "by The Middle East Hustle"
 
   return (
     <header
@@ -130,14 +128,9 @@ export function Navbar() {
         <div className="flex items-center justify-between py-3">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex flex-col leading-none group">
-              <span className="font-display font-black text-lg uppercase tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">
+              <span className="font-wordmark font-black text-lg uppercase tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">
                 {brandName}<span className="text-primary">.</span>
               </span>
-              {location !== "/" && (
-                <span className="text-[10px] font-serif tracking-[0.2em] uppercase text-muted-foreground leading-none mt-1.5">
-                  {brandSub}
-                </span>
-              )}
             </Link>
 
           </div>

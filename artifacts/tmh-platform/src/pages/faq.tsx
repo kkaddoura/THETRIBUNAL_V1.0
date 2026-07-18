@@ -135,20 +135,20 @@ const FAQ_SECTIONS_DEFAULT: FaqSection[] = [
     ],
   },
   {
-    category: "The Majlis",
+    category: "The Gallery",
     requires: "majlis",
     questions: [
       {
-        q: "What is The Majlis?",
-        a: "The Majlis is a private members-only space connected to The Tribunal.",
+        q: "What is The Gallery?",
+        a: "The Gallery is a private members-only space connected to The Tribunal.",
       },
       {
         q: "Who can join?",
         a: "Selected participants with a serious connection to the region.",
       },
       {
-        q: "Is The Majlis private?",
-        a: "The Majlis is separate from private voting. Voting remains private. Majlis access may require identity review or approval.",
+        q: "Is The Gallery private?",
+        a: "The Gallery is separate from private voting. Voting remains private. Gallery access may require identity review or approval.",
       },
       {
         q: "Can anyone post?",

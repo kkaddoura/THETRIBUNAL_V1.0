@@ -36,12 +36,53 @@ interface GenerationConfig {
   mode: string;
   batchSize: number;
   pillarCounts?: { debates: number; predictions: number; pulse: number };
+  pollType?: "binary" | "multiple_choice" | "scale" | "hot_take";
   promptTemplate: string;
   exclusionList: string[];
   guardrails?: string[];
   categories?: string[];
   tags?: string[];
   researchData: ResearchResult | Record<string, unknown>;
+}
+
+type GeneratedPollType = NonNullable<GenerationConfig["pollType"]>;
+
+const POLL_TYPE_OPTIONS: Record<GeneratedPollType, string[]> = {
+  binary: ["Yes", "No"],
+  multiple_choice: ["Strongly agree", "Strongly disagree", "It depends", "The premise is wrong"],
+  scale: ["1", "2", "3", "4", "5"],
+  hot_take: ["Agree", "Disagree"],
+};
+
+function applyGenerationControls(
+  ideas: GeneratedIdea[],
+  pollType: GeneratedPollType,
+  selectedTags: string[] = [],
+): GeneratedIdea[] {
+  const normalizedSelectedTags = selectedTags.map(tag => tag.trim()).filter(Boolean);
+
+  return ideas.map((idea, index) => {
+    if (idea.pillarType !== "debates" && idea.pillarType !== "predictions") return idea;
+
+    const generatedOptions = Array.isArray(idea.content.options)
+      ? idea.content.options.filter((option): option is string => typeof option === "string" && option.trim().length > 0)
+      : [];
+    const options = pollType === "multiple_choice" && generatedOptions.length >= 3
+      ? generatedOptions.slice(0, 4)
+      : POLL_TYPE_OPTIONS[pollType];
+    const generatedTags = Array.isArray(idea.content.tags)
+      ? idea.content.tags.filter((tag): tag is string => typeof tag === "string" && tag.trim().length > 0)
+      : [];
+    const assignedTag = normalizedSelectedTags.length > 0
+      ? normalizedSelectedTags[index % normalizedSelectedTags.length]
+      : null;
+    const tags = [...new Set([...(assignedTag ? [assignedTag] : []), ...generatedTags])].slice(0, 4);
+
+    return {
+      ...idea,
+      content: { ...idea.content, pollType, options, ...(tags.length > 0 ? { tags } : {}) },
+    };
+  });
 }
 
 interface RefinementConfig {
@@ -253,8 +294,10 @@ export async function runResearch(config: ResearchConfig): Promise<ResearchResul
   const prompt = `Today is ${today}. Find the most important MENA news and data from the ${RECENCY_LABEL[recency]}.
 
 Focus areas: ${config.categories.join(", ") || "business, technology, culture, politics, economy"}
-Tags: ${config.tags.join(", ") || "any"}
+Cross-cutting metadata tags: ${config.tags.join(", ") || "any"}
 Regions: ${config.regions.join(", ") || "MENA region broadly"}
+
+Use tags as research lenses across categories. A tag can represent a country, entity, industry, policy theme, demographic, or recurring story line. When tags are selected, make sure the research set contains meaningful evidence for each one rather than merely repeating the tag as a keyword.
 
 Return a JSON object with:
 - "topics": array of {title, summary, source} for 5-8 BREAKING or trending stories. Each summary must be 1 sentence with a specific fact or number.
@@ -275,9 +318,10 @@ Return ONLY valid JSON.`;
 
 export async function runGeneration(config: GenerationConfig): Promise<GeneratedIdea[]> {
   const hasApiKey = !!process.env.ANTHROPIC_API_KEY;
+  const pollType = config.pollType ?? "multiple_choice";
 
   if (!hasApiKey) {
-    return generateMockIdeas(config);
+    return applyGenerationControls(generateMockIdeas(config), pollType, config.tags);
   }
 
   // Mandatory house-style rule appended to EVERY ideation prompt (regardless of
@@ -293,8 +337,24 @@ export async function runGeneration(config: GenerationConfig): Promise<Generated
     ? `\n\nCONTENT GUARDRAILS (you MUST follow these rules):\n${config.guardrails.map(g => `- ${g}`).join("\n")}`
     : "";
 
+  const pollTypeInstructions: Record<GeneratedPollType, string> = {
+    binary: "Frame each Debate and Prediction as a clear proposition or milestone answerable with Yes or No. Return exactly these options: [\"Yes\", \"No\"].",
+    multiple_choice: "Return exactly 4 distinct, opinionated answer options for each Debate and Prediction.",
+    scale: "Frame each Debate and Prediction as a rating prompt suitable for a 1 to 5 response. Return exactly these options: [\"1\", \"2\", \"3\", \"4\", \"5\"].",
+    hot_take: "Frame each Debate and Prediction as a bold proposition suitable for agreement or disagreement. Return exactly these options: [\"Agree\", \"Disagree\"].",
+  };
+  const pollTypeNote = `\n\nPOLL / PREDICTION TYPE (mandatory for Debates and Predictions; ignore for Pulse):\nType: ${pollType}\n${pollTypeInstructions[pollType]}\nInclude pollType: \"${pollType}\" inside each Debate or Prediction content object.`;
+
   const focusNote = (config.categories?.length || config.tags?.length)
-    ? `\n\nEDITORIAL FOCUS (prioritize ideas in these areas):\nCategories: ${config.categories?.join(", ") || "any"}\nThemes/Tags: ${config.tags?.join(", ") || "any"}`
+    ? `\n\nEDITORIAL TAXONOMY AND FOCUS:
+Categories: ${config.categories?.join(", ") || "any"}
+Selected tags: ${config.tags?.join(", ") || "none"}
+
+TAG RULES:
+- A category is one broad editorial vertical. Tags are reusable, cross-cutting metadata used by the product for search, filtering, and CMS section grouping.
+- Treat selected tags as coverage constraints, not decorative keywords. Distribute the batch across them so every selected tag is represented.
+- Every Debate or Prediction must include a content.tags array with 1-4 concise metadata labels. Use the exact spelling and casing of a selected tag when assigning it.
+- Tags may identify a country, entity, industry, policy theme, demographic, or recurring story line. Do not write sentences, hashtags, answer options, or duplicate the category as a tag.`
     : "";
 
   // Enumerate the research into a numbered work-list so each idea can be
@@ -346,7 +406,7 @@ QUALITY GATES: Reject any card where (1) the stat is vague ("millions" instead o
     pillarPrompt = `Generate a mix of ideas across all three pillars:\n${Object.entries(pillarInstructions).map(([k, v]) => `${k}: ${v}`).join("\n")}`;
   }
 
-  const userPrompt = `${researchContext}${focusNote}${exclusionNote}${guardrailNote}
+  const userPrompt = `${researchContext}${focusNote}${exclusionNote}${guardrailNote}${pollTypeNote}
 
 ${pillarPrompt}
 
@@ -387,7 +447,8 @@ Return ONLY a valid JSON array.`;
   }
   try {
     const jsonMatch = result.match(/\[[\s\S]*\]/);
-    return JSON.parse(jsonMatch ? jsonMatch[0] : result);
+    const parsed = JSON.parse(jsonMatch ? jsonMatch[0] : result) as GeneratedIdea[];
+    return applyGenerationControls(parsed, pollType, config.tags);
   } catch {
     throw new Error(
       `Idea generation failed: the model did not return valid JSON. First 300 chars: ${result.slice(0, 300)}`,

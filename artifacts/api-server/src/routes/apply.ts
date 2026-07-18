@@ -115,9 +115,9 @@ async function sendApplicationEmail(email: string, name: string, status: string,
   }
 
   const bodies: Record<string, string> = {
-    passed: `Hi ${name},\n\nYou've passed our AI review (score: ${score}/100).\n\nOur editorial team will review your application within 48 hours. You'll receive the final decision and your onboarding kit if approved.\n\nThe Tribunal, by The Middle East Hustle`,
-    conditional: `Hi ${name},\n\nYour profile shows real promise (score: ${score}/100).\n\n${reasoning}\n\nResubmit in 30 days with more specific outcomes.\n\nThe Tribunal, by The Middle East Hustle`,
-    not_yet: `Hi ${name},\n\nThe Tribunal's bar is high because our audience is discerning (score: ${score}/100).\n\n${reasoning}\n\nYou're on our Rising Voices watchlist. Reapply in 90 days. In the meantime — go vote on something.\n\nthemiddleeasthustle.com\n\nThe Tribunal, by The Middle East Hustle`,
+    passed: `Hi ${name},\n\nYou've passed our AI review (score: ${score}/100).\n\nOur editorial team will review your application within 48 hours. You'll receive the final decision and your onboarding kit if approved.\n\nThe Tribunal`,
+    conditional: `Hi ${name},\n\nYour profile shows real promise (score: ${score}/100).\n\n${reasoning}\n\nResubmit in 30 days with more specific outcomes.\n\nThe Tribunal`,
+    not_yet: `Hi ${name},\n\nThe Tribunal's bar is high because our audience is discerning (score: ${score}/100).\n\n${reasoning}\n\nYou're on our Rising Voices watchlist. Reapply in 90 days. In the meantime — go vote on something.\n\nthemiddleeasthustle.com\n\nThe Tribunal`,
   }
 
   await sendEmail({

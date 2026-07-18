@@ -171,14 +171,14 @@ router.post("/majlis/auth/register", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Associated profile not found" });
     }
     if (!profile.isVerified) {
-      return res.status(403).json({ error: "Only verified Voices can register for The Majlis" });
+      return res.status(403).json({ error: "Only verified Voices can register for The Gallery" });
     }
 
     const existingByProfile = await db.select().from(majlisUsersTable)
       .where(eq(majlisUsersTable.profileId, invite.profileId))
       .limit(1);
     if (existingByProfile.length > 0) {
-      return res.status(409).json({ error: "This Voice profile already has a Majlis account" });
+      return res.status(409).json({ error: "This Voice profile already has a Gallery account" });
     }
 
     const existingByEmail = await db.select().from(majlisUsersTable)
@@ -1011,7 +1011,7 @@ router.post("/cms/majlis/invites", requireCmsAuth, async (req: Request, res: Res
       .where(eq(majlisUsersTable.profileId, profileId))
       .limit(1);
     if (existingUser.length > 0) {
-      return res.status(409).json({ error: "This Voice already has a Majlis account" });
+      return res.status(409).json({ error: "This Voice already has a Gallery account" });
     }
 
     const code = generateInviteCode();

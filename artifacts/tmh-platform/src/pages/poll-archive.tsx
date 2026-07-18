@@ -41,7 +41,7 @@ export default function PollArchive() {
           <div className="text-[12px] uppercase tracking-[0.3em] font-bold text-primary mb-4 font-serif">
             The Archive
           </div>
-          <h1 className="font-display font-black text-5xl md:text-6xl uppercase tracking-tight text-background leading-none">
+          <h1 className="font-serif font-black text-5xl md:text-6xl uppercase tracking-tight text-background leading-none">
             Every Question<br />We've Ever Asked.
           </h1>
           <p className="text-background/70 font-sans text-base mt-4">

@@ -1383,7 +1383,7 @@ function TopicCardComponent({
         {topic.live ? (
           <span
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif",
               fontWeight: 900,
               color: "#fff",
               letterSpacing: "-0.02em",
@@ -1404,7 +1404,7 @@ function TopicCardComponent({
         ) : (
           <span
             style={{
-              fontFamily: "'Playfair Display', serif",
+              fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif",
               fontWeight: 900,
               color: "#fff",
               letterSpacing: "-0.02em",
@@ -1668,7 +1668,7 @@ function BigNumber() {
       <div style={{ display: "flex", alignItems: "baseline", gap: 6 }}>
         <span
           style={{
-            fontFamily: "'Playfair Display', serif",
+            fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif",
             fontWeight: 900,
             color: "#DC143C",
             letterSpacing: "-0.02em",

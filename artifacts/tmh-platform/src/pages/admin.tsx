@@ -324,7 +324,7 @@ export default function Admin() {
       <div className="min-h-screen bg-background flex items-center justify-center px-4">
         <div className="w-full max-w-sm">
           <div className="text-center mb-8">
-            <h1 className="font-display font-black text-4xl uppercase text-foreground">
+            <h1 className="font-serif font-black text-4xl uppercase text-foreground">
               TMH<span className="text-primary">.</span>
             </h1>
             <p className="text-[12px] uppercase tracking-[0.3em] text-muted-foreground mt-1 font-serif">Admin Access</p>
@@ -369,7 +369,7 @@ export default function Admin() {
       <div className="bg-foreground text-background px-6 py-4 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Link href="/">
-            <span className="font-display font-black text-2xl uppercase tracking-tight cursor-pointer">
+            <span className="font-serif font-black text-2xl uppercase tracking-tight cursor-pointer">
               TMH<span className="text-primary">.</span>
             </span>
           </Link>

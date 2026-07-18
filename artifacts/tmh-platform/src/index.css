@@ -59,7 +59,6 @@
 
   --font-sans: var(--app-font-sans);
   --font-serif: var(--app-font-serif);
-  --font-display: var(--app-font-display);
   --font-mono: var(--app-font-mono);
 
   --radius-sm: calc(var(--radius) - 4px);
@@ -122,7 +121,7 @@
   --chart-4: 348 70% 62%;
   --chart-5: 0 0% 70%;
 
-  --app-font-display: 'Playfair Display', Georgia, serif;
+  --app-font-wordmark: 'Playfair Display', Georgia, serif;
   --app-font-sans: 'DM Sans', system-ui, sans-serif;
   --app-font-serif: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --app-font-mono: Menlo, monospace;
@@ -201,7 +200,7 @@
   --chart-4: 348 70% 65%;
   --chart-5: 0 0% 75%;
 
-  --app-font-display: 'Playfair Display', Georgia, serif;
+  --app-font-wordmark: 'Playfair Display', Georgia, serif;
   --app-font-sans: 'DM Sans', system-ui, sans-serif;
   --app-font-serif: 'Barlow Condensed', 'Arial Narrow', sans-serif;
   --app-font-mono: Menlo, monospace;
@@ -261,8 +260,8 @@
 }
 
 @layer utilities {
-  .font-display {
-    font-family: var(--app-font-display);
+  .font-wordmark {
+    font-family: var(--app-font-wordmark);
   }
 
   .text-balance {
@@ -460,9 +459,11 @@
 [dir="rtl"] {
   font-family: 'IBM Plex Sans Arabic', 'DM Sans', sans-serif;
 }
-[dir="rtl"] .font-display,
+[dir="rtl"] .font-wordmark {
+  font-family: 'Playfair Display', Georgia, serif;
+}
 [dir="rtl"] .font-serif {
-  font-family: 'IBM Plex Sans Arabic', 'Playfair Display', serif;
+  font-family: 'IBM Plex Sans Arabic', 'Barlow Condensed', sans-serif;
 }
 [dir="rtl"] .tmh-ticker-scroll {
   animation-direction: reverse;

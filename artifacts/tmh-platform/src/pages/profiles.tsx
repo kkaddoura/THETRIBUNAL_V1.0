@@ -294,7 +294,7 @@ export default function Profiles() {
                 className="inline-flex items-center gap-2 mt-4 bg-primary text-white text-[13px] font-bold uppercase tracking-[0.15em] px-5 py-2.5 hover:bg-primary/90 transition-colors font-serif"
               >
                 <Lock className="w-3.5 h-3.5" />
-                Enter The Majlis
+                Enter The Gallery
               </Link>
             </motion.div>
           )}

@@ -419,7 +419,7 @@ function CreateGroupModal({ members, onClose, onSubmit }: {
     <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4" onClick={onClose}>
       <div className="bg-card border border-border w-full max-w-md max-h-[80vh] flex flex-col" onClick={e => e.stopPropagation()}>
         <div className="p-4 border-b border-border flex items-center justify-between">
-          <h3 className="text-sm font-display font-bold uppercase tracking-tight text-foreground">
+          <h3 className="text-sm font-serif font-bold uppercase tracking-tight text-foreground">
             Create Group Channel
           </h3>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
@@ -475,7 +475,7 @@ function CreateGroupModal({ members, onClose, onSubmit }: {
 
 export default function Majlis() {
   usePageTitle({
-    title: "The Majlis",
+    title: "The Gallery",
     description: "A private community for MENA's sharpest voices. Discuss, share, and shape the debate behind closed doors.",
   });
   const [, navigate] = useLocation()
@@ -747,9 +747,9 @@ export default function Majlis() {
             <Lock className="w-6 h-6 text-primary" />
           </div>
           <p className="text-[10px] font-serif uppercase tracking-[0.3em] text-muted-foreground mb-3">
-            THE MAJLIS
+            THE GALLERY
           </p>
-          <h2 className="font-display font-black text-2xl uppercase tracking-tight text-foreground mb-2">
+          <h2 className="font-serif font-black text-2xl uppercase tracking-tight text-foreground mb-2">
             A private room for serious conversation.
           </h2>
           {hasApplied ? (
@@ -795,8 +795,8 @@ export default function Majlis() {
             >
               <Menu className="w-4 h-4" />
             </button>
-            <h1 className="font-display text-lg font-black uppercase tracking-tight text-foreground leading-none">
-              The Majlis<span className="text-primary">.</span>
+            <h1 className="font-serif text-lg font-black uppercase tracking-tight text-foreground leading-none">
+              The Gallery<span className="text-primary">.</span>
             </h1>
             <span className="text-[10px] font-serif uppercase tracking-[0.2em] text-muted-foreground hidden sm:inline">
               المجلس
@@ -819,7 +819,7 @@ export default function Majlis() {
             <button
               onClick={handleLogout}
               className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-              title="Leave The Majlis"
+              title="Leave The Gallery"
             >
               <LogOut className="w-4 h-4" />
             </button>
@@ -860,8 +860,8 @@ export default function Majlis() {
               ) : messages.length === 0 ? (
                 <div className="flex flex-col items-center justify-center h-full text-center px-4">
                   <MessageSquare className="w-10 h-10 text-muted-foreground/30 mb-4" />
-                  <h3 className="font-display text-xl font-black uppercase text-foreground mb-1">
-                    {activeChannel ? `Welcome to ${activeChannel.displayName}` : "Welcome to The Majlis"}<span className="text-primary">.</span>
+                  <h3 className="font-serif text-xl font-black uppercase text-foreground mb-1">
+                    {activeChannel ? `Welcome to ${activeChannel.displayName}` : "Welcome to The Gallery"}<span className="text-primary">.</span>
                   </h3>
                   <p className="text-sm text-muted-foreground max-w-md">
                     {activeChannel?.type === "dm" ? "Start a private conversation." : "Start the conversation."}
