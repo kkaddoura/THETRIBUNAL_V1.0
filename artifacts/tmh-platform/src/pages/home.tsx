@@ -2094,15 +2094,10 @@ export default function Home() {
             {(trendingLoading || queuedLeadDebates.length > 0) && (
             <aside className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border" aria-label="Upcoming debates">
               <FadeIn delay={0.15}>
-              <div className="mb-5 flex items-start justify-between gap-3 border-l-4 border-primary pl-4">
-                <div className="py-0.5">
-                  <p className="font-serif text-[11px] font-bold uppercase tracking-[0.28em] text-muted-foreground">
-                    Ballot queue
-                  </p>
-                  <h2 className="mt-1.5 font-serif text-2xl font-black uppercase leading-none text-foreground">
-                    Up next
-                  </h2>
-                </div>
+              <div className="mb-5 flex items-center justify-between gap-3 border-l-4 border-primary pl-4">
+                <h2 className="font-serif text-[12px] font-bold uppercase tracking-[0.25em] text-muted-foreground">
+                  {t("Latest Debates")}
+                </h2>
                 <Link
                   href="/debates"
                   className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground hover:text-foreground font-serif transition-colors"

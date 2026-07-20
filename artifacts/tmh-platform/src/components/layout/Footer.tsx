@@ -55,6 +55,8 @@ export function Footer() {
   const copyright = footerSettings?.copyright?.includes("Middle East Hustle")
     ? FALLBACK_COPYRIGHT
     : footerSettings?.copyright || FALLBACK_COPYRIGHT
+  const footerWordmark = (siteSettings?.seo?.siteTitle?.split(" by ")?.[0] || "The Tribunal")
+    .replace(/\.+$/, "")
 
   const NAV = (footerSettings?.links?.length
     ? footerSettings.links.map(link => ({
@@ -83,9 +85,9 @@ export function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex flex-col md:flex-row justify-between gap-12 mb-12 pb-12 border-b border-background/10">
           <div className="flex-1">
-            <Link href="/">
-              <span className="font-wordmark font-black text-3xl uppercase tracking-tight text-background leading-none block hover:text-primary transition-colors">
-                {siteSettings?.seo?.siteTitle?.split(" by ")?.[0] || "The Tribunal"}
+            <Link href="/" className="group">
+              <span className="block font-wordmark text-3xl font-black uppercase leading-none tracking-tight text-background transition-colors group-hover:text-background/80">
+                {footerWordmark}<span className="text-primary">.</span>
               </span>
             </Link>
             <p className="text-background/75 font-sans text-sm mt-4 max-w-xs leading-relaxed">
