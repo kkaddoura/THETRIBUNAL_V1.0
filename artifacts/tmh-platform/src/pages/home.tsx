@@ -2027,8 +2027,17 @@ export default function Home() {
       <section id="debates" className="scroll-mt-20 bg-background py-8 border-b border-border relative">
         <FadeUp>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-0">
-            <div className="lg:pr-8 lg:border-r lg:border-border pb-8 lg:pb-0">
+          <div
+            className={cn(
+              "grid grid-cols-1 gap-0",
+              (trendingLoading || queuedLeadDebates.length > 0) && "lg:grid-cols-[1fr_320px]",
+            )}
+          >
+            <div
+              className={cn(
+                (trendingLoading || queuedLeadDebates.length > 0) && "pb-8 lg:border-r lg:border-border lg:pb-0 lg:pr-8",
+              )}
+            >
               <FadeIn delay={0.1}>
               <div className="mb-5 flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2 font-serif text-sm font-bold uppercase tracking-[0.22em] text-primary">
@@ -2061,8 +2070,28 @@ export default function Home() {
                   </motion.div>
                 </AnimatePresence>
               ) : null}
+
+              {!trendingLoading && queuedLeadDebates.length === 0 && (
+                <FadeIn delay={0.15}>
+                  <div className="mt-5 border border-border bg-secondary/40 p-6 text-left">
+                    <p className="font-serif text-sm font-black uppercase tracking-wide text-foreground">
+                      Queue complete
+                    </p>
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                      You have weighed in on every featured question.
+                    </p>
+                    <Link
+                      href="/debates"
+                      className="mt-4 inline-flex items-center gap-2 font-serif text-[10px] font-bold uppercase tracking-widest text-primary"
+                    >
+                      Find more debates <ArrowRight className="h-3 w-3" aria-hidden="true" />
+                    </Link>
+                  </div>
+                </FadeIn>
+              )}
             </div>
 
+            {(trendingLoading || queuedLeadDebates.length > 0) && (
             <aside className="lg:pl-8 pt-8 lg:pt-0 border-t lg:border-t-0 border-border" aria-label="Upcoming debates">
               <FadeIn delay={0.15}>
               <div className="mb-5 flex items-start justify-between gap-3 border-l-4 border-primary pl-4">
@@ -2089,21 +2118,6 @@ export default function Home() {
                     <div key={i} className="h-28 bg-secondary animate-pulse border border-border" />
                   ))}
                 </div>
-              ) : queuedLeadDebates.length === 0 ? (
-                <div className="border border-border bg-secondary/40 p-6 text-center">
-                  <p className="font-serif text-sm font-black uppercase tracking-wide text-foreground">
-                    Queue complete
-                  </p>
-                  <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
-                    You have weighed in on every featured question.
-                  </p>
-                  <Link
-                    href="/debates"
-                    className="mt-4 inline-flex items-center gap-2 font-serif text-[10px] font-bold uppercase tracking-widest text-primary"
-                  >
-                    Find more debates <ArrowRight className="h-3 w-3" aria-hidden="true" />
-                  </Link>
-                </div>
               ) : (
                 <div className="max-h-[46rem] space-y-4 overflow-y-auto pr-1 [scrollbar-width:thin]" role="list" aria-live="polite">
                   <AnimatePresence initial={false}>
@@ -2121,10 +2135,15 @@ export default function Home() {
                         className="group w-full border border-border bg-card px-5 py-6 text-left transition-colors hover:border-primary hover:bg-secondary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                       >
                         <div className="flex items-center justify-between gap-3">
-                          <span className="font-serif text-[11px] font-bold uppercase tracking-[0.22em] text-muted-foreground">
+                          <span className="font-serif text-[11px] font-bold uppercase tracking-[0.22em] text-[#3B82F6]">
                             {poll.category}
                           </span>
-                          <span className="font-serif text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          <span
+                            className={cn(
+                              "font-serif text-[10px] font-black uppercase tracking-widest",
+                              index === 0 ? "text-[#10B981]" : "text-[#D97706] dark:text-[#F59E0B]",
+                            )}
+                          >
                             {index === 0 ? "Next" : "In queue"}
                           </span>
                         </div>
@@ -2134,10 +2153,10 @@ export default function Home() {
                             : poll.question}
                         </p>
                         <div className="mt-5 flex items-center justify-between border-t border-border pt-4">
-                          <span className="font-serif text-[11px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                          <span className="font-serif text-[11px] font-bold uppercase tracking-[0.14em] text-[#D97706] dark:text-[#F59E0B]">
                             {(poll.totalVotes ?? 0).toLocaleString()} votes
                           </span>
-                          <span className="flex items-center gap-1 font-serif text-[10px] font-bold uppercase tracking-widest text-foreground transition-colors group-hover:text-primary">
+                          <span className="flex items-center gap-1 font-serif text-[10px] font-bold uppercase tracking-widest text-primary transition-colors group-hover:text-primary/75">
                             Make lead <ArrowRight className="h-3 w-3 transition-transform group-hover:translate-x-1" aria-hidden="true" />
                           </span>
                         </div>
@@ -2147,6 +2166,7 @@ export default function Home() {
                 </div>
               )}
             </aside>
+            )}
           </div>
         </div>
         </FadeUp>

@@ -3,7 +3,7 @@ import { useQuery } from "@tanstack/react-query"
 const API_BASE = import.meta.env?.VITE_API_BASE_URL ?? ""
 
 async function fetchJson<T>(url: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_BASE}${url}`, init)
+  const res = await fetch(`${API_BASE}${url}`, { cache: "no-store", ...init })
   if (!res.ok) throw new Error(`HTTP ${res.status}`)
   return res.json()
 }
@@ -148,7 +148,8 @@ export function usePageConfig<T = Record<string, unknown>>(page: string) {
   return useQuery<T>({
     queryKey: ["page-config", page],
     queryFn: () => fetchJson(`/api/public/page-config/${page}`),
-    staleTime: 120_000,
+    staleTime: 0,
+    refetchOnWindowFocus: "always",
     retry: 1,
   })
 }
@@ -167,7 +168,8 @@ export function useSiteSettings() {
   return useQuery<SiteSettings>({
     queryKey: ["site-settings"],
     queryFn: () => fetchJson("/api/public/site-settings"),
-    staleTime: 300_000,
+    staleTime: 0,
+    refetchOnWindowFocus: "always",
     retry: 1,
   })
 }
@@ -193,7 +195,8 @@ export function useDesignTokens() {
   return useQuery<{ items: DesignToken[] }>({
     queryKey: ["design-tokens"],
     queryFn: () => fetchJson("/api/public/design-tokens"),
-    staleTime: 300_000,
+    staleTime: 0,
+    refetchOnWindowFocus: "always",
     retry: 1,
   })
 }

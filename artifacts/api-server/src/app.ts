@@ -10,16 +10,16 @@ import { optionalAuth } from "./middlewares/auth";
 const app: Express = express();
 
 // ── Domain configuration ────────────────────────────────────
-// In production, tribunal.com serves the main site and
-// cms.tribunal.com serves the CMS admin panel.
+// In production, thetribunal.me serves the main site and
+// cms.thetribunal.me (or /cms) serves the CMS admin panel.
 // Both domains point to this single Railway service.
 
 const allowedOrigins =
   process.env.NODE_ENV === "production"
     ? [
-        "https://tribunal.com",
-        "https://www.tribunal.com",
-        "https://cms.tribunal.com",
+        "https://thetribunal.me",
+        "https://www.thetribunal.me",
+        "https://cms.thetribunal.me",
       ]
     : true; // allow all origins in development
 
@@ -60,6 +60,16 @@ app.use((req, res, next) => {
 // Prevents 304 Not Modified responses that return stale data
 // after mutations (e.g., status updates not reflected in list).
 app.use("/api/cms", (_req, res, next) => {
+  res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+  res.set("Pragma", "no-cache");
+  res.set("Expires", "0");
+  next();
+});
+
+// Public CMS-backed configuration must never be cached by a CDN or browser.
+// Editors expect a saved homepage, page config, site setting, or design token
+// to be visible on the public site immediately after the next fetch.
+app.use("/api/public", (_req, res, next) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
   res.set("Pragma", "no-cache");
   res.set("Expires", "0");
